@@ -8,7 +8,7 @@ import type { Account, Goals, Settings, Subscription, Transaction } from "./type
 const LEGACY_KEY = "tookbaht-v1";
 const IMPORTED_KEY = "tookbaht-v1-imported";
 
-interface LegacyData {
+export interface LegacyData {
   accounts: Account[];
   transactions: Transaction[];
   subscriptions: Subscription[];
@@ -48,12 +48,18 @@ export function dismissLegacyData() {
 
 const CHUNK = 500;
 
-/**
- * Copy legacy data into the signed-in user's database rows. Old ids aren't
- * UUIDs, so every row gets a new id and references are remapped. If a step
- * fails, rows inserted so far are removed again.
- */
+/** Import legacy data, then retire the local copy. */
 export async function importLegacyData(userId: string, data: LegacyData): Promise<void> {
+  await importData(userId, data);
+  dismissLegacyData();
+}
+
+/**
+ * Copy app data (legacy export or sample data) into the signed-in user's
+ * database rows. Old ids aren't UUIDs, so every row gets a new id and
+ * references are remapped. If a step fails, rows inserted so far are removed.
+ */
+export async function importData(userId: string, data: LegacyData): Promise<void> {
   const sb = getSupabase();
   const ids = new Map<string, string>();
   const newId = (old?: string) => {
@@ -106,5 +112,4 @@ export async function importLegacyData(userId: string, data: LegacyData): Promis
     for (const { table, ids } of inserted.reverse()) await sb.from(table).delete().in("id", ids);
     throw e;
   }
-  dismissLegacyData();
 }

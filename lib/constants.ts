@@ -36,7 +36,10 @@ export const SUB_CATEGORIES: CategoryDef[] = [
   { key: "other", label: "อื่นๆ", dot: "#b9b4a7" },
 ];
 
-export const POPULAR_SUBS = ["Netflix", "Spotify", "YouTube Premium", "Disney+", "iCloud+", "ChatGPT"];
+export const POPULAR_SUBS = [
+  "Netflix", "Spotify", "YouTube Premium", "Disney+ Hotstar", "iCloud+", "ChatGPT",
+  "Claude", "Google One", "Apple Music", "Prime Video", "Viu", "Canva",
+];
 
 export const MONO_TONES = ["#2f5b45", "#33558f", "#8a2e22", "#6e3a1c", "#5b4a7a", "#1c1e1b"];
 

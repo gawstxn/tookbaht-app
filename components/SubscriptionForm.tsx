@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { AccountSheet, CategorySheet, DateSheet } from "@/components/pickers";
 import { Card, Chip, ListCard, PickerRow, PrimaryButton, PushHeader, Segmented, SwitchRow } from "@/components/ui/primitives";
-import { PushScreen } from "@/components/app";
+import { BrandMark, PushScreen, SubMono } from "@/components/app";
+import { findBrand, suggestCategory } from "@/lib/brands";
 import { MONO_TONES, POPULAR_SUBS, SUB_CATEGORIES } from "@/lib/constants";
 import { baht, fromISO, monthlyEquivalent, shortDate, todayISO, TH_MONTHS_SHORT } from "@/lib/format";
 import { useStore } from "@/lib/store";
@@ -11,8 +12,10 @@ import type { Cycle, Subscription } from "@/lib/types";
 
 export type SubDraft = Omit<Subscription, "id">;
 
-/** Stable colour per service name. */
+/** Brand colour for known services, otherwise a stable colour per name. */
 function toneFor(name: string) {
+  const brand = findBrand(name);
+  if (brand) return brand.color;
   let h = 0;
   for (const ch of name.trim().toLowerCase()) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return MONO_TONES[h % MONO_TONES.length];
@@ -69,9 +72,13 @@ export function SubscriptionForm({
       <PushHeader title={title} backIcon="close" onBack={onBack} />
 
       <div className="flex items-center gap-3.5">
-        <span aria-hidden="true" className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-ink text-2xl font-bold text-lime">
-          {(d.name.trim()[0] ?? "?").toUpperCase()}
-        </span>
+        {findBrand(d.name) ? (
+          <SubMono s={{ name: d.name, tone: toneFor(d.name) }} size={56} />
+        ) : (
+          <span aria-hidden="true" className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-ink text-2xl font-bold text-lime">
+            {(d.name.trim()[0] ?? "?").toUpperCase()}
+          </span>
+        )}
         <div className="flex min-w-0 grow flex-col gap-0.5">
           <label htmlFor="subname" className="text-xs text-muted">
             ชื่อบริการ
@@ -87,11 +94,17 @@ export function SubscriptionForm({
       </div>
 
       <div aria-label="เลือกจากบริการยอดนิยม" className="flex flex-wrap gap-1.5">
-        {POPULAR_SUBS.map((n) => (
-          <Chip key={n} size="sm" on={d.name === n} onClick={() => set({ name: n })}>
-            {n}
-          </Chip>
-        ))}
+        {POPULAR_SUBS.map((n) => {
+          const brand = findBrand(n);
+          return (
+            <Chip key={n} size="sm" on={d.name === n} onClick={() => set({ name: n, category: suggestCategory(n) ?? d.category })}>
+              <span className="flex items-center gap-1.5">
+                {brand ? <BrandMark brand={brand} size={18} /> : null}
+                {n}
+              </span>
+            </Chip>
+          );
+        })}
       </div>
 
       <Card className="flex flex-col gap-3 px-4 py-3.5">
@@ -141,7 +154,15 @@ export function SubscriptionForm({
           เฉลี่ย <span className="font-mono font-semibold text-ink">{baht(monthly)}</span> / เดือน ·
           <span className="font-mono font-semibold text-ink">{baht(monthly * 12)}</span> / ปี
         </p>
-        <PrimaryButton disabled={!canSave} onClick={() => onSave({ ...d, name: d.name.trim(), tone: initial?.tone ?? toneFor(d.name) })}>
+        <PrimaryButton
+          disabled={!canSave}
+          onClick={() => {
+            const name = d.name.trim();
+            // Keep a custom colour on edit unless the name now matches a known service.
+            const tone = findBrand(name) || !initial ? toneFor(name) : initial.tone;
+            onSave({ ...d, name, tone });
+          }}
+        >
           {saveLabel}
         </PrimaryButton>
       </div>

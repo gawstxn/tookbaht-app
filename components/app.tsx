@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { TYPE_META, categoryLabel } from "@/lib/constants";
+import { findBrand, onColor, type Brand } from "@/lib/brands";
 import { baht2, relativeDue } from "@/lib/format";
 import type { Subscription, Transaction } from "@/lib/types";
 import { Icon, type IconName } from "./ui/Icon";
@@ -110,6 +111,28 @@ export function DuePill({ days }: { days: number }) {
   );
 }
 
+/** Subscription icon: the service's logo when we know it, else a monogram. */
 export function SubMono({ s, size = 40 }: { s: Pick<Subscription, "name" | "tone">; size?: number }) {
-  return <Monogram text={(s.name.trim()[0] ?? "?").toUpperCase()} tone={s.tone} size={size} />;
+  const brand = findBrand(s.name);
+  if (!brand) return <Monogram text={(s.name.trim()[0] ?? "?").toUpperCase()} tone={s.tone} size={size} />;
+  return <BrandMark brand={brand} size={size} />;
+}
+
+export function BrandMark({ brand, size = 40 }: { brand: Brand; size?: number }) {
+  const fg = onColor(brand.color);
+  return (
+    <span
+      aria-hidden="true"
+      className="flex shrink-0 items-center justify-center font-bold"
+      style={{ width: size, height: size, borderRadius: size * 0.3, background: brand.color, color: fg }}
+    >
+      {brand.path ? (
+        <svg viewBox="0 0 24 24" width={size * 0.56} height={size * 0.56} fill="currentColor">
+          <path d={brand.path} />
+        </svg>
+      ) : (
+        <span style={{ fontSize: size * (brand.label!.length > 2 ? 0.3 : 0.4), letterSpacing: "-0.02em" }}>{brand.label}</span>
+      )}
+    </span>
+  );
 }
