@@ -88,8 +88,7 @@ function AddForm() {
   const dateText = date === today ? `วันนี้, ${shortDate(date, false)}` : date === addDays(today, -1) ? `เมื่อวาน, ${shortDate(date, false)}` : shortDate(date);
 
   return (
-    // Exactly one screen tall: the keypad takes whatever height is left.
-    <PushScreen className="h-dvh gap-3 overflow-hidden">
+    <PushScreen className="gap-3">
       <PushHeader title="เพิ่มรายการ" backIcon="close" onBack={() => router.back()} />
 
       <Segmented
@@ -159,14 +158,14 @@ function AddForm() {
         />
       </div>
 
-      <div className="mt-auto grid max-h-[248px] min-h-0 grow grid-cols-3 grid-rows-4 gap-1.5">
+      <div className="mt-auto grid grid-cols-3 gap-1.5">
         {["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "del"].map((k) => (
           <button
             key={k}
             type="button"
             aria-label={k === "del" ? "ลบ" : k}
             onClick={() => press(k)}
-            className={cx("flex min-h-10 items-center justify-center rounded-xl font-mono text-[22px] font-medium", k === "del" || k === "." ? "bg-chip" : "bg-card")}
+            className={cx("flex min-h-[50px] items-center justify-center rounded-xl font-mono text-[22px] font-medium", k === "del" || k === "." ? "bg-chip" : "bg-card")}
           >
             {k === "del" ? <Icon name="del" size={24} /> : k}
           </button>
