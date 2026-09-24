@@ -40,6 +40,10 @@ html,
 body {
   background: var(--color-paper);
   color: var(--color-ink);
+  /* Feel like an app: scrolling only — no pinch or double-tap zoom. */
+  touch-action: pan-x pan-y;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {

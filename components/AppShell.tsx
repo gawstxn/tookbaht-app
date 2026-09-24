@@ -37,6 +37,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => data.subscription.unsubscribe();
   }, [router]);
 
+  // iOS Safari still pinch-zooms despite the viewport settings; cancel its gesture events.
+  useEffect(() => {
+    const block = (e: Event) => e.preventDefault();
+    document.addEventListener("gesturestart", block);
+    return () => document.removeEventListener("gesturestart", block);
+  }, []);
+
   useEffect(() => {
     if (needsOnboarding && !onOnboarding && !noData) router.replace("/onboarding");
   }, [needsOnboarding, onOnboarding, noData, router]);
