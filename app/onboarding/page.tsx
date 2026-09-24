@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import { balanceLabel, monoFor } from "@/components/AccountEditSheet";
 import { Card, ListCard, Monogram, PrimaryButton, SecondaryButton } from "@/components/ui/primitives";
-import { dismissLegacyData, importLegacyData, readLegacyData } from "@/lib/legacyImport";
+import { dismissLegacyData, importData, importLegacyData, readLegacyData } from "@/lib/legacyImport";
+import { seedData } from "@/lib/seed";
 import { useStore } from "@/lib/store";
 import type { AccountKind } from "@/lib/types";
 
@@ -48,12 +49,13 @@ export default function OnboardingPage() {
     router.replace("/");
   };
 
-  const runImport = async () => {
-    if (!legacy || !userId) return;
+  const runImport = async (sample = false) => {
+    if (!userId || (!sample && !legacy)) return;
     setBusy(true);
     setError(false);
     try {
-      await importLegacyData(userId, legacy);
+      if (sample) await importData(userId, seedData());
+      else await importLegacyData(userId, legacy!);
       await load(userId);
       router.replace("/");
     } catch (e) {
@@ -80,7 +82,7 @@ export default function OnboardingPage() {
           </p>
         ) : null}
         <div className="mt-auto flex flex-col gap-2.5">
-          <PrimaryButton disabled={busy} onClick={runImport}>
+          <PrimaryButton disabled={busy} onClick={() => runImport()}>
             {busy ? "กำลังนำเข้า…" : "นำเข้าข้อมูลเดิม"}
           </PrimaryButton>
           <SecondaryButton
@@ -136,10 +138,18 @@ export default function OnboardingPage() {
           </div>
         ))}
       </ListCard>
-      <div className="mt-auto">
-        <PrimaryButton disabled={chosen.length === 0} onClick={start}>
+      {error ? (
+        <p role="alert" className="text-center text-sm text-danger">
+          ใส่ข้อมูลตัวอย่างไม่สำเร็จ ลองอีกครั้ง
+        </p>
+      ) : null}
+      <div className="mt-auto flex flex-col gap-2.5">
+        <PrimaryButton disabled={chosen.length === 0 || busy} onClick={start}>
           เริ่มใช้งาน
         </PrimaryButton>
+        {process.env.NEXT_PUBLIC_DEV_LOGIN === "true" ? (
+          <SecondaryButton onClick={() => void runImport(true)}>{busy ? "กำลังใส่ข้อมูล…" : "ลองด้วยข้อมูลตัวอย่าง (โหมดทดสอบ)"}</SecondaryButton>
+        ) : null}
       </div>
     </main>
   );

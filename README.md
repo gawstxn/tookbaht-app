@@ -17,6 +17,16 @@ npm run dev
 
 รีเซ็ตฐานข้อมูลบนเครื่อง: `npx supabase db reset` (ลบข้อมูลทั้งหมดแล้วรัน migrations ใหม่)
 
+### ลองเล่นบนเครื่องโดยไม่ต้องตั้ง Google OAuth
+
+ใส่ `NEXT_PUBLIC_DEV_LOGIN=true` ใน `.env.local` แล้วหน้า login จะมีช่อง "โหมดทดสอบบนเครื่อง":
+
+1. ใส่อีเมลอะไรก็ได้ แล้วกด "ส่งลิงก์"
+2. เปิดกล่องจดหมายทดสอบที่ http://127.0.0.1:55324 แล้วกดลิงก์ในอีเมล "Your sign-in link" (เปิดในเบราว์เซอร์เดียวกับแอป)
+3. หน้า onboarding มีปุ่ม "ลองด้วยข้อมูลตัวอย่าง" ใส่บัญชี รายการ subscriptions และเป้าหมายตัวอย่างให้
+
+**ห้ามตั้ง `NEXT_PUBLIC_DEV_LOGIN` บน production** และปิด Email provider ใน Supabase Dashboard → Authentication → Sign In / Providers ให้เหลือแค่ Google
+
 เปิด http://localhost:3000 บนมือถือหรือ DevTools โหมดมือถือ (ออกแบบที่ความกว้าง 390px, จำกัดความกว้างสูงสุด 430px)
 
 ## ฟีเจอร์
@@ -49,6 +59,7 @@ components/
   SubscriptionForm.tsx  ฟอร์มเพิ่ม/แก้ไข subscription
   AccountEditSheet.tsx  ฟอร์มเพิ่ม/แก้ไขบัญชี
   PushToggle.tsx        เปิด/ปิดการแจ้งเตือนบนเครื่องนี้ (หน้าโปรไฟล์)
+  DevLogin.tsx          เข้าสู่ระบบด้วย magic link ในโหมดทดสอบบนเครื่อง
   AppShell.tsx          ติดตาม session, โหลดข้อมูล, พาไป onboarding, toast เมื่อบันทึกไม่สำเร็จ
 lib/
   store.ts              Zustand store + actions (อัปเดตหน้าจอทันที แล้วบันทึกลง Supabase ถ้าล้มเหลวจะย้อนกลับ)
@@ -58,7 +69,8 @@ lib/
   selectors.ts          คำนวณสรุปรายเดือน, ยอดบัญชี, subscriptions ใกล้ถึง, pace
   format.ts             ฟอร์แมตเงิน/วันที่ภาษาไทย (พ.ศ.), คำนวณรอบตัดบัญชี
   constants.ts          หมวดหมู่และสี
-  seed.ts               ข้อมูลตัวอย่าง (ยังไม่ได้ใช้แล้ว)
+  seed.ts               ข้อมูลตัวอย่าง (ปุ่มในโหมดทดสอบ)
+  brands.ts, brands.data.ts  โลโก้และสีของบริการ subscription ยอดนิยม (จับคู่จากชื่อ)
 proxy.ts                ต่ออายุ session และพาผู้ที่ยังไม่เข้าสู่ระบบไป /login
 supabase/
   config.toml           ตั้งค่า Supabase บนเครื่อง
@@ -101,4 +113,10 @@ Design tokens (สี ฟอนต์ เงา) อยู่ใน `app/globals
 
 ใช้ Google login บนเครื่อง: ใส่ `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` / `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET` ใน `supabase/.env`, เปลี่ยน `[auth.external.google] enabled = true` ใน `supabase/config.toml`, เพิ่ม redirect URI `http://127.0.0.1:55321/auth/v1/callback` ใน Google Console แล้ว `npx supabase stop && npx supabase start`
 
-อย่าลืมเปลี่ยนไอคอนในปุ่มเป็นโลโก้ Google ทางการตาม branding guidelines ของ Google
+
+## โลโก้
+
+- โลโก้บริการ subscription มาจาก [Simple Icons](https://simpleicons.org) v16.32.0 (CC0) เก็บเป็น path ใน `lib/brands.data.ts` ชื่อและโลโก้เป็นเครื่องหมายการค้าของเจ้าของ ใช้เพื่อบอกว่าเป็นบริการไหนเท่านั้น
+- บริการที่ Simple Icons ไม่มี (เช่น Disney+, ChatGPT, Prime Video, Canva, Microsoft 365, Adobe, Viu, WeTV, iQIYI) แสดงเป็นตัวอักษรบนสีประจำแบรนด์
+- เพิ่มบริการ: เพิ่มแถวใน `lib/brands.data.ts` (aliases เป็นชื่อตัวพิมพ์เล็กไม่มีช่องว่าง/เครื่องหมาย ดู `normalizeName` ใน `lib/brands.ts`)
+- ปุ่ม "เข้าสู่ระบบด้วย Google" ใช้โลโก้ G สี่สีตาม branding guidelines ของ Google
