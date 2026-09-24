@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f3f0e8" />
+    <title>ไม่มีการเชื่อมต่อ — ทุกบาท</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: #f3f0e8;
+        color: #1c1e1b;
+        font-family: "IBM Plex Sans Thai", system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      main { display: flex; flex-direction: column; align-items: center; gap: 16px; max-width: 340px; text-align: center; }
+      img { width: 64px; height: 64px; border-radius: 16px; }
+      h1 { margin: 8px 0 0; font-size: 22px; font-weight: 700; }
+      p { margin: 0; font-size: 14px; line-height: 1.6; color: #5f6259; }
+      button {
+        margin-top: 8px;
+        min-height: 52px;
+        width: 100%;
+        border: 0;
+        border-radius: 16px;
+        background: #1c1e1b;
+        color: #f3f0e8;
+        font: inherit;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/icons/icon-192.png" alt="" />
+      <h1>ไม่มีการเชื่อมต่ออินเทอร์เน็ต</h1>
+      <p>ทุกบาทต้องใช้อินเทอร์เน็ตเพื่อโหลดข้อมูลของคุณ ลองเชื่อมต่อใหม่แล้วกดโหลดอีกครั้ง</p>
+      <button type="button" onclick="location.reload()">ลองอีกครั้ง</button>
+    </main>
+    <script>
+      window.addEventListener("online", () => location.reload());
+    </script>
+  </body>
+</html>

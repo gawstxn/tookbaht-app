@@ -49,6 +49,15 @@ lib/
 
 Design tokens (สี ฟอนต์ เงา) อยู่ใน `app/globals.css` ใต้ `@theme`
 
+## PWA
+
+- `app/manifest.ts` — web app manifest (ติดตั้งลงหน้าจอหลักได้)
+- `public/icons/` — ไอคอน 192/512, maskable และ apple-touch-icon
+- `public/sw.js` — service worker: cache ไฟล์ build (`/_next/static`) และแสดง `public/offline.html` เมื่อโหลดหน้าไม่ได้ ไม่ cache ข้อมูลผู้ใช้
+- `components/ServiceWorkerRegister.tsx` — ลงทะเบียน SW เฉพาะ production build
+
+ทดสอบ: `npm run build && npm run start` แล้วเปิด DevTools → Application → Service workers / Manifest จากนั้นติ๊ก Offline แล้วรีโหลดจะเห็นหน้าออฟไลน์ ถ้าแก้ `sw.js` ในส่วนที่เกี่ยวกับ cache ให้เปลี่ยน `VERSION` เพื่อล้าง cache เก่า
+
 ## ต่อ Google login จริง
 
 แก้ `handleGoogle` ใน `app/login/page.tsx`:
