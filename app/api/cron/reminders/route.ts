@@ -11,6 +11,9 @@ interface PendingReminder {
   due_date: string;
   account_name: string;
 }
+/** Browser push services (mirrors public.is_push_endpoint in the database). */
+const PUSH_ENDPOINT = /^https:\/\/(fcm\.googleapis\.com|updates\.push\.services\.mozilla\.com|web\.push\.apple\.com|[a-z0-9-]+\.notify\.windows\.com)\//;
+
 interface PushTarget {
   id: string;
   user_id: string;
@@ -61,7 +64,7 @@ export async function GET(request: NextRequest) {
       tag: `due-${r.subscription_id}-${r.due_date}`,
     });
     let ok = false;
-    for (const t of targets.filter((x) => x.user_id === r.user_id && !gone.has(x.id))) {
+    for (const t of targets.filter((x) => x.user_id === r.user_id && !gone.has(x.id) && PUSH_ENDPOINT.test(x.endpoint))) {
       try {
         await webpush.sendNotification({ endpoint: t.endpoint, keys: { p256dh: t.p256dh, auth: t.auth } }, payload, { TTL: 60 * 60 * 12 });
         ok = true;
