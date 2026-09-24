@@ -1,0 +1,108 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { PushScreen } from "@/components/app";
+import { Icon } from "@/components/ui/Icon";
+import { Card, ListCard, PrimaryButton, PushHeader, SwitchRow } from "@/components/ui/primitives";
+import { EXPENSE_CATEGORIES } from "@/lib/constants";
+import { baht } from "@/lib/format";
+import { useStore } from "@/lib/store";
+
+const toNum = (s: string) => parseInt(s.replace(/[^0-9]/g, ""), 10) || 0;
+const fmt = (n: number) => (n ? n.toLocaleString("en-US") : "");
+
+export default function GoalEditPage() {
+  const router = useRouter();
+  const goals = useStore((s) => s.goals);
+  const setGoals = useStore((s) => s.setGoals);
+  const [income, setIncome] = useState(goals.incomeTarget);
+  const [expense, setExpense] = useState(goals.expenseBudget);
+  const [alert, setAlert] = useState(goals.alertAt80);
+  const [budgets, setBudgets] = useState<Record<string, number>>(goals.categoryBudgets);
+
+  const cats = EXPENSE_CATEGORIES.filter((c) => c.key !== "other");
+  const allocated = Object.values(budgets).reduce((a, b) => a + b, 0);
+  const over = expense > 0 && allocated > expense;
+  const save = income - expense;
+
+  return (
+    <PushScreen>
+      <PushHeader title="ตั้งเป้าหมาย" onBack={() => router.back()} />
+
+      <div className="grid grid-cols-2 gap-2.5">
+        <MoneyField label="เป้ารายรับ / เดือน" icon="in" color="var(--color-income)" value={income} onChange={setIncome} />
+        <MoneyField label="งบรายจ่าย / เดือน" icon="out" color="var(--color-expense)" value={expense} onChange={setExpense} />
+      </div>
+
+      <div className="flex items-center gap-2.5 rounded-2xl bg-ink px-4 py-3.5 text-[13px] text-on-ink">
+        <span className="h-2 w-2 shrink-0 rounded-full bg-lime" />
+        <span className="grow">ถ้าทำได้ตามเป้า จะเหลือเก็บ</span>
+        <span className="font-mono text-[15px] font-semibold text-lime">
+          {save < 0 ? "−" : ""}
+          {baht(Math.abs(save))} / เดือน
+        </span>
+      </div>
+
+      <section className="flex flex-col gap-2">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-base font-semibold">งบแยกหมวด</h2>
+          <span className={over ? "text-xs font-medium text-danger" : "text-xs font-medium text-muted"}>
+            {over ? `เกินงบรวม ${baht(allocated - expense)}` : `แบ่งแล้ว ${baht(allocated)}${expense ? ` จาก ${baht(expense)}` : ""}`}
+          </span>
+        </div>
+        <ListCard>
+          {cats.map((c) => (
+            <label key={c.key} className="flex min-h-[52px] items-center gap-3">
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c.dot }} />
+              <span className="grow text-sm">{c.label}</span>
+              <span className="flex min-h-9 items-center gap-0.5 rounded-[10px] bg-paper px-2.5 font-mono text-sm font-semibold">
+                ฿
+                <input
+                  inputMode="numeric"
+                  aria-label={`งบ${c.label}`}
+                  value={fmt(budgets[c.key] ?? 0)}
+                  placeholder="0"
+                  onChange={(e) => setBudgets((b) => ({ ...b, [c.key]: toNum(e.target.value) }))}
+                  className="w-[72px] bg-transparent text-right outline-none"
+                />
+              </span>
+            </label>
+          ))}
+        </ListCard>
+      </section>
+
+      <ListCard>
+        <SwitchRow label="แจ้งเตือนเมื่อใช้ถึง 80% ของงบ" hint="ทั้งงบรวมและงบแต่ละหมวด" checked={alert} onChange={setAlert} />
+      </ListCard>
+
+      <div className="mt-auto">
+        <PrimaryButton
+          onClick={() => {
+            setGoals({ incomeTarget: income, expenseBudget: expense, categoryBudgets: budgets, alertAt80: alert });
+            router.replace("/goals");
+          }}
+        >
+          บันทึกเป้าหมาย
+        </PrimaryButton>
+      </div>
+    </PushScreen>
+  );
+}
+
+function MoneyField({ label, icon, color, value, onChange }: { label: string; icon: "in" | "out"; color: string; value: number; onChange: (n: number) => void }) {
+  return (
+    <Card className="px-3.5 py-3">
+      <label className="flex flex-col gap-1">
+        <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color }}>
+          <Icon name={icon} size={14} strokeWidth={2.2} />
+          {label}
+        </span>
+        <span className="flex items-baseline gap-0.5 font-mono text-[22px] font-semibold">
+          ฿
+          <input inputMode="numeric" value={fmt(value)} placeholder="0" onChange={(e) => onChange(toNum(e.target.value))} className="min-h-8 w-full min-w-0 bg-transparent outline-none" />
+        </span>
+      </label>
+    </Card>
+  );
+}

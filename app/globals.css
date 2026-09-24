@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #f3f0e8;
+  --color-card: #fffdf8;
+  --color-line: #e8e3d8;
+  --color-divider: #ede8dc;
+  --color-chip: #e6e1d5;
+  --color-ink: #1c1e1b;
+  --color-ink-2: #2a2d28;
+  --color-ink-3: #3a3d37;
+  --color-ink-line: #33362f;
+  --color-muted: #5f6259;
+  --color-faint: #8a8c84;
+  --color-on-ink: #f3f0e8;
+  --color-on-ink-muted: #b9bcb2;
+  --color-on-ink-faint: #9a9d93;
+  --color-lime: #d4f06a;
+  --color-peach: #ffb38a;
+  --color-income: #1b6b4a;
+  --color-income-tint: #ddebdf;
+  --color-expense: #b4470f;
+  --color-expense-tint: #f6e1d3;
+  --color-transfer: #33558f;
+  --color-transfer-tint: #dee4f0;
+  --color-warn: #c98a1e;
+  --color-danger: #9a3a0b;
+  --color-switch-off: #b9b4a7;
+
+  --font-sans: "IBM Plex Sans Thai", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-serif: "Noto Serif Thai", Georgia, serif;
+
+  --shadow-hero: 0 10px 24px rgba(28, 30, 27, 0.14);
+  --shadow-fab: 0 6px 16px rgba(28, 30, 27, 0.18);
+  --shadow-sheet: 0 -10px 30px rgba(28, 30, 27, 0.18);
+}
+
+html,
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+}
+
+input::placeholder {
+  color: var(--color-faint);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-transfer);
+  outline-offset: 2px;
+}
+
+@keyframes sheet-in {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-sheet { animation: sheet-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.animate-fade { animation: fade-in 180ms ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sheet, .animate-fade { animation: none; }
+}
