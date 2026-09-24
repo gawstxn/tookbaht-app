@@ -1,8 +1,8 @@
 "use client";
 
 import { create } from "zustand";
-import { fetchAll, fromRow, toRow } from "./db";
-import { dueDatesUntil, todayISO } from "./format";
+import { fetchAll, fromRow, toRow, type TransactionRow } from "./db";
+import { todayISO } from "./format";
 import { getSupabase } from "./supabase/client";
 import type { Account, Goals, Settings, Subscription, Transaction, User } from "./types";
 
@@ -176,7 +176,10 @@ export const useStore = create<State & Actions>()((set, get) => {
       set((s) => ({ subscriptions: s.subscriptions.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
       void save(sb().from("subscriptions").update(toRow.subscription(patch)).eq("id", id), () =>
         set((s) => ({ subscriptions: s.subscriptions.map((x) => (x.id === id ? prev : x)) })),
-      );
+      ).then((ok) => {
+        // Resuming, turning auto-log on or moving the start date can make charges due now.
+        if (ok) void get().runAutoLog();
+      });
     },
     deleteSubscription: (id) => {
       const prev = get().subscriptions.find((x) => x.id === id);
@@ -193,40 +196,13 @@ export const useStore = create<State & Actions>()((set, get) => {
     },
 
     runAutoLog: async () => {
-      const today = todayISO();
-      const { subscriptions, transactions } = get();
-      const logged = new Set(
-        transactions.filter((t) => t.subscriptionId).map((t) => `${t.subscriptionId}|${t.date}`),
-      );
-      const due: Transaction[] = [];
-      for (const s of subscriptions) {
-        if (!s.autoLog || s.paused) continue;
-        for (const date of dueDatesUntil(s.startDate, s.cycle, today)) {
-          if (logged.has(`${s.id}|${date}`)) continue;
-          due.push({
-            id: crypto.randomUUID(),
-            type: "out",
-            amount: s.amount,
-            date,
-            title: s.name,
-            category: "sub",
-            accountId: s.accountId,
-            subscriptionId: s.id,
-            createdAt: Date.now(),
-          });
-        }
-      }
-      if (!due.length) return;
-      // Another device may have logged some already: skip those, keep only what was inserted.
-      const { data, error } = await sb()
-        .from("transactions")
-        .upsert(due.map(toRow.transaction), { onConflict: "subscription_id,date", ignoreDuplicates: true })
-        .select("*");
+      // The database works out what's due (also run hourly by pg_cron) and returns only new rows.
+      const { data, error } = await sb().rpc("run_my_auto_log");
       if (error) {
         console.error(error);
         return;
       }
-      const added = data.map(fromRow.transaction);
+      const added = (data as TransactionRow[]).map(fromRow.transaction);
       const known = new Set(get().transactions.map((t) => t.id));
       set((s) => ({ transactions: [...s.transactions, ...added.filter((t) => !known.has(t.id))] }));
     },
