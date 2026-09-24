@@ -1,40 +1,90 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect } from "react";
+import { getSupabase } from "@/lib/supabase/client";
 import { useStore } from "@/lib/store";
+import { PrimaryButton } from "./ui/primitives";
 
-const subscribe = (cb: () => void) => useStore.persist.onFinishHydration(cb);
-const getHydrated = () => useStore.persist.hasHydrated();
-const getServer = () => false;
+/** Screens that work without a session or before any data exists. */
+const NO_DATA_PATHS = ["/login", "/auth/"];
 
 /**
- * Loads saved data from localStorage, then guards routes:
- * signed-out users only see /login, signed-in users skip it.
+ * Follows the Supabase session, loads the user's data, and sends users
+ * without accounts to onboarding. proxy.ts already keeps signed-out
+ * visitors on /login.
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const hydrated = useSyncExternalStore(subscribe, getHydrated, getServer);
-  const user = useStore((s) => s.user);
-  const runAutoLog = useStore((s) => s.runAutoLog);
+  const status = useStore((s) => s.status);
+  const needsOnboarding = useStore((s) => s.status === "ready" && s.accounts.length === 0);
   const pathname = usePathname();
   const router = useRouter();
-  const onLogin = pathname === "/login";
-  const mustRedirect = hydrated && ((!user && !onLogin) || (!!user && onLogin));
+  const noData = NO_DATA_PATHS.some((p) => pathname.startsWith(p));
+  const onOnboarding = pathname === "/onboarding";
 
   useEffect(() => {
-    void useStore.persist.rehydrate();
-  }, []);
+    const sb = getSupabase();
+    const { data } = sb.auth.onAuthStateChange((event, session) => {
+      const { userId, load, reset } = useStore.getState();
+      if (session?.user && session.user.id !== userId) {
+        // Defer so we don't call Supabase inside its own auth callback.
+        setTimeout(() => void load(session.user.id), 0);
+      } else if (!session && event === "SIGNED_OUT") {
+        reset();
+        router.replace("/login");
+      }
+    });
+    return () => data.subscription.unsubscribe();
+  }, [router]);
 
   useEffect(() => {
-    if (!hydrated) return;
-    if (!user && !onLogin) router.replace("/login");
-    else if (user && onLogin) router.replace("/");
-    else if (user) runAutoLog();
-  }, [hydrated, user, onLogin, router, runAutoLog]);
+    if (needsOnboarding && !onOnboarding && !noData) router.replace("/onboarding");
+  }, [needsOnboarding, onOnboarding, noData, router]);
+
+  let content: React.ReactNode;
+  if (noData) content = children;
+  else if (status === "error") content = <LoadError />;
+  else if (status !== "ready" || (needsOnboarding && !onOnboarding)) content = <div aria-busy="true" className="min-h-dvh" />;
+  else content = children;
 
   return (
     <div className="relative mx-auto min-h-dvh w-full max-w-[430px] bg-paper">
-      {hydrated && !mustRedirect ? children : <div aria-busy="true" className="min-h-dvh" />}
+      {content}
+      <SyncToast />
+    </div>
+  );
+}
+
+function LoadError() {
+  const retry = () => {
+    const { userId, load } = useStore.getState();
+    if (userId) void load(userId);
+  };
+  return (
+    <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
+      <h1 className="font-serif text-xl font-bold">โหลดข้อมูลไม่สำเร็จ</h1>
+      <p className="text-sm text-muted">ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต แล้วลองอีกครั้ง</p>
+      <PrimaryButton onClick={retry}>ลองอีกครั้ง</PrimaryButton>
+    </main>
+  );
+}
+
+function SyncToast() {
+  const error = useStore((s) => s.syncError);
+  const dismiss = useStore((s) => s.dismissError);
+
+  useEffect(() => {
+    if (!error) return;
+    const t = setTimeout(dismiss, 4000);
+    return () => clearTimeout(t);
+  }, [error, dismiss]);
+
+  if (!error) return null;
+  return (
+    <div role="alert" className="fixed inset-x-0 top-[calc(12px+env(safe-area-inset-top))] z-[60] mx-auto flex max-w-[430px] justify-center px-4">
+      <button type="button" onClick={dismiss} className="animate-fade rounded-2xl bg-ink px-4 py-3 text-left text-sm text-on-ink shadow-hero">
+        {error}
+      </button>
     </div>
   );
 }

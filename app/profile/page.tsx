@@ -4,16 +4,15 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { PushScreen } from "@/components/app";
 import { Icon } from "@/components/ui/Icon";
-import { ListCard, Monogram, PrimaryButton, PushHeader, SecondaryButton, Sheet, SwitchRow, cx } from "@/components/ui/primitives";
+import { ListCard, PrimaryButton, PushHeader, SecondaryButton, Sheet, SwitchRow, cx } from "@/components/ui/primitives";
 import { TYPE_META, categoryLabel } from "@/lib/constants";
-import { baht } from "@/lib/format";
-import { accountBalance } from "@/lib/selectors";
 import { useStore } from "@/lib/store";
 
 export default function ProfilePage() {
   const router = useRouter();
   const { user, accounts, transactions, settings, setSettings, signOut, deleteAccount } = useStore();
-  const [sheet, setSheet] = useState<"" | "accounts" | "logout" | "delete">("");
+  const [sheet, setSheet] = useState<"" | "logout" | "delete">("");
+  const [busy, setBusy] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
 
   const exportCsv = () => {
@@ -54,7 +53,7 @@ export default function ProfilePage() {
       </section>
 
       <Group title="การเงิน">
-        <NavRow label="บัญชีของฉัน" value={`${accounts.length} บัญชี`} onClick={() => setSheet("accounts")} />
+        <NavRow label="บัญชีของฉัน" value={`${accounts.length} บัญชี`} onClick={() => router.push("/accounts")} />
         <NavRow label="สกุลเงิน" value="บาท (THB)" />
         <NavRow label="ส่งออกข้อมูล" value="CSV" icon="download" onClick={exportCsv} />
       </Group>
@@ -81,30 +80,17 @@ export default function ProfilePage() {
         </button>
       </Group>
 
-      <Sheet open={sheet === "accounts"} onClose={() => setSheet("")} title="บัญชีของฉัน">
-        <ListCard>
-          {accounts.map((a) => (
-            <div key={a.id} className="flex min-h-[60px] items-center gap-3">
-              <Monogram text={a.mono} tone={a.tone} size={36} />
-              <span className="grow text-[15px] font-medium">{a.name}</span>
-              <span className="font-mono text-sm font-semibold">
-                {a.kind === "credit" ? "วงเงิน " : ""}
-                {baht(accountBalance(a, transactions))}
-              </span>
-            </div>
-          ))}
-        </ListCard>
-      </Sheet>
-
       <Sheet open={sheet === "logout"} onClose={() => setSheet("")} title="ออกจากระบบ?">
-        <p className="text-sm text-muted">ข้อมูลยังเก็บอยู่ในเครื่องนี้ เข้าสู่ระบบด้วย Google อีกครั้งเมื่อไหร่ก็ได้</p>
+        <p className="text-sm text-muted">ข้อมูลเก็บไว้ในบัญชีของคุณ เข้าสู่ระบบด้วย Google อีกครั้งเมื่อไหร่ก็ได้ ทุกเครื่อง</p>
         <PrimaryButton
-          onClick={() => {
-            signOut();
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            await signOut();
             router.replace("/login");
           }}
         >
-          ออกจากระบบ
+          {busy ? "กำลังออกจากระบบ…" : "ออกจากระบบ"}
         </PrimaryButton>
         <SecondaryButton onClick={() => setSheet("")}>ยกเลิก</SecondaryButton>
       </Sheet>
@@ -117,13 +103,14 @@ export default function ProfilePage() {
         </label>
         <PrimaryButton
           tone="danger"
-          disabled={!confirmed}
-          onClick={() => {
-            deleteAccount();
-            router.replace("/login");
+          disabled={!confirmed || busy}
+          onClick={async () => {
+            setBusy(true);
+            if (await deleteAccount()) router.replace("/login");
+            else setBusy(false);
           }}
         >
-          ลบบัญชี
+          {busy ? "กำลังลบ…" : "ลบบัญชี"}
         </PrimaryButton>
         <SecondaryButton onClick={() => setSheet("")}>ยกเลิก</SecondaryButton>
       </Sheet>

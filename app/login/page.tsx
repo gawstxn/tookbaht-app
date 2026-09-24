@@ -1,26 +1,31 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { useStore } from "@/lib/store";
+import { useState, useSyncExternalStore } from "react";
+import { getSupabase } from "@/lib/supabase/client";
 
-/**
- * Google-only sign-in.
- *
- * This build keeps everything on the device, so "sign in" creates a local
- * profile. To use real Google accounts, swap `handleGoogle` for Auth.js
- * (`signIn("google")`) or Supabase (`signInWithOAuth({ provider: "google" })`)
- * and store the returned name/email with `useStore.getState().signIn(...)`.
- */
+const noop = () => () => {};
+/** /auth/callback sends failed sign-ins back here with ?error=auth. */
+const callbackFailed = () => new URLSearchParams(window.location.search).has("error");
+
+/** Google-only sign-in via Supabase Auth; Google redirects back to /auth/callback. */
 export default function LoginPage() {
-  const signIn = useStore((s) => s.signIn);
-  const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState<boolean | null>(null);
+  const urlError = useSyncExternalStore(noop, callbackFailed, () => false);
+  const error = failed ?? urlError;
 
-  const handleGoogle = () => {
+  const handleGoogle = async () => {
     setBusy(true);
-    signIn({ name: "ผู้ใช้ทดลอง", email: "demo@example.com" });
-    router.replace("/");
+    setFailed(false);
+    const { error } = await getSupabase().auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (error) {
+      console.error(error);
+      setBusy(false);
+      setFailed(true);
+    }
   };
 
   return (
@@ -82,6 +87,11 @@ export default function LoginPage() {
           <GoogleMark />
           {busy ? "กำลังเข้าสู่ระบบ…" : "เข้าสู่ระบบด้วย Google"}
         </button>
+        {error ? (
+          <p role="alert" className="text-center text-sm text-danger">
+            เข้าสู่ระบบไม่สำเร็จ ลองอีกครั้ง
+          </p>
+        ) : null}
         <p className="text-center text-xs leading-relaxed text-muted">
           เมื่อเข้าสู่ระบบ ถือว่าคุณยอมรับ{" "}
           <a href="#" className="font-semibold text-ink underline">
