@@ -9,10 +9,14 @@ import "@fontsource/noto-serif-thai/600.css";
 import "@fontsource/noto-serif-thai/700.css";
 import "./globals.css";
 import { AppShell } from "@/components/AppShell";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 
 export const metadata: Metadata = {
   title: "ทุกบาท — บันทึกรายรับรายจ่าย",
   description: "บันทึกรายรับ รายจ่าย การโอน จัดการ subscriptions และตั้งเป้าหมายการเงิน",
+  applicationName: "ทุกบาท",
+  appleWebApp: { capable: true, title: "ทุกบาท", statusBarStyle: "default" },
+  icons: { apple: "/icons/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = {
@@ -27,6 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="th" className="h-full antialiased">
       <body className="min-h-full">
         <AppShell>{children}</AppShell>
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
