@@ -32,7 +32,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="flex min-h-dvh flex-col gap-6 px-6 pb-[calc(36px+env(safe-area-inset-bottom))] pt-6">
+    <main className="flex min-h-dvh flex-col gap-6 px-6 pb-[calc(36px+env(safe-area-inset-bottom))] pt-[calc(24px+env(safe-area-inset-top)+var(--standalone-top,0px))]">
       <section className="flex grow flex-col justify-between gap-8 rounded-[28px] bg-ink px-6 py-7 text-on-ink shadow-hero">
         <span aria-hidden="true" className="flex h-[52px] w-[52px] items-center justify-center rounded-2xl bg-lime font-mono text-[26px] font-semibold text-ink">
           ฿

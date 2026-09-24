@@ -1,14 +1,23 @@
 "use client";
 
 import { create } from "zustand";
+import { TYPE_META } from "./constants";
 import { fetchAll, fromRow, toRow, type TransactionRow } from "./db";
-import { todayISO } from "./format";
+import { baht, todayISO } from "./format";
 import { getSupabase } from "./supabase/client";
 import type { Account, Goals, Settings, Subscription, Transaction, User } from "./types";
 
 const EMPTY_GOALS: Goals = { incomeTarget: 0, expenseBudget: 0, categoryBudgets: {}, alertAt80: true };
 
 type Status = "idle" | "loading" | "ready" | "error";
+
+export interface Toast {
+  id: number;
+  text: string;
+  tone: "ok" | "error";
+  /** e.g. "เลิกทำ" after a delete. */
+  action?: { label: string; run: () => void };
+}
 
 interface State {
   status: Status;
@@ -21,8 +30,8 @@ interface State {
   settings: Settings;
   /** Selected month on overview/list screens, "YYYY-MM". */
   viewMonth: string;
-  /** Last failed save, shown as a toast. */
-  syncError: string | null;
+  /** Feedback for the last change (or failed save). */
+  toast: Toast | null;
 }
 
 interface Actions {
@@ -34,7 +43,8 @@ interface Actions {
   /** Permanently delete the user and all their data. */
   deleteAccount: () => Promise<boolean>;
   setViewMonth: (key: string) => void;
-  dismissError: () => void;
+  notify: (text: string, opts?: { tone?: Toast["tone"]; action?: Toast["action"] }) => void;
+  dismissToast: () => void;
 
   addAccount: (a: Omit<Account, "id">) => string;
   updateAccount: (id: string, patch: Partial<Omit<Account, "id">>) => void;
@@ -64,24 +74,46 @@ const initial: State = {
   goals: EMPTY_GOALS,
   settings: { faceLock: false },
   viewMonth: todayISO().slice(0, 7),
-  syncError: null,
+  toast: null,
 };
 
 const SAVE_FAILED = "บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง";
+const UNDO = "เลิกทำ";
+let toastSeq = 0;
 
 export const useStore = create<State & Actions>()((set, get) => {
   const sb = () => getSupabase();
+  const ok = (text: string, action?: Toast["action"]) => get().notify(text, { action });
 
-  /** Run a write; on failure undo the optimistic change and show a toast. */
+  /** Run a write; on failure undo the optimistic change and show an error toast. */
   const save = async (write: PromiseLike<{ error: unknown }>, undo: () => void, message = SAVE_FAILED) => {
     const { error } = await write;
     if (error) {
       console.error(error);
       undo();
-      set({ syncError: message });
+      get().notify(message, { tone: "error" });
       return false;
     }
     return true;
+  };
+
+  const insertTransaction = (tx: Transaction) => {
+    set((s) => ({ transactions: [...s.transactions, tx] }));
+    return save(sb().from("transactions").insert(toRow.transaction(tx)), () =>
+      set((s) => ({ transactions: s.transactions.filter((x) => x.id !== tx.id) })),
+    );
+  };
+  const insertAccount = (account: Account, sortOrder: number) => {
+    set((s) => ({ accounts: [...s.accounts, account] }));
+    return save(sb().from("accounts").insert({ ...toRow.account(account), sort_order: sortOrder }), () =>
+      set((s) => ({ accounts: s.accounts.filter((x) => x.id !== account.id) })),
+    );
+  };
+  const insertSubscription = (sub: Subscription) => {
+    set((s) => ({ subscriptions: [...s.subscriptions, sub] }));
+    return save(sb().from("subscriptions").insert(toRow.subscription(sub)), () =>
+      set((s) => ({ subscriptions: s.subscriptions.filter((x) => x.id !== sub.id) })),
+    );
   };
 
   return {
@@ -108,7 +140,7 @@ export const useStore = create<State & Actions>()((set, get) => {
       const { error } = await sb().rpc("delete_my_account");
       if (error) {
         console.error(error);
-        set({ syncError: "ลบบัญชีไม่สำเร็จ ลองใหม่อีกครั้ง" });
+        get().notify("ลบบัญชีไม่สำเร็จ ลองใหม่อีกครั้ง", { tone: "error" });
         return false;
       }
       await sb().auth.signOut({ scope: "local" });
@@ -116,82 +148,105 @@ export const useStore = create<State & Actions>()((set, get) => {
       return true;
     },
     setViewMonth: (viewMonth) => set({ viewMonth }),
-    dismissError: () => set({ syncError: null }),
+    notify: (text, opts) => {
+      set({ toast: { id: ++toastSeq, text, tone: opts?.tone ?? "ok", action: opts?.action } });
+      // A light tap on Android; iOS doesn't expose vibration to web apps.
+      if (opts?.tone !== "error") navigator.vibrate?.(10);
+    },
+    dismissToast: () => set({ toast: null }),
 
     addAccount: (a) => {
       const account: Account = { ...a, id: crypto.randomUUID() };
-      set((s) => ({ accounts: [...s.accounts, account] }));
-      void save(sb().from("accounts").insert({ ...toRow.account(account), sort_order: get().accounts.length }), () =>
-        set((s) => ({ accounts: s.accounts.filter((x) => x.id !== account.id) })),
-      );
+      void insertAccount(account, get().accounts.length);
+      ok(`เพิ่มบัญชี ${account.name} แล้ว`);
       return account.id;
     },
     updateAccount: (id, patch) => {
       const prev = get().accounts.find((x) => x.id === id);
       if (!prev) return;
       set((s) => ({ accounts: s.accounts.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
+      ok("บันทึกแล้ว");
       void save(sb().from("accounts").update(toRow.account(patch)).eq("id", id), () =>
         set((s) => ({ accounts: s.accounts.map((x) => (x.id === id ? prev : x)) })),
       );
     },
     removeAccount: async (id) => {
       const prev = get().accounts;
+      const index = prev.findIndex((x) => x.id === id);
+      const account = prev[index];
+      if (!account) return false;
       set({ accounts: prev.filter((x) => x.id !== id) });
-      return save(
+      const done = await save(
         sb().from("accounts").delete().eq("id", id),
         () => set({ accounts: prev }),
         "ลบไม่ได้ เพราะยังมีรายการหรือ subscription ที่ใช้บัญชีนี้",
       );
+      if (done) ok(`ลบบัญชี ${account.name} แล้ว`, { label: UNDO, run: () => void insertAccount(account, index) });
+      return done;
     },
 
     addTransaction: (t) => {
       const tx: Transaction = { ...t, id: crypto.randomUUID(), createdAt: Date.now() };
-      set((s) => ({ transactions: [...s.transactions, tx] }));
-      void save(sb().from("transactions").insert(toRow.transaction(tx)), () =>
-        set((s) => ({ transactions: s.transactions.filter((x) => x.id !== tx.id) })),
-      );
+      void insertTransaction(tx);
+      ok(`บันทึก${tx.type === "move" ? "การโอน" : TYPE_META[tx.type].label} ${baht(tx.amount)} แล้ว`);
     },
     deleteTransaction: (id) => {
       const prev = get().transactions.find((x) => x.id === id);
       if (!prev) return;
       set((s) => ({ transactions: s.transactions.filter((x) => x.id !== id) }));
+      ok(`ลบ "${prev.title || TYPE_META[prev.type].label}" แล้ว`, { label: UNDO, run: () => void insertTransaction(prev) });
       void save(sb().from("transactions").delete().eq("id", id), () =>
         set((s) => ({ transactions: [...s.transactions, prev] })),
       );
     },
 
     addSubscription: (sub) => {
-      const id = crypto.randomUUID();
-      set((s) => ({ subscriptions: [...s.subscriptions, { ...sub, id }] }));
-      void save(sb().from("subscriptions").insert(toRow.subscription({ ...sub, id })), () =>
-        set((s) => ({ subscriptions: s.subscriptions.filter((x) => x.id !== id) })),
-      ).then((ok) => {
-        if (ok) void get().runAutoLog();
+      const full: Subscription = { ...sub, id: crypto.randomUUID() };
+      void insertSubscription(full).then((done) => {
+        if (done) void get().runAutoLog();
       });
-      return id;
+      ok(`เพิ่ม ${full.name} แล้ว`);
+      return full.id;
     },
     updateSubscription: (id, patch) => {
       const prev = get().subscriptions.find((x) => x.id === id);
       if (!prev) return;
       set((s) => ({ subscriptions: s.subscriptions.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
+      ok(
+        patch.paused === true
+          ? `หยุด ${prev.name} ชั่วคราวแล้ว`
+          : patch.paused === false
+            ? `ใช้งาน ${prev.name} ต่อแล้ว`
+            : "บันทึกแล้ว",
+      );
       void save(sb().from("subscriptions").update(toRow.subscription(patch)).eq("id", id), () =>
         set((s) => ({ subscriptions: s.subscriptions.map((x) => (x.id === id ? prev : x)) })),
-      ).then((ok) => {
+      ).then((done) => {
         // Resuming, turning auto-log on or moving the start date can make charges due now.
-        if (ok) void get().runAutoLog();
+        if (done) void get().runAutoLog();
       });
     },
     deleteSubscription: (id) => {
       const prev = get().subscriptions.find((x) => x.id === id);
       if (!prev) return;
-      set((s) => ({
-        subscriptions: s.subscriptions.filter((x) => x.id !== id),
-        // Mirrors the database: logged expenses stay, unlinked.
-        transactions: s.transactions.map((t) => (t.subscriptionId === id ? { ...t, subscriptionId: undefined } : t)),
-      }));
+      const linked = get().transactions.filter((t) => t.subscriptionId === id).map((t) => t.id);
+      const relink = (subscriptionId: string | undefined) =>
+        set((s) => ({ transactions: s.transactions.map((t) => (linked.includes(t.id) ? { ...t, subscriptionId } : t)) }));
+      set((s) => ({ subscriptions: s.subscriptions.filter((x) => x.id !== id) }));
+      // Mirrors the database: logged expenses stay, unlinked.
+      relink(undefined);
+      ok(`ลบ ${prev.name} แล้ว`, {
+        label: UNDO,
+        run: () =>
+          void insertSubscription(prev).then(async (done) => {
+            if (!done || !linked.length) return;
+            relink(id);
+            await save(sb().from("transactions").update({ subscription_id: id }).in("id", linked), () => relink(undefined));
+          }),
+      });
       void save(sb().from("subscriptions").delete().eq("id", id), () => {
         set((s) => ({ subscriptions: [...s.subscriptions, prev] }));
-        void get().load(get().userId!);
+        relink(id);
       });
     },
 
@@ -210,6 +265,7 @@ export const useStore = create<State & Actions>()((set, get) => {
     setGoals: (goals) => {
       const prev = get().goals;
       set({ goals });
+      ok("บันทึกเป้าหมายแล้ว");
       void save(sb().from("goals").upsert({ user_id: get().userId, ...toRow.goals(goals) }), () => set({ goals: prev }));
     },
     setSettings: (p) => {

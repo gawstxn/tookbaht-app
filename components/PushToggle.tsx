@@ -39,7 +39,7 @@ export function PushToggle() {
     };
   }, []);
 
-  const fail = () => useStore.setState({ syncError: "ตั้งค่าการแจ้งเตือนไม่สำเร็จ ลองอีกครั้ง" });
+  const fail = () => useStore.getState().notify("ตั้งค่าการแจ้งเตือนไม่สำเร็จ ลองอีกครั้ง", { tone: "error" });
 
   const enable = async () => {
     const reg = await getRegistration();
@@ -62,6 +62,7 @@ export function PushToggle() {
       return fail();
     }
     setState("on");
+    useStore.getState().notify("เปิดการแจ้งเตือนบนเครื่องนี้แล้ว");
   };
 
   const disable = async () => {
@@ -71,6 +72,7 @@ export function PushToggle() {
       await sub.unsubscribe();
     }
     setState("off");
+    useStore.getState().notify("ปิดการแจ้งเตือนบนเครื่องนี้แล้ว");
   };
 
   const hint =

@@ -1,10 +1,11 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { getSupabase } from "@/lib/supabase/client";
-import { useStore } from "@/lib/store";
-import { PrimaryButton } from "./ui/primitives";
+import { useStore, type Toast } from "@/lib/store";
+import { Icon } from "./ui/Icon";
+import { PrimaryButton, cx } from "./ui/primitives";
 
 /** Screens that work without a session or before any data exists. */
 const NO_DATA_PATHS = ["/login", "/auth/"];
@@ -51,13 +52,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   let content: React.ReactNode;
   if (noData) content = children;
   else if (status === "error") content = <LoadError />;
-  else if (status !== "ready" || (needsOnboarding && !onOnboarding)) content = <div aria-busy="true" className="min-h-dvh" />;
+  else if (status !== "ready" || (needsOnboarding && !onOnboarding)) content = <Splash />;
   else content = children;
 
   return (
     <div className="relative mx-auto min-h-dvh w-full max-w-[430px] bg-paper">
       {content}
-      <SyncToast />
+      <ToastHost />
     </div>
   );
 }
@@ -76,22 +77,71 @@ function LoadError() {
   );
 }
 
-function SyncToast() {
-  const error = useStore((s) => s.syncError);
-  const dismiss = useStore((s) => s.dismissError);
+/** First-load screen: the app mark while the user's data loads. */
+function Splash() {
+  return (
+    <main aria-busy="true" aria-label="กำลังโหลด" className="flex min-h-dvh flex-col items-center justify-center gap-4">
+      {/* eslint-disable-next-line @next/next/no-img-element -- tiny static icon, no optimisation needed */}
+      <img src="/icons/icon-192.png" alt="" width={84} height={84} className="animate-splash rounded-[24px] shadow-fab" />
+      <span className="font-serif text-xl font-bold">ทุกบาท</span>
+    </main>
+  );
+}
+
+/** Bottom toast for the last change; delete toasts carry an undo button. */
+function ToastHost() {
+  const toast = useStore((s) => s.toast);
+  const dismiss = useStore((s) => s.dismissToast);
+  // Keep the last toast on screen while it animates out.
+  const [shown, setShown] = useState<Toast | null>(toast);
+  if (toast && toast !== shown) setShown(toast);
+  const leaving = !toast && !!shown;
+
+  // Same fallback as the sheet: clear the toast even if animationend never fires.
+  useEffect(() => {
+    if (!leaving) return;
+    const t = setTimeout(() => setShown(null), 280);
+    return () => clearTimeout(t);
+  }, [leaving]);
 
   useEffect(() => {
-    if (!error) return;
-    const t = setTimeout(dismiss, 4000);
+    if (!toast) return;
+    const t = setTimeout(dismiss, toast.action ? 5000 : 2800);
     return () => clearTimeout(t);
-  }, [error, dismiss]);
+  }, [toast, dismiss]);
 
-  if (!error) return null;
+  if (!shown) return null;
   return (
-    <div role="alert" className="fixed inset-x-0 top-[calc(12px+env(safe-area-inset-top))] z-[60] mx-auto flex max-w-[430px] justify-center px-4">
-      <button type="button" onClick={dismiss} className="animate-fade rounded-2xl bg-ink px-4 py-3 text-left text-sm text-on-ink shadow-hero">
-        {error}
-      </button>
+    <div
+      role={shown.tone === "error" ? "alert" : "status"}
+      className="pointer-events-none fixed inset-x-0 bottom-[calc(92px+env(safe-area-inset-bottom))] z-[60] mx-auto flex max-w-[430px] justify-center px-4"
+    >
+      <div
+        key={shown.id}
+        onAnimationEnd={() => {
+          if (leaving) setShown(null);
+        }}
+        className={cx(
+          "flex min-h-12 w-full items-center gap-3 rounded-2xl py-2 pl-4 pr-2 text-sm shadow-hero",
+          leaving ? "animate-toast-out" : "animate-toast pointer-events-auto",
+          shown.tone === "error" ? "bg-danger text-white" : "bg-ink text-on-ink",
+        )}
+      >
+        {shown.tone === "ok" ? <Icon name="check" size={16} strokeWidth={2.4} className="shrink-0 text-lime" /> : null}
+        <span className="grow">{shown.text}</span>
+        {shown.action && !leaving ? (
+          <button
+            type="button"
+            onClick={() => {
+              shown.action!.run();
+              dismiss();
+            }}
+            className="min-h-9 shrink-0 rounded-xl px-3 font-semibold text-lime"
+          >
+            {shown.action.label}
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }

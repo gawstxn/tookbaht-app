@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Icon, type IconName } from "./Icon";
 
 export function cx(...c: (string | false | null | undefined)[]) {
@@ -297,6 +297,20 @@ export function Empty({ children }: { children: ReactNode }) {
 export function Sheet({ open, onClose, title, children, titleClassName }: { open: boolean; onClose: () => void; title: string; children: ReactNode; titleClassName?: string }) {
   const titleId = useId();
   const panel = useRef<HTMLDivElement>(null);
+  // Stay mounted after `open` turns false so the sheet can slide out, showing
+  // the last content it had (parents often clear it on close).
+  const [mounted, setMounted] = useState(open);
+  const [kept, setKept] = useState({ title, children });
+  if (open && !mounted) setMounted(true);
+  if (open && (kept.title !== title || kept.children !== children)) setKept({ title, children });
+  const closing = mounted && !open;
+
+  // Unmount after the slide-out even if animationend never fires (hidden tab, reduced motion).
+  useEffect(() => {
+    if (!closing) return;
+    const t = setTimeout(() => setMounted(false), 260);
+    return () => clearTimeout(t);
+  }, [closing]);
 
   useEffect(() => {
     if (!open) return;
@@ -315,9 +329,9 @@ export function Sheet({ open, onClose, title, children, titleClassName }: { open
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!mounted) return null;
   return (
-    <div className="animate-fade fixed inset-0 z-50 flex justify-center bg-ink/45">
+    <div className={cx("fixed inset-0 z-50 flex justify-center bg-ink/45", closing ? "animate-fade-out pointer-events-none" : "animate-fade")}>
       <div className="flex w-full max-w-[430px] flex-col">
       <button type="button" aria-label="ปิด" tabIndex={-1} onClick={onClose} className="grow" />
       <div
@@ -326,18 +340,21 @@ export function Sheet({ open, onClose, title, children, titleClassName }: { open
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="animate-sheet flex max-h-[88dvh] flex-col gap-3.5 overflow-y-auto rounded-t-[28px] bg-paper px-6 pb-[calc(32px+env(safe-area-inset-bottom))] pt-2.5 shadow-sheet outline-none"
+        onAnimationEnd={(e) => {
+          if (closing && e.target === e.currentTarget) setMounted(false);
+        }}
+        className={cx(closing ? "animate-sheet-out" : "animate-sheet", "flex max-h-[88dvh] flex-col gap-3.5 overflow-y-auto rounded-t-[28px] bg-paper px-6 pb-[calc(32px+env(safe-area-inset-bottom))] pt-2.5 shadow-sheet outline-none")}
       >
         <span aria-hidden="true" className="h-1 w-10 self-center rounded-full bg-[#d0cbbf]" />
         <div className="flex items-center justify-between">
           <h2 id={titleId} className={cx("font-serif text-xl font-bold", titleClassName)}>
-            {title}
+            {closing ? kept.title : title}
           </h2>
           <button type="button" aria-label="ปิด" onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-card">
             <Icon name="close" size={18} strokeWidth={2} />
           </button>
         </div>
-        {children}
+        {closing ? kept.children : children}
       </div>
       </div>
     </div>
