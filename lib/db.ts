@@ -13,7 +13,7 @@ interface AccountRow {
   mono: string;
   tone: string;
 }
-interface TransactionRow {
+export interface TransactionRow {
   id: string;
   type: Transaction["type"];
   amount: Num;

@@ -4,13 +4,14 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { PushScreen } from "@/components/app";
 import { Icon } from "@/components/ui/Icon";
-import { ListCard, PrimaryButton, PushHeader, SecondaryButton, Sheet, SwitchRow, cx } from "@/components/ui/primitives";
+import { PushToggle } from "@/components/PushToggle";
+import { ListCard, PrimaryButton, PushHeader, SecondaryButton, Sheet, cx } from "@/components/ui/primitives";
 import { TYPE_META, categoryLabel } from "@/lib/constants";
 import { useStore } from "@/lib/store";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, accounts, transactions, settings, setSettings, signOut, deleteAccount } = useStore();
+  const { user, accounts, transactions, signOut, deleteAccount } = useStore();
   const [sheet, setSheet] = useState<"" | "logout" | "delete">("");
   const [busy, setBusy] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -58,8 +59,8 @@ export default function ProfilePage() {
         <NavRow label="ส่งออกข้อมูล" value="CSV" icon="download" onClick={exportCsv} />
       </Group>
 
-      <Group title="ความปลอดภัย">
-        <SwitchRow label="ล็อกแอปด้วย Face ID" hint="ถามทุกครั้งที่เปิดแอป" checked={settings.faceLock} onChange={(faceLock) => setSettings({ faceLock })} />
+      <Group title="การแจ้งเตือน">
+        <PushToggle />
       </Group>
 
       <Group title="บัญชี">
