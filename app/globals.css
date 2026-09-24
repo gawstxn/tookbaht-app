@@ -66,6 +66,40 @@ input::placeholder {
   outline: 2px solid var(--color-transfer);
   outline-offset: 2px;
 }
+/* Text fields show focus with the caret and their own border, not a ring. */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+}
+input:focus,
+textarea:focus {
+  border-color: var(--color-faint);
+}
+/* Touch screens: no focus rings after a tap (keyboards still get them). */
+@media (hover: none) and (pointer: coarse) {
+  :focus-visible {
+    outline: none;
+  }
+}
+
+/* Native-app feel: no visible scrollbars. */
+html,
+body,
+* {
+  scrollbar-width: none;
+}
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Installed on iOS the system blurs the strip under the status bar;
+   start content a little lower so titles don't sit in it. */
+@media (display-mode: standalone) {
+  :root {
+    --standalone-top: 14px;
+  }
+}
 
 @keyframes sheet-in {
   from { transform: translateY(100%); }
@@ -75,9 +109,35 @@ input::placeholder {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+@keyframes sheet-out {
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
+}
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes toast-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(10px) scale(0.97); }
+}
+@keyframes splash-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
 .animate-sheet { animation: sheet-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 .animate-fade { animation: fade-in 180ms ease-out; }
+.animate-sheet-out { animation: sheet-out 200ms cubic-bezier(0.4, 0, 1, 1) forwards; }
+.animate-fade-out { animation: fade-out 200ms ease-in forwards; }
+.animate-toast { animation: toast-in 340ms cubic-bezier(0.22, 1, 0.36, 1); }
+.animate-toast-out { animation: toast-out 220ms ease-in forwards; }
+.animate-splash { animation: splash-in 320ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-sheet, .animate-fade { animation: none; }
+  /* Exit animations still need to end so the element unmounts. */
+  .animate-sheet-out, .animate-fade-out, .animate-toast-out { animation-duration: 1ms; }
 }

@@ -46,6 +46,8 @@ export default function OnboardingPage() {
     for (const s of chosen) {
       addAccount({ name: s.name.trim(), kind: s.kind, openingBalance: parseFloat(s.balance) || 0, mono: monoFor(s.name), tone: s.tone });
     }
+    // One message for the whole setup instead of one per account.
+    useStore.getState().notify(`เพิ่ม ${chosen.length} บัญชีแล้ว พร้อมใช้งาน`);
     router.replace("/");
   };
 
@@ -67,7 +69,7 @@ export default function OnboardingPage() {
 
   if (legacy && !skipLegacy) {
     return (
-      <main className="flex min-h-dvh flex-col gap-5 px-6 pb-[calc(32px+env(safe-area-inset-bottom))] pt-10">
+      <main className="flex min-h-dvh flex-col gap-5 px-6 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[calc(40px+env(safe-area-inset-top)+var(--standalone-top,0px))]">
         <Heading name={user?.name} />
         <Card className="flex flex-col gap-2 p-5">
           <h2 className="text-base font-semibold">พบข้อมูลเดิมในเครื่องนี้</h2>
@@ -99,7 +101,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="flex min-h-dvh flex-col gap-5 px-6 pb-[calc(32px+env(safe-area-inset-bottom))] pt-10">
+    <main className="flex min-h-dvh flex-col gap-5 px-6 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[calc(40px+env(safe-area-inset-top)+var(--standalone-top,0px))]">
       <Heading name={user?.name} />
       <section className="flex flex-col gap-2">
         <h2 className="text-base font-semibold">เลือกบัญชีที่ใช้อยู่</h2>

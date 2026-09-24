@@ -57,7 +57,7 @@ export function BottomNav() {
 export function TabScreen({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <main className="flex flex-col gap-4 px-6 pb-[calc(110px+env(safe-area-inset-bottom))] pt-5">{children}</main>
+      <main className="flex flex-col gap-4 px-6 pb-[calc(110px+env(safe-area-inset-bottom))] pt-[calc(20px+env(safe-area-inset-top)+var(--standalone-top,0px))]">{children}</main>
       <BottomNav />
     </>
   );
@@ -65,7 +65,7 @@ export function TabScreen({ children }: { children: React.ReactNode }) {
 
 /** Pushed-screen scaffold: fills the viewport so the primary action sits at the bottom. */
 export function PushScreen({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <main className={cx("flex min-h-dvh flex-col gap-4 px-6 pb-[calc(24px+env(safe-area-inset-bottom))] pt-3", className)}>{children}</main>;
+  return <main className={cx("flex min-h-dvh flex-col gap-4 px-6 pb-[calc(24px+env(safe-area-inset-bottom))] pt-[calc(12px+env(safe-area-inset-top)+var(--standalone-top,0px))]", className)}>{children}</main>;
 }
 
 export function TxIcon({ type, size = 38 }: { type: Transaction["type"]; size?: number }) {
