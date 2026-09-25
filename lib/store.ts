@@ -195,12 +195,9 @@ export const useStore = create<State & Actions>()((set, get) => {
       const index = prev.findIndex((x) => x.id === id);
       const account = prev[index];
       if (!account) return false;
-      set({ accounts: prev.filter((x) => x.id !== id) });
-      const done = await save(
-        sb().from("accounts").delete().eq("id", id),
-        () => set({ accounts: prev }),
-        t("toast.accountInUse"),
-      );
+      // Not optimistic: a refused delete (still in use) must not make the account vanish and reappear.
+      const done = await save(sb().from("accounts").delete().eq("id", id), () => {}, t("toast.accountInUse"));
+      if (done) set((s) => ({ accounts: s.accounts.filter((x) => x.id !== id) }));
       if (done) ok(t("toast.accountDeleted", { name: account.name }), { label: UNDO(), run: () => void insertAccount(account, index) });
       return done;
     },

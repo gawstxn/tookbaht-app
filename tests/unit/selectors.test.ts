@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accountBalance, accountDue, chargesSoFar, creditSummary, daysLeftInMonth, planInterest, planReserved, filterTransactions, monthPace, nextCharge, reconcileEntry, spendByCategory, subscriptionTotals, summarize, upcomingSubscriptions } from "@/lib/selectors";
+import { accountBalance, accountDeleteBlock, accountDue, chargesSoFar, creditSummary, daysLeftInMonth, planInterest, planReserved, filterTransactions, monthPace, nextCharge, reconcileEntry, spendByCategory, subscriptionTotals, summarize, upcomingSubscriptions } from "@/lib/selectors";
 import type { Account, Subscription, Transaction } from "@/lib/types";
 
 let n = 0;
@@ -207,5 +207,24 @@ describe("pay-later purchases", () => {
   it("holds the remaining installments for plans without a price", () => {
     const old = sub({ kind: "recurring", amount: 1000, cycle: "month", startDate: "2026-09-01", accountId: "p", installments: 3 });
     expect(planReserved(old, "2026-09-25")).toBe(2000);
+  });
+});
+
+describe("deleting an account", () => {
+  const a = account("a"), b = account("b");
+
+  it("refuses the last account", () => {
+    expect(accountDeleteBlock("a", [a], [], [])).toEqual({ reason: "last" });
+  });
+
+  it("refuses an account that transactions or scheduled entries use, counting them", () => {
+    const txs = [tx({ type: "out", amount: 1, accountId: "a" }), tx({ type: "move", amount: 1, fromId: "b", toId: "a" })];
+    expect(accountDeleteBlock("a", [a, b], txs, [])).toEqual({ reason: "used", transactions: 2, schedules: 0 });
+    const saving = sub({ kind: "recurring", entryType: "move", amount: 100, cycle: "month", accountId: "b", toAccountId: "a" });
+    expect(accountDeleteBlock("a", [a, b], [], [saving])).toEqual({ reason: "used", transactions: 0, schedules: 1 });
+  });
+
+  it("allows an unused account when others remain", () => {
+    expect(accountDeleteBlock("b", [a, b], [tx({ type: "out", amount: 1, accountId: "a" })], [])).toBeNull();
   });
 });

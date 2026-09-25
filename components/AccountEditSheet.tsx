@@ -30,6 +30,7 @@ export function AccountEditSheet({
   initial,
   onSave,
   onDelete,
+  deleteBlocked,
   onReconcile,
 }: {
   open: boolean;
@@ -37,18 +38,32 @@ export function AccountEditSheet({
   initial?: AccountDraft;
   onSave: (a: AccountDraft) => void;
   onDelete?: () => void;
+  /** Why this account can't be deleted; shown instead of the delete button. */
+  deleteBlocked?: string | null;
   /** Existing accounts: open the "match the real balance" sheet. */
   onReconcile?: () => void;
 }) {
   return (
     <Sheet open={open} onClose={onClose} title={t(initial ? "accounts.edit" : "accounts.add")}>
       {/* Remount per open so the form starts from `initial`. */}
-      {open ? <AccountFields initial={initial} onSave={onSave} onDelete={onDelete} onReconcile={onReconcile} /> : null}
+      {open ? <AccountFields initial={initial} onSave={onSave} onDelete={onDelete} deleteBlocked={deleteBlocked} onReconcile={onReconcile} /> : null}
     </Sheet>
   );
 }
 
-function AccountFields({ initial, onSave, onDelete, onReconcile }: { initial?: AccountDraft; onSave: (a: AccountDraft) => void; onDelete?: () => void; onReconcile?: () => void }) {
+function AccountFields({
+  initial,
+  onSave,
+  onDelete,
+  deleteBlocked,
+  onReconcile,
+}: {
+  initial?: AccountDraft;
+  onSave: (a: AccountDraft) => void;
+  onDelete?: () => void;
+  deleteBlocked?: string | null;
+  onReconcile?: () => void;
+}) {
   const [name, setName] = useState(initial?.name ?? "");
   const [kind, setKind] = useState<AccountKind>(initial?.kind ?? "bank");
   const [balanceText, setBalanceText] = useState(initial ? String(initial.openingBalance) : "");
@@ -163,7 +178,9 @@ function AccountFields({ initial, onSave, onDelete, onReconcile }: { initial?: A
         {tr("common.save")}
       </PrimaryButton>
       {onReconcile ? <SecondaryButton onClick={onReconcile}>{tr("accounts.reconcile")}</SecondaryButton> : null}
-      {onDelete ? (
+      {onDelete && deleteBlocked ? (
+        <p className="text-center text-xs leading-relaxed text-muted">{deleteBlocked}</p>
+      ) : onDelete ? (
         confirmDelete ? (
           <SecondaryButton tone="danger" onClick={onDelete}>
             {tr("accounts.confirmDelete")}

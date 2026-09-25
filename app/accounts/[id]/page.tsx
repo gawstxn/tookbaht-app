@@ -9,14 +9,16 @@ import { AccountEditSheet } from "@/components/AccountEditSheet";
 import { PayBillSheet } from "@/components/PayBillSheet";
 import { Bar, Card, Empty, HeroCard, ListCard, PushHeader } from "@/components/ui/primitives";
 import { baht, baht2, shortDate, todayISO } from "@/lib/format";
-import { accountDue, chargesSoFar, creditSummary } from "@/lib/selectors";
+import { accountDeleteBlock, accountDue, chargesSoFar, creditSummary } from "@/lib/selectors";
+import { deleteBlockedText } from "@/components/accountDeleteText";
 import { useStore } from "@/lib/store";
 
 /** A card or pay-later account: available credit, this cycle's bill, and purchases being paid off. */
 export default function CreditAccountPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
-  const account = useStore((s) => s.accounts.find((a) => a.id === id));
+  const accounts = useStore((s) => s.accounts);
+  const account = accounts.find((a) => a.id === id);
   const transactions = useStore((s) => s.transactions);
   const subscriptions = useStore((s) => s.subscriptions);
   const updateAccount = useStore((s) => s.updateAccount);
@@ -138,6 +140,7 @@ export default function CreditAccountPage() {
           updateAccount(account.id, a);
           setSheet("");
         }}
+        deleteBlocked={deleteBlockedText(accountDeleteBlock(account.id, accounts, transactions, subscriptions))}
         onDelete={async () => {
           setSheet("");
           if (await removeAccount(account.id)) router.replace("/accounts");
