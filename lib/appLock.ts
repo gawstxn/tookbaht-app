@@ -104,12 +104,14 @@ export const LOCK_BOOT_SCRIPT = `(function(){try{if(localStorage.getItem("${LOCK
 
 /* ---------- Face ID / Touch ID ---------- */
 
-export async function biometricAvailable(): Promise<boolean> {
-  try {
-    return !!window.PublicKeyCredential && (await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());
-  } catch {
-    return false;
-  }
+/**
+ * Whether to offer Face ID / Touch ID: any browser with WebAuthn. The
+ * platform-authenticator check isn't used to hide it, because a web app on
+ * the iPhone home screen can report "unavailable" on a phone that has Face ID;
+ * trying to register is the real test, and a failure says why.
+ */
+export function biometricSupported(): boolean {
+  return typeof window !== "undefined" && !!window.PublicKeyCredential && !!navigator.credentials?.create;
 }
 
 /** Register a platform credential on this device; returns its id. */

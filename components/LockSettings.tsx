@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PinPad } from "@/components/AppLock";
 import { ListCard, SecondaryButton, Sheet, SwitchRow } from "@/components/ui/primitives";
-import { biometricAvailable, checkPin, makeLock, readLock, registerBiometric, setUnlocked, writeLock, type LockConfig } from "@/lib/appLock";
+import { biometricSupported, checkPin, makeLock, readLock, registerBiometric, setUnlocked, writeLock, type LockConfig } from "@/lib/appLock";
 import { useStore } from "@/lib/store";
 
 type Step = "menu" | "new" | "confirm" | "current";
@@ -18,7 +18,6 @@ export function LockSettings({ open, onClose, onChange }: { open: boolean; onClo
   const [first, setFirst] = useState("");
   const [error, setError] = useState<string>();
   const [then, setThen] = useState<"off" | "change">("off");
-  const [canBio, setCanBio] = useState(false);
   const [wasOpen, setWasOpen] = useState(false);
   if (open !== wasOpen) {
     setWasOpen(open);
@@ -29,9 +28,6 @@ export function LockSettings({ open, onClose, onChange }: { open: boolean; onClo
       setError(undefined);
     }
   }
-  useEffect(() => {
-    void biometricAvailable().then(setCanBio);
-  }, []);
 
   const save = (c: LockConfig | null) => {
     // The user is here, so setting or changing the lock mustn't lock them out right away.
@@ -48,7 +44,7 @@ export function LockSettings({ open, onClose, onChange }: { open: boolean; onClo
       {step === "menu" && config ? (
         <>
           <ListCard>
-            {canBio ? (
+            {biometricSupported() ? (
               <SwitchRow
                 label={t("lock.biometric")}
                 hint={t("lock.biometricHint")}
@@ -59,7 +55,9 @@ export function LockSettings({ open, onClose, onChange }: { open: boolean; onClo
                     save({ ...config, credentialId: await registerBiometric() });
                   } catch (e) {
                     console.error(e);
-                    notify(t("lock.biometricFailed"), { tone: "error" });
+                    // Name the browser's reason (e.g. NotAllowedError when cancelled) so a failure can be told apart.
+                    const reason = e instanceof Error && e.name !== "Error" ? ` (${e.name})` : "";
+                    notify(t("lock.biometricFailed") + reason, { tone: "error" });
                   }
                 }}
               />

@@ -159,6 +159,22 @@ body,
 :root[data-locked] .app-content {
   visibility: hidden;
 }
+/* Unlocking: the opaque lock screen slides up out of view (like swiping up on
+   an iPhone) while the app settles into place underneath; no crossfade, so the
+   two never show through each other. */
+@keyframes lock-out {
+  to { transform: translateY(-100%); }
+}
+@keyframes app-in {
+  from { opacity: 0.6; transform: scale(0.95); }
+}
+.animate-lock-out { animation: lock-out 380ms cubic-bezier(0.5, 0, 0.2, 1) forwards; }
+:root[data-unlocking] .app-content { animation: app-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+@media (prefers-reduced-motion: reduce) {
+  /* Still ends, so the lock screen unmounts. */
+  .animate-lock-out { animation-duration: 1ms; }
+  :root[data-unlocking] .app-content { animation: none; }
+}
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-8px); }
