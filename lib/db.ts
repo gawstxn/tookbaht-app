@@ -14,6 +14,7 @@ interface AccountRow {
   tone: string;
   fx_fee_pct: Num;
   due_day: number | null;
+  bill_from_id: string | null;
 }
 export interface TransactionRow {
   id: string;
@@ -38,6 +39,7 @@ interface SubscriptionRow {
   entry_type: Subscription["entryType"];
   to_account_id: string | null;
   installments: number | null;
+  principal: Num | null;
   name: string;
   amount: Num;
   currency: Currency;
@@ -74,6 +76,7 @@ export const fromRow = {
     tone: r.tone,
     fxFeePct: Number(r.fx_fee_pct ?? 0),
     dueDay: r.due_day ?? null,
+    billFromId: r.bill_from_id ?? null,
   }),
   transaction: (r: TransactionRow): Transaction => ({
     id: r.id,
@@ -98,6 +101,7 @@ export const fromRow = {
     entryType: r.entry_type ?? "out",
     toAccountId: r.to_account_id,
     installments: r.installments,
+    principal: r.principal === null || r.principal === undefined ? null : Number(r.principal),
     name: r.name,
     amount: Number(r.amount),
     currency: r.currency ?? "THB",
@@ -130,6 +134,7 @@ export const toRow = {
       fx_fee_pct: a.fxFeePct,
       // null clears it; undefined leaves it alone.
       due_day: a.dueDay,
+      bill_from_id: a.billFromId,
     }),
   transaction: (t: Partial<Transaction>) =>
     strip({
@@ -156,6 +161,7 @@ export const toRow = {
       entry_type: s.entryType,
       to_account_id: s.toAccountId,
       installments: s.installments,
+      principal: s.principal,
       name: s.name,
       amount: s.amount,
       currency: s.currency,

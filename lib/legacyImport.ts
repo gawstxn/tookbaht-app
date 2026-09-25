@@ -70,7 +70,10 @@ export async function importData(userId: string, data: LegacyData): Promise<void
 
   // Skip rows pointing at accounts that no longer exist; the database would reject them.
   const hasAcc = new Set(data.accounts.map((a) => a.id));
-  const accounts = data.accounts.map((a, i) => ({ ...toRow.account({ ...a, fxFeePct: a.fxFeePct ?? 0, id: newId(a.id) }), sort_order: i }));
+  const accounts = data.accounts.map((a, i) => ({
+    ...toRow.account({ ...a, fxFeePct: a.fxFeePct ?? 0, id: newId(a.id), billFromId: a.billFromId && hasAcc.has(a.billFromId) ? newId(a.billFromId) : null }),
+    sort_order: i,
+  }));
   const subs = data.subscriptions.filter((s) => hasAcc.has(s.accountId) && (!s.toAccountId || hasAcc.has(s.toAccountId)));
   const subscriptions = subs.map((s) =>
     toRow.subscription({

@@ -24,6 +24,8 @@ export interface Account {
   fxFeePct: number;
   /** Cards and pay-later: day of the month the bill must be paid by. */
   dueDay?: number | null;
+  /** Cards and pay-later: the account the bill is usually paid from. */
+  billFromId?: string | null;
 }
 
 export interface Transaction {
@@ -69,6 +71,8 @@ export interface Subscription {
   toAccountId?: string | null;
   /** Installment plans: total number of charges (ผ่อน 3 งวด); open-ended when unset. */
   installments?: number | null;
+  /** Pay-later purchases: the price; installments × amount − principal is the interest. */
+  principal?: number | null;
   category: string;
   remind: boolean;
   autoLog: boolean;

@@ -70,7 +70,7 @@ export function buildNotifications(input: {
 
   // Card / pay-later payments due within 3 days (announced 09:00, three days before).
   for (const a of accounts) {
-    const d = accountDue(a, transactions, today);
+    const d = accountDue(a, transactions, today, subscriptions);
     if (!d || d.owed <= 0 || d.days > 3) continue;
     out.push({
       id: `pay:${a.id}:${d.due}`,
