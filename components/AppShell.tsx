@@ -8,7 +8,7 @@ import { Icon } from "./ui/Icon";
 import { PrimaryButton, cx } from "./ui/primitives";
 
 /** Screens that work without a session or before any data exists. */
-const NO_DATA_PATHS = ["/login", "/auth/"];
+const NO_DATA_PATHS = ["/login", "/auth/", "/terms", "/privacy"];
 
 /**
  * Follows the Supabase session, loads the user's data, and sends users

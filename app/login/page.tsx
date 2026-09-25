@@ -2,7 +2,9 @@
 
 import { useState, useSyncExternalStore } from "react";
 import { BrandMark } from "@/components/app";
+import Link from "next/link";
 import { DevLogin } from "@/components/DevLogin";
+import { InstallPrompt } from "@/components/InstallPrompt";
 import { findBrand } from "@/lib/brands";
 import { getSupabase } from "@/lib/supabase/client";
 
@@ -95,17 +97,18 @@ export default function LoginPage() {
             เข้าสู่ระบบไม่สำเร็จ ลองอีกครั้ง
           </p>
         ) : null}
+        <InstallPrompt />
         {process.env.NEXT_PUBLIC_DEV_LOGIN === "true" ? <DevLogin /> : null}
         <p className="text-center text-xs leading-relaxed text-muted">
           เมื่อเข้าสู่ระบบ ถือว่าคุณยอมรับ{" "}
-          <a href="#" className="font-semibold text-ink underline">
+          <Link href="/terms" className="font-semibold text-ink underline">
             ข้อกำหนดการใช้งาน
-          </a>
+          </Link>
           <br />
           และ{" "}
-          <a href="#" className="font-semibold text-ink underline">
+          <Link href="/privacy" className="font-semibold text-ink underline">
             นโยบายความเป็นส่วนตัว
-          </a>
+          </Link>
         </p>
       </div>
     </main>
