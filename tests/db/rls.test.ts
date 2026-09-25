@@ -92,8 +92,13 @@ describe.sequential("schema and row-level security", () => {
     expect(await t.as(A, `select subscription_id, user_id from public.transactions where title = 'Spotify'`)).toEqual([{ subscription_id: null, user_id: A }]);
   });
 
-  it("delete_my_account removes everything of A and nothing of B", async () => {
-    await t.as(A, `select public.delete_my_account()`);
+  it("users can't delete their account immediately any more", async () => {
+    await expect(t.as(A, `select public.delete_my_account()`)).rejects.toThrow(/permission denied/);
+  });
+
+  it("purging a deleted account removes everything of A and nothing of B", async () => {
+    await t.db.exec(`update public.profiles set deletion_requested_at = now() - interval '31 days' where id = '${A}'`);
+    expect(await t.rows(`select public.purge_deleted_accounts() n`)).toEqual([{ n: 1 }]);
     const [counts] = await t.rows(`select (select count(*)::int from public.accounts) a, (select count(*)::int from public.transactions) t,
       (select count(*)::int from public.profiles) p, (select count(*)::int from public.goals) g, (select count(*)::int from auth.users) u`);
     expect(counts).toEqual({ a: 1, t: 0, p: 1, g: 1, u: 1 });

@@ -2,14 +2,9 @@
 
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { DEV_EMAIL, DEV_PASSWORD, localDevLogin } from "@/lib/devLogin";
 import { getSupabase } from "@/lib/supabase/client";
 
-/** Fixed local test user; created on first use (local Supabase needs no email confirmation). */
-const DEV_EMAIL = "dev@tookbaht.local";
-const DEV_PASSWORD = "tookbaht-dev";
-
-/** Only against a Supabase on this machine — never a hosted project, whatever the env flag says. */
-const localSupabase = /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
 
 /**
  * Local-development one-tap sign-in, so the app can be tried without Google
@@ -19,7 +14,7 @@ const localSupabase = /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(process.
 export function DevLogin() {
   const { t: tr } = useTranslation();
   const [state, setState] = useState<"idle" | "busy" | "error">("idle");
-  if (!localSupabase) return null;
+  if (!localDevLogin) return null;
 
   const signIn = async () => {
     setState("busy");

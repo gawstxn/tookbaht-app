@@ -7,12 +7,15 @@ import { DevLogin } from "@/components/DevLogin";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { findBrand } from "@/lib/brands";
 import { useTranslation } from "react-i18next";
+import { shortDate } from "@/lib/format";
 import { applyLang, currentLang } from "@/lib/i18n";
 import { getSupabase } from "@/lib/supabase/client";
 
 const noop = () => () => {};
 /** /auth/callback sends failed sign-ins back here with ?error=auth. */
 const callbackFailed = () => new URLSearchParams(window.location.search).has("error");
+/** After closing the account: ?deleted=YYYY-MM-DD, the day it is deleted for good. */
+const deletedOn = () => new URLSearchParams(window.location.search).get("deleted") ?? "";
 
 /** Google-only sign-in via Supabase Auth; Google redirects back to /auth/callback. */
 export default function LoginPage() {
@@ -20,6 +23,7 @@ export default function LoginPage() {
   const [failed, setFailed] = useState<boolean | null>(null);
   const urlError = useSyncExternalStore(noop, callbackFailed, () => false);
   const error = failed ?? urlError;
+  const deleted = useSyncExternalStore(noop, deletedOn, () => "");
   const { t: tr } = useTranslation();
 
   const handleGoogle = async () => {
@@ -105,6 +109,11 @@ export default function LoginPage() {
           <GoogleMark />
           {busy ? tr("login.signingIn") : tr("login.google")}
         </button>
+        {/^\d{4}-\d{2}-\d{2}$/.test(deleted) ? (
+          <p role="status" className="rounded-2xl border border-line bg-card px-4 py-3 text-center text-sm leading-relaxed text-muted">
+            {tr("deletion.closed", { date: shortDate(deleted) })}
+          </p>
+        ) : null}
         {error ? (
           <p role="alert" className="text-center text-sm text-danger">
             {tr("login.failed")}
