@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useStore } from "@/lib/store";
-import { TH_MONTHS, TH_MONTHS_SHORT, TH_WEEKDAYS_SHORT, daysInMonth, shiftMonth, todayISO, toISO, monthKey } from "@/lib/format";
+import { useTranslation } from "react-i18next";
+import { daysInMonth, displayYear, monthLabel, monthNamesShort, shiftMonth, todayISO, toISO, monthKey, weekdayNamesShort, shortDate } from "@/lib/format";
 import { accountSubtitle } from "@/lib/selectors";
 import type { CategoryDef } from "@/lib/constants";
 import { Icon } from "./ui/Icon";
@@ -24,6 +25,7 @@ export function Calendar({
 }) {
   const [view, setView] = useState(monthKey(value));
   const today = todayISO();
+  const { t } = useTranslation();
   const [y, m] = view.split("-").map(Number);
   const first = new Date(y, m - 1, 1).getDay();
   const days = daysInMonth(y, m - 1);
@@ -31,18 +33,16 @@ export function Calendar({
   return (
     <div className="flex flex-col gap-2 rounded-[20px] border border-line bg-card p-3">
       <div className="flex items-center justify-between">
-        <button type="button" aria-label="เดือนก่อน" onClick={() => setView(shiftMonth(view, -1))} className="flex h-10 w-10 items-center justify-center rounded-full">
+        <button type="button" aria-label={t("picker.prevMonth")} onClick={() => setView(shiftMonth(view, -1))} className="flex h-10 w-10 items-center justify-center rounded-full">
           <Icon name="back" size={18} strokeWidth={2} />
         </button>
-        <span className="text-[15px] font-semibold">
-          {TH_MONTHS[m - 1]} {y + 543}
-        </span>
-        <button type="button" aria-label="เดือนถัดไป" onClick={() => setView(shiftMonth(view, 1))} className="flex h-10 w-10 items-center justify-center rounded-full">
+        <span className="text-[15px] font-semibold">{monthLabel(view)}</span>
+        <button type="button" aria-label={t("picker.nextMonth")} onClick={() => setView(shiftMonth(view, 1))} className="flex h-10 w-10 items-center justify-center rounded-full">
           <Icon name="chevronRight" size={18} strokeWidth={2} />
         </button>
       </div>
       <div aria-hidden="true" className="grid grid-cols-7 text-center text-xs text-muted">
-        {TH_WEEKDAYS_SHORT.map((d) => (
+        {weekdayNamesShort().map((d) => (
           <span key={d}>{d}</span>
         ))}
       </div>
@@ -60,7 +60,7 @@ export function Calendar({
               key={iso}
               type="button"
               aria-pressed={on}
-              aria-label={`${i + 1} ${TH_MONTHS[m - 1]} ${y + 543}`}
+              aria-label={shortDate(iso)}
               disabled={!!disabled}
               onClick={() => onChange(iso)}
               className={cx(
@@ -99,6 +99,7 @@ export function DateSheet({
   hint?: string;
   quick?: { label: string; value: string }[];
 }) {
+  const { t } = useTranslation();
   return (
     <Sheet open={open} onClose={onClose} title={title}>
       {quick ? (
@@ -117,7 +118,7 @@ export function DateSheet({
       ) : null}
       <Calendar key={open ? "o" : "c"} value={value} onChange={onChange} min={min} max={max} />
       {hint ? <p className="text-center text-[13px] text-muted">{hint}</p> : null}
-      <PrimaryButton onClick={onClose}>ตกลง</PrimaryButton>
+      <PrimaryButton onClick={onClose}>{t("common.ok")}</PrimaryButton>
     </Sheet>
   );
 }
@@ -139,6 +140,7 @@ export function AccountSheet({
   onPick: (id: string) => void;
   exclude?: string;
 }) {
+  const { t } = useTranslation();
   const accounts = useStore((s) => s.accounts);
   const txs = useStore((s) => s.transactions);
   return (
@@ -163,7 +165,7 @@ export function AccountSheet({
               <AccountMark account={a} size={36} />
               <span className="flex grow flex-col">
                 <span className="text-[15px] font-medium">{a.name}</span>
-                <span className="text-xs text-muted">{blocked ? "เลือกไว้อีกฝั่งแล้ว" : accountSubtitle(a, txs)}</span>
+                <span className="text-xs text-muted">{blocked ? t("picker.otherSide") : accountSubtitle(a, txs)}</span>
               </span>
               <span
                 aria-hidden="true"
@@ -230,14 +232,14 @@ export function MonthSwitcher() {
   const [open, setOpen] = useState(false);
   const current = monthKey(todayISO());
   const months = Array.from({ length: 12 }, (_, i) => shiftMonth(current, -i));
-  const [y, m] = viewMonth.split("-").map(Number);
+  const { t } = useTranslation();
   return (
     <>
       <button type="button" aria-haspopup="dialog" onClick={() => setOpen(true)} className="flex min-h-6 items-center gap-1 text-[13px] text-muted">
-        {TH_MONTHS[m - 1]} {y + 543}
+        {monthLabel(viewMonth)}
         <Icon name="chevronDown" size={14} strokeWidth={2} />
       </button>
-      <Sheet open={open} onClose={() => setOpen(false)} title="เลือกเดือน">
+      <Sheet open={open} onClose={() => setOpen(false)} title={t("picker.pickMonth")}>
         <div className="grid grid-cols-3 gap-2">
           {months.map((k) => {
             const [yy, mm] = k.split("-").map(Number);
@@ -253,8 +255,8 @@ export function MonthSwitcher() {
                 }}
                 className={cx("flex min-h-14 flex-col items-center justify-center rounded-2xl border", on ? "border-ink bg-ink text-on-ink" : "border-line bg-card")}
               >
-                <span className="text-sm font-semibold">{TH_MONTHS_SHORT[mm - 1]}</span>
-                <span className={cx("text-xs", on ? "text-on-ink-muted" : "text-muted")}>{yy + 543}</span>
+                <span className="text-sm font-semibold">{monthNamesShort()[mm - 1]}</span>
+                <span className={cx("text-xs", on ? "text-on-ink-muted" : "text-muted")}>{displayYear(yy)}</span>
               </button>
             );
           })}

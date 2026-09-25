@@ -1,4 +1,5 @@
 import { daysInMonth, diffDays, monthKey, monthlyEquivalent, nextDueDate } from "./format";
+import { t } from "./i18n";
 import type { Account, Subscription, Transaction } from "./types";
 
 export function monthTransactions(txs: Transaction[], key: string) {
@@ -39,7 +40,7 @@ export function accountBalance(a: Account, txs: Transaction[]): number {
 export function accountSubtitle(a: Account, txs: Transaction[]): string {
   const bal = accountBalance(a, txs);
   const f = "฿" + Math.round(bal).toLocaleString("en-US");
-  return a.kind === "credit" ? `วงเงินคงเหลือ ${f}` : `คงเหลือ ${f}`;
+  return t(a.kind === "credit" ? "balance.creditLeft" : "balance.left", { amount: f });
 }
 
 export interface UpcomingSub {

@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { TYPE_META } from "./constants";
 import { fetchAll, fromRow, toRow, type TransactionRow } from "./db";
+import { applyLang, currentLang, t, type Lang } from "./i18n";
 import { baht, todayISO } from "./format";
 import { getSupabase } from "./supabase/client";
 import type { Account, Goals, Settings, Subscription, Transaction, User } from "./types";
@@ -62,6 +63,8 @@ interface Actions {
 
   setGoals: (g: Goals) => void;
   setSettings: (s: Partial<Settings>) => void;
+  /** Switch the UI language and remember it on the profile. */
+  setLanguage: (lang: Lang) => void;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
 }
@@ -79,8 +82,8 @@ const initial: State = {
   toast: null,
 };
 
-const SAVE_FAILED = "บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง";
-const UNDO = "เลิกทำ";
+const SAVE_FAILED = () => t("toast.saveFailed");
+const UNDO = () => t("common.undo");
 let toastSeq = 0;
 
 export const useStore = create<State & Actions>()((set, get) => {
@@ -88,7 +91,7 @@ export const useStore = create<State & Actions>()((set, get) => {
   const ok = (text: string, action?: Toast["action"]) => get().notify(text, { action });
 
   /** Run a write; on failure undo the optimistic change and show an error toast. */
-  const save = async (write: PromiseLike<{ error: unknown }>, undo: () => void, message = SAVE_FAILED) => {
+  const save = async (write: PromiseLike<{ error: unknown }>, undo: () => void, message = SAVE_FAILED()) => {
     const { error } = await write;
     if (error) {
       console.error(error);
@@ -127,6 +130,9 @@ export const useStore = create<State & Actions>()((set, get) => {
         const data = await fetchAll(sb(), userId);
         if (get().userId !== userId) return;
         set({ ...data, goals: data.goals ?? EMPTY_GOALS, status: "ready" });
+        // The profile's language wins; if it has none yet, store the one in use.
+        if (data.settings.lang) applyLang(data.settings.lang);
+        else get().setSettings({ lang: currentLang() });
         await get().runAutoLog();
       } catch (e) {
         console.error(e);
@@ -142,7 +148,7 @@ export const useStore = create<State & Actions>()((set, get) => {
       const { error } = await sb().rpc("delete_my_account");
       if (error) {
         console.error(error);
-        get().notify("ลบบัญชีไม่สำเร็จ ลองใหม่อีกครั้ง", { tone: "error" });
+        get().notify(t("toast.deleteAccountFailed"), { tone: "error" });
         return false;
       }
       await sb().auth.signOut({ scope: "local" });
@@ -160,14 +166,14 @@ export const useStore = create<State & Actions>()((set, get) => {
     addAccount: (a) => {
       const account: Account = { ...a, id: crypto.randomUUID() };
       void insertAccount(account, get().accounts.length);
-      ok(`เพิ่มบัญชี ${account.name} แล้ว`);
+      ok(t("toast.accountAdded", { name: account.name }));
       return account.id;
     },
     updateAccount: (id, patch) => {
       const prev = get().accounts.find((x) => x.id === id);
       if (!prev) return;
       set((s) => ({ accounts: s.accounts.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
-      ok("บันทึกแล้ว");
+      ok(t("toast.saved"));
       void save(sb().from("accounts").update(toRow.account(patch)).eq("id", id), () =>
         set((s) => ({ accounts: s.accounts.map((x) => (x.id === id ? prev : x)) })),
       );
@@ -181,22 +187,22 @@ export const useStore = create<State & Actions>()((set, get) => {
       const done = await save(
         sb().from("accounts").delete().eq("id", id),
         () => set({ accounts: prev }),
-        "ลบไม่ได้ เพราะยังมีรายการหรือ subscription ที่ใช้บัญชีนี้",
+        t("toast.accountInUse"),
       );
-      if (done) ok(`ลบบัญชี ${account.name} แล้ว`, { label: UNDO, run: () => void insertAccount(account, index) });
+      if (done) ok(t("toast.accountDeleted", { name: account.name }), { label: UNDO(), run: () => void insertAccount(account, index) });
       return done;
     },
 
-    addTransaction: (t) => {
-      const tx: Transaction = { ...t, id: crypto.randomUUID(), createdAt: Date.now() };
+    addTransaction: (input) => {
+      const tx: Transaction = { ...input, id: crypto.randomUUID(), createdAt: Date.now() };
       void insertTransaction(tx);
-      ok(`บันทึก${tx.type === "move" ? "การโอน" : TYPE_META[tx.type].label} ${baht(tx.amount)} แล้ว`);
+      ok(t("toast.txSaved", { type: tx.type === "move" ? t("type.moveLong") : TYPE_META[tx.type].label, amount: baht(tx.amount) }));
     },
     deleteTransaction: (id) => {
       const prev = get().transactions.find((x) => x.id === id);
       if (!prev) return;
       set((s) => ({ transactions: s.transactions.filter((x) => x.id !== id) }));
-      ok(`ลบ "${prev.title || TYPE_META[prev.type].label}" แล้ว`, { label: UNDO, run: () => void insertTransaction(prev) });
+      ok(t("toast.deleted", { name: prev.title || TYPE_META[prev.type].label }), { label: UNDO(), run: () => void insertTransaction(prev) });
       void save(sb().from("transactions").delete().eq("id", id), () =>
         set((s) => ({ transactions: [...s.transactions, prev] })),
       );
@@ -207,7 +213,7 @@ export const useStore = create<State & Actions>()((set, get) => {
       void insertSubscription(full).then((done) => {
         if (done) void get().runAutoLog();
       });
-      ok(`เพิ่ม ${full.name} แล้ว`);
+      ok(t("toast.subAdded", { name: full.name }));
       return full.id;
     },
     updateSubscription: (id, patch) => {
@@ -216,10 +222,10 @@ export const useStore = create<State & Actions>()((set, get) => {
       set((s) => ({ subscriptions: s.subscriptions.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
       ok(
         patch.paused === true
-          ? `หยุด ${prev.name} ชั่วคราวแล้ว`
+          ? t("toast.subPaused", { name: prev.name })
           : patch.paused === false
-            ? `ใช้งาน ${prev.name} ต่อแล้ว`
-            : "บันทึกแล้ว",
+            ? t("toast.subResumed", { name: prev.name })
+            : t("toast.saved"),
       );
       void save(sb().from("subscriptions").update(toRow.subscription(patch)).eq("id", id), () =>
         set((s) => ({ subscriptions: s.subscriptions.map((x) => (x.id === id ? prev : x)) })),
@@ -237,8 +243,8 @@ export const useStore = create<State & Actions>()((set, get) => {
       set((s) => ({ subscriptions: s.subscriptions.filter((x) => x.id !== id) }));
       // Mirrors the database: logged expenses stay, unlinked.
       relink(undefined);
-      ok(`ลบ ${prev.name} แล้ว`, {
-        label: UNDO,
+      ok(t("toast.subDeleted", { name: prev.name }), {
+        label: UNDO(),
         run: () =>
           void insertSubscription(prev).then(async (done) => {
             if (!done || !linked.length) return;
@@ -267,7 +273,7 @@ export const useStore = create<State & Actions>()((set, get) => {
     setGoals: (goals) => {
       const prev = get().goals;
       set({ goals });
-      ok("บันทึกเป้าหมายแล้ว");
+      ok(t("toast.goalsSaved"));
       void save(sb().from("goals").upsert({ user_id: get().userId, ...toRow.goals(goals) }), () => set({ goals: prev }));
     },
     setSettings: (p) => {
@@ -275,6 +281,10 @@ export const useStore = create<State & Actions>()((set, get) => {
       const settings = { ...prev, ...p };
       set({ settings });
       void save(sb().from("profiles").update({ settings }).eq("id", get().userId), () => set({ settings: prev }));
+    },
+    setLanguage: (lang) => {
+      applyLang(lang);
+      if (get().userId) get().setSettings({ lang });
     },
     markNotificationRead: (id) => {
       const ids = get().settings.notifReadIds ?? [];

@@ -1,6 +1,6 @@
 import webpush from "web-push";
 import { NextResponse, type NextRequest } from "next/server";
-import { baht } from "@/lib/format";
+import { baht } from "@/lib/money";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 
 interface PendingReminder {
@@ -45,6 +45,9 @@ export async function GET(request: NextRequest) {
   if (!pending.length) return NextResponse.json({ reminders: 0, sent: 0 });
 
   const userIds = [...new Set(pending.map((r) => r.user_id))];
+  // Each user's chosen language (profiles.settings.lang); Thai when unset.
+  const { data: profiles } = await db.from("profiles").select("id, settings").in("id", userIds);
+  const langOf = new Map((profiles ?? []).map((p: { id: string; settings: { lang?: string } | null }) => [p.id, p.settings?.lang === "en" ? "en" : "th"]));
   const { data: targets, error: targetsError } = await db
     .from("push_subscriptions")
     .select("id, user_id, endpoint, p256dh, auth")
@@ -58,8 +61,7 @@ export async function GET(request: NextRequest) {
 
   for (const r of pending) {
     const payload = JSON.stringify({
-      title: `${r.name} ตัดบัญชีพรุ่งนี้`,
-      body: `${baht(Number(r.amount))} จาก${r.account_name}`,
+      ...reminderText(langOf.get(r.user_id) ?? "th", r),
       url: `/subscriptions/${r.subscription_id}`,
       tag: `due-${r.subscription_id}-${r.due_date}`,
     });
@@ -85,4 +87,12 @@ export async function GET(request: NextRequest) {
     if (logError) console.error(logError);
   }
   return NextResponse.json({ reminders: pending.length, sent, removed: gone.size });
+}
+
+/** Push text in the user's language (the server has no i18n instance). */
+function reminderText(lang: string, r: PendingReminder) {
+  const amount = baht(Number(r.amount));
+  return lang === "en"
+    ? { title: `${r.name} bills tomorrow`, body: `${amount} from ${r.account_name}` }
+    : { title: `${r.name} ตัดบัญชีพรุ่งนี้`, body: `${amount} จาก${r.account_name}` };
 }

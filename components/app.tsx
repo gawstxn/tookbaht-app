@@ -2,23 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
 import { ACCOUNT_KIND_ICON, TYPE_META, categoryIcon, categoryLabel } from "@/lib/constants";
 import { findBrand, onColor, type Brand } from "@/lib/brands";
 import { baht2, relativeDue } from "@/lib/format";
+import { txTitle } from "@/lib/txTitle";
 import type { Account, Subscription, Transaction } from "@/lib/types";
 import { Icon, type IconName } from "./ui/Icon";
 import { Monogram, cx } from "./ui/primitives";
 
-const TABS: { href: string; label: string; icon: IconName }[] = [
-  { href: "/", label: "หน้าหลัก", icon: "home" },
-  { href: "/transactions", label: "รายการ", icon: "list" },
-  { href: "/subscriptions", label: "รายเดือน", icon: "repeat" },
-  { href: "/profile", label: "โปรไฟล์", icon: "user" },
+const TABS: { href: string; label: "home" | "transactions" | "monthly" | "profile"; icon: IconName }[] = [
+  { href: "/", label: "home", icon: "home" },
+  { href: "/transactions", label: "transactions", icon: "list" },
+  { href: "/subscriptions", label: "monthly", icon: "repeat" },
+  { href: "/profile", label: "profile", icon: "user" },
 ];
 
 export function BottomNav() {
   const path = usePathname();
+  const { t: tr } = useTranslation();
   const tab = (t: (typeof TABS)[number]) => {
     const on = t.href === "/" ? path === "/" : path.startsWith(t.href);
     return (
@@ -29,20 +32,20 @@ export function BottomNav() {
         className={cx("flex min-h-12 flex-col items-center justify-center gap-0.5 text-[11px]", on ? "font-semibold text-ink" : "text-[#6b6e65]")}
       >
         <Icon name={t.icon} size={22} strokeWidth={on ? 2 : 1.8} />
-        {t.label}
+        {tr(`nav.${t.label}`)}
       </Link>
     );
   };
   return (
     <nav
-      aria-label="เมนูหลัก"
+      aria-label={tr("nav.menu")}
       className="fixed inset-x-0 bottom-0 z-40 mx-auto grid max-w-[430px] grid-cols-5 items-center border-t border-line bg-card px-2 pb-[max(6px,calc(env(safe-area-inset-bottom)-8px))] pt-1"
     >
       {tab(TABS[0])}
       {tab(TABS[1])}
       <Link
         href="/add"
-        aria-label="เพิ่มรายการ"
+        aria-label={tr("nav.add")}
         className="-mt-[18px] flex h-14 w-14 items-center justify-center justify-self-center rounded-full bg-lime text-ink shadow-fab"
       >
         <Icon name="plus" size={26} strokeWidth={2.4} />
@@ -108,7 +111,7 @@ export function TxRow({ t, onClick }: { t: Transaction; onClick?: () => void }) 
     <Tag type={onClick ? "button" : undefined} onClick={onClick} className="flex min-h-[60px] w-full items-center gap-3 text-left">
       <TxIcon type={t.type} category={t.category} />
       <div className="flex min-w-0 grow flex-col">
-        <span className="truncate text-[15px] font-medium">{t.title}</span>
+        <span className="truncate text-[15px] font-medium">{txTitle(t, accounts)}</span>
         <span className="truncate text-xs text-muted">{sub}</span>
       </div>
       <span className="whitespace-nowrap font-mono text-[15px] font-semibold" style={{ color: meta.color }}>

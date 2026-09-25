@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Card, ListCard, PrimaryButton, PushHeader, SwitchRow } from "@/components/ui/primitives";
 import { EXPENSE_CATEGORIES } from "@/lib/constants";
 import { baht } from "@/lib/format";
+import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
 
 const toNum = (s: string) => parseInt(s.replace(/[^0-9]/g, ""), 10) || 0;
@@ -16,6 +17,7 @@ export default function GoalEditPage() {
   const router = useRouter();
   const goals = useStore((s) => s.goals);
   const setGoals = useStore((s) => s.setGoals);
+  const { t: tr } = useTranslation();
   const [income, setIncome] = useState(goals.incomeTarget);
   const [expense, setExpense] = useState(goals.expenseBudget);
   const [alert, setAlert] = useState(goals.alertAt80);
@@ -28,27 +30,27 @@ export default function GoalEditPage() {
 
   return (
     <PushScreen>
-      <PushHeader title="ตั้งเป้าหมาย" onBack={() => router.back()} />
+      <PushHeader title={tr("goals.set")} onBack={() => router.back()} />
 
       <div className="grid grid-cols-2 gap-2.5">
-        <MoneyField label="เป้ารายรับ / เดือน" icon="in" color="var(--color-income)" value={income} onChange={setIncome} />
-        <MoneyField label="งบรายจ่าย / เดือน" icon="out" color="var(--color-expense)" value={expense} onChange={setExpense} />
+        <MoneyField label={tr("goals.incomePerMonth")} icon="in" color="var(--color-income)" value={income} onChange={setIncome} />
+        <MoneyField label={tr("goals.expensePerMonth")} icon="out" color="var(--color-expense)" value={expense} onChange={setExpense} />
       </div>
 
       <div className="flex items-center gap-2.5 rounded-2xl bg-ink px-4 py-3.5 text-[13px] text-on-ink">
         <span className="h-2 w-2 shrink-0 rounded-full bg-lime" />
-        <span className="grow">ถ้าทำได้ตามเป้า จะเหลือเก็บ</span>
+        <span className="grow">{tr("goals.saving")}</span>
         <span className="font-mono text-[15px] font-semibold text-lime">
           {save < 0 ? "−" : ""}
-          {baht(Math.abs(save))} / เดือน
+          {baht(Math.abs(save))} {tr("common.perMonth")}
         </span>
       </div>
 
       <section className="flex flex-col gap-2">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-base font-semibold">งบแยกหมวด</h2>
+          <h2 className="text-base font-semibold">{tr("goals.perCategory")}</h2>
           <span className={over ? "text-xs font-medium text-danger" : "text-xs font-medium text-muted"}>
-            {over ? `เกินงบรวม ${baht(allocated - expense)}` : `แบ่งแล้ว ${baht(allocated)}${expense ? ` จาก ${baht(expense)}` : ""}`}
+            {over ? tr("goals.overTotal", { amount: baht(allocated - expense) }) : tr("goals.allocated", { amount: baht(allocated) }) + (expense ? tr("goals.allocatedOf", { amount: baht(expense) }) : "")}
           </span>
         </div>
         <ListCard>
@@ -60,7 +62,7 @@ export default function GoalEditPage() {
                 ฿
                 <input
                   inputMode="numeric"
-                  aria-label={`งบ${c.label}`}
+                  aria-label={tr("goals.budgetFor", { label: c.label })}
                   value={fmt(budgets[c.key] ?? 0)}
                   placeholder="0"
                   onChange={(e) => setBudgets((b) => ({ ...b, [c.key]: toNum(e.target.value) }))}
@@ -73,7 +75,7 @@ export default function GoalEditPage() {
       </section>
 
       <ListCard>
-        <SwitchRow label="แจ้งเตือนเมื่อใช้ถึง 80% ของงบ" hint="ทั้งงบรวมและงบแต่ละหมวด" checked={alert} onChange={setAlert} />
+        <SwitchRow label={tr("goals.alert80")} hint={tr("goals.alert80Hint")} checked={alert} onChange={setAlert} />
       </ListCard>
 
       <div className="mt-auto">
@@ -84,7 +86,7 @@ export default function GoalEditPage() {
             router.replace("/goals");
           }}
         >
-          บันทึกเป้าหมาย
+          {tr("goals.save")}
         </PrimaryButton>
       </div>
     </PushScreen>

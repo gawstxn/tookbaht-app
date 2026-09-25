@@ -65,4 +65,6 @@ export interface Settings {
   /** Notification read state: everything up to readBefore (ms) plus these ids. */
   notifReadBefore?: number;
   notifReadIds?: string[];
+  /** UI language; also used for push reminders sent by the server. */
+  lang?: "th" | "en";
 }

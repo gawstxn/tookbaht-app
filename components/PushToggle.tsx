@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { t } from "@/lib/i18n";
 import { getSupabase } from "@/lib/supabase/client";
 import { useStore } from "@/lib/store";
 import { SwitchRow } from "./ui/primitives";
@@ -23,6 +25,7 @@ async function getRegistration() {
 export function PushToggle() {
   const [state, setState] = useState<PushState>("loading");
   const [busy, setBusy] = useState(false);
+  const { t: tr } = useTranslation();
 
   useEffect(() => {
     let cancelled = false;
@@ -39,7 +42,7 @@ export function PushToggle() {
     };
   }, []);
 
-  const fail = () => useStore.getState().notify("ตั้งค่าการแจ้งเตือนไม่สำเร็จ ลองอีกครั้ง", { tone: "error" });
+  const fail = () => useStore.getState().notify(t("push.failed"), { tone: "error" });
 
   const enable = async () => {
     const reg = await getRegistration();
@@ -62,7 +65,7 @@ export function PushToggle() {
       return fail();
     }
     setState("on");
-    useStore.getState().notify("เปิดการแจ้งเตือนบนเครื่องนี้แล้ว");
+    useStore.getState().notify(t("push.on"));
   };
 
   const disable = async () => {
@@ -72,19 +75,19 @@ export function PushToggle() {
       await sub.unsubscribe();
     }
     setState("off");
-    useStore.getState().notify("ปิดการแจ้งเตือนบนเครื่องนี้แล้ว");
+    useStore.getState().notify(t("push.off"));
   };
 
   const hint =
     state === "unsupported"
-      ? "ใช้ได้เมื่อติดตั้งแอปลงหน้าจอหลัก (iPhone ต้อง iOS 16.4 ขึ้นไป)"
+      ? tr("push.unsupported")
       : state === "denied"
-        ? "ถูกปิดไว้ในการตั้งค่าเบราว์เซอร์ เปิดอนุญาตการแจ้งเตือนก่อน"
-        : "เตือนล่วงหน้า 1 วันก่อนตัดบัญชี บนเครื่องนี้";
+        ? tr("push.denied")
+        : tr("push.hint");
 
   return (
     <SwitchRow
-      label="แจ้งเตือน subscriptions"
+      label={tr("push.label")}
       hint={hint}
       checked={state === "on"}
       onChange={async (on) => {

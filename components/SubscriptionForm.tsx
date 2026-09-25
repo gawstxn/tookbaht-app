@@ -7,7 +7,8 @@ import { Card, Chip, Empty, ListCard, PickerRow, PrimaryButton, PushHeader, Segm
 import { BrandMark, PushScreen, SubMono } from "@/components/app";
 import { findBrand, normalizeName, suggestCategory } from "@/lib/brands";
 import { MONO_TONES, POPULAR_SUBS, SUB_CATALOG, SUB_CATEGORIES } from "@/lib/constants";
-import { baht, fromISO, monthlyEquivalent, shortDate, todayISO, TH_MONTHS_SHORT } from "@/lib/format";
+import { useTranslation } from "react-i18next";
+import { baht, fromISO, monthlyEquivalent, shortDate, todayISO } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { Cycle, Subscription } from "@/lib/types";
 
@@ -51,6 +52,7 @@ export function SubscriptionForm({
       tone: MONO_TONES[0],
     },
   );
+  const { t } = useTranslation();
   const [amountText, setAmountText] = useState(initial ? String(initial.amount) : "");
   const [sheet, setSheet] = useState<"" | "date" | "account" | "category" | "catalog">("");
   const pick = (n: string) => set({ name: n, category: suggestCategory(n) ?? d.category });
@@ -61,10 +63,10 @@ export function SubscriptionForm({
   const start = fromISO(d.startDate);
   const hint =
     d.cycle === "week"
-      ? "หลังจากนั้นตัดบัญชีทุกสัปดาห์"
+      ? t("subs.hintWeek")
       : d.cycle === "year"
-        ? `หลังจากนั้นตัดบัญชีทุกปี วันที่ ${start.getDate()} ${TH_MONTHS_SHORT[start.getMonth()]}`
-        : `หลังจากนั้นตัดบัญชีทุกวันที่ ${start.getDate()} ของเดือน`;
+        ? t("subs.hintYear", { date: shortDate(d.startDate, false) })
+        : t("subs.hintMonth", { day: start.getDate() });
 
   return (
     <PushScreen className="gap-3.5">
@@ -80,19 +82,19 @@ export function SubscriptionForm({
         )}
         <div className="flex min-w-0 grow flex-col gap-0.5">
           <label htmlFor="subname" className="text-xs text-muted">
-            ชื่อบริการ
+            {t("subs.name")}
           </label>
           <input
             id="subname"
             value={d.name}
             onChange={(e) => set({ name: e.target.value })}
-            placeholder="เช่น Netflix, ค่ายิม"
+            placeholder={t("subs.namePlaceholder")}
             className="min-h-9 w-full border-b border-[#d0cbbf] bg-transparent pb-1 font-serif text-[22px] font-bold outline-none"
           />
         </div>
       </div>
 
-      <div aria-label="เลือกจากบริการยอดนิยม" className="flex flex-wrap gap-1.5">
+      <div aria-label={t("subs.popular")} className="flex flex-wrap gap-1.5">
         {POPULAR_SUBS.map((n) => {
           const brand = findBrand(n);
           return (
@@ -106,7 +108,7 @@ export function SubscriptionForm({
         })}
         <Chip size="sm" on={false} onClick={() => setSheet("catalog")}>
           <span className="flex items-center gap-1">
-            ดูทั้งหมด
+            {t("common.seeAll")}
             <Icon name="chevronRight" size={14} strokeWidth={2.2} />
           </span>
         </Chip>
@@ -114,7 +116,7 @@ export function SubscriptionForm({
 
       <Card className="flex flex-col gap-3 px-4 py-3.5">
         <label className="flex items-baseline gap-2">
-          <span className="shrink-0 text-[13px] text-muted">ราคา</span>
+          <span className="shrink-0 text-[13px] text-muted">{t("subs.price")}</span>
           <span className="flex grow items-baseline gap-0.5 font-mono text-[30px] font-semibold">
             ฿
             <input
@@ -132,32 +134,32 @@ export function SubscriptionForm({
         </label>
         <Segmented<Cycle>
           size="sm"
-          label="รอบการชำระ"
+          label={t("subs.cycle")}
           value={d.cycle}
           onChange={(cycle) => set({ cycle })}
           options={[
-            { value: "week", label: "รายสัปดาห์" },
-            { value: "month", label: "รายเดือน" },
-            { value: "year", label: "รายปี" },
+            { value: "week", label: t("cycle.week") },
+            { value: "month", label: t("cycle.month") },
+            { value: "year", label: t("cycle.year") },
           ]}
         />
       </Card>
 
       <ListCard>
-        <PickerRow label="เริ่มตัดบัญชี" value={shortDate(d.startDate)} onClick={() => setSheet("date")} />
-        <PickerRow label="ชำระจาก" value={accounts.find((a) => a.id === d.accountId)?.name ?? "เลือกบัญชี"} onClick={() => setSheet("account")} />
-        <PickerRow label="หมวดหมู่" value={SUB_CATEGORIES.find((c) => c.key === d.category)?.label ?? ""} onClick={() => setSheet("category")} />
+        <PickerRow label={t("subs.start")} value={shortDate(d.startDate)} onClick={() => setSheet("date")} />
+        <PickerRow label={t("subs.payFrom")} value={accounts.find((a) => a.id === d.accountId)?.name ?? t("common.selectAccount")} onClick={() => setSheet("account")} />
+        <PickerRow label={t("common.category")} value={SUB_CATEGORIES.find((c) => c.key === d.category)?.label ?? ""} onClick={() => setSheet("category")} />
       </ListCard>
 
       <ListCard>
-        <SwitchRow label="แจ้งเตือนก่อนตัดบัญชี 1 วัน" checked={d.remind} onChange={(remind) => set({ remind })} />
-        <SwitchRow label="บันทึกเป็นรายจ่ายอัตโนมัติ" checked={d.autoLog} onChange={(autoLog) => set({ autoLog })} />
+        <SwitchRow label={t("subs.remindForm")} checked={d.remind} onChange={(remind) => set({ remind })} />
+        <SwitchRow label={t("subs.autoLog")} checked={d.autoLog} onChange={(autoLog) => set({ autoLog })} />
       </ListCard>
 
       <div className="mt-auto flex flex-col gap-2.5">
         <p className="flex justify-center gap-1.5 text-[13px] text-muted">
-          เฉลี่ย <span className="font-mono font-semibold text-ink">{baht(monthly)}</span> / เดือน ·
-          <span className="font-mono font-semibold text-ink">{baht(monthly * 12)}</span> / ปี
+          {t("subs.average")} <span className="font-mono font-semibold text-ink">{baht(monthly)}</span> {t("common.perMonth")} ·
+          <span className="font-mono font-semibold text-ink">{baht(monthly * 12)}</span> {t("common.perYear")}
         </p>
         <PrimaryButton
           once
@@ -176,12 +178,12 @@ export function SubscriptionForm({
       <DateSheet
         open={sheet === "date"}
         onClose={() => setSheet("")}
-        title="เริ่มตัดบัญชี"
+        title={t("subs.start")}
         value={d.startDate}
         onChange={(startDate) => set({ startDate })}
-        hint={d.startDate < today ? `${hint} · รอบก่อนวันนี้จะไม่ถูกบันทึกย้อนหลัง` : hint}
+        hint={d.startDate < today ? hint + t("subs.noBackfill") : hint}
       />
-      <AccountSheet open={sheet === "account"} onClose={() => setSheet("")} title="ชำระจาก" value={d.accountId} onPick={(accountId) => set({ accountId })} />
+      <AccountSheet open={sheet === "account"} onClose={() => setSheet("")} title={t("subs.payFrom")} value={d.accountId} onPick={(accountId) => set({ accountId })} />
       <CatalogSheet
         open={sheet === "catalog"}
         onClose={() => setSheet("")}
@@ -190,23 +192,24 @@ export function SubscriptionForm({
           setSheet("");
         }}
       />
-      <CategorySheet open={sheet === "category"} onClose={() => setSheet("")} title="หมวดหมู่" options={SUB_CATEGORIES} value={d.category} onPick={(category) => set({ category })} />
+      <CategorySheet open={sheet === "category"} onClose={() => setSheet("")} title={t("common.category")} options={SUB_CATEGORIES} value={d.category} onPick={(category) => set({ category })} />
     </PushScreen>
   );
 }
 
 /** Full list of known services, grouped, with search. */
 function CatalogSheet({ open, onClose, onPick }: { open: boolean; onClose: () => void; onPick: (name: string) => void }) {
+  const { t } = useTranslation();
   const [q, setQ] = useState("");
   const query = normalizeName(q);
   const groups = SUB_CATALOG.map((g) => ({ ...g, names: g.names.filter((n) => !query || normalizeName(n).includes(query)) })).filter((g) => g.names.length);
   return (
-    <Sheet open={open} onClose={onClose} title="เลือกบริการ">
+    <Sheet open={open} onClose={onClose} title={t("subs.pickService")}>
       <label className="flex min-h-11 items-center gap-2 rounded-xl border border-line bg-card px-3">
         <Icon name="search" size={16} strokeWidth={2} className="text-faint" />
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="ค้นหา เช่น Netflix, AIS" aria-label="ค้นหาบริการ" className="min-w-0 grow bg-transparent text-sm outline-none" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("subs.searchPlaceholder")} aria-label={t("subs.searchService")} className="min-w-0 grow bg-transparent text-sm outline-none" />
       </label>
-      {groups.length === 0 ? <Empty>ไม่พบ ลองพิมพ์ชื่อเองในช่องชื่อบริการได้เลย</Empty> : null}
+      {groups.length === 0 ? <Empty>{t("subs.noService")}</Empty> : null}
       {groups.map((g) => (
         <section key={g.title} className="flex flex-col gap-1.5">
           <h3 className="text-[13px] font-semibold text-muted">{g.title}</h3>

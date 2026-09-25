@@ -8,12 +8,13 @@ import { Icon } from "@/components/ui/Icon";
 import { Chip, Empty, ListCard, PushHeader } from "@/components/ui/primitives";
 import { shortDate, toISO, todayISO } from "@/lib/format";
 import { dayBucket, isUnread, type AppNotification } from "@/lib/notifications";
+import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
 
 const GROUPS = [
-  ["today", "วันนี้"],
-  ["yesterday", "เมื่อวาน"],
-  ["earlier", "ก่อนหน้านี้"],
+  ["today", "common.today"],
+  ["yesterday", "common.yesterday"],
+  ["earlier", "notif.earlier"],
 ] as const;
 
 export default function NotificationsPage() {
@@ -21,6 +22,7 @@ export default function NotificationsPage() {
   const { items, unread, settings } = useNotifications();
   const markRead = useStore((s) => s.markNotificationRead);
   const markAll = useStore((s) => s.markAllNotificationsRead);
+  const { t: tr } = useTranslation();
   const [onlyUnread, setOnlyUnread] = useState(false);
   const today = todayISO();
   const shown = onlyUnread ? unread : items;
@@ -33,7 +35,7 @@ export default function NotificationsPage() {
   return (
     <PushScreen>
       <PushHeader
-        title="การแจ้งเตือน"
+        title={tr("notif.title")}
         onBack={() => router.back()}
         action={
           <button
@@ -42,28 +44,28 @@ export default function NotificationsPage() {
             disabled={!unread.length}
             className="min-h-11 whitespace-nowrap px-1 text-[13px] font-semibold text-transfer disabled:text-faint"
           >
-            อ่านทั้งหมด
+            {tr("notif.markAll")}
           </button>
         }
       />
 
       <div className="flex gap-2">
         <Chip on={!onlyUnread} onClick={() => setOnlyUnread(false)}>
-          ทั้งหมด
+          {tr("common.all")}
         </Chip>
         <Chip on={onlyUnread} onClick={() => setOnlyUnread(true)}>
-          ยังไม่อ่าน ({unread.length})
+          {tr("notif.unreadTab", { count: unread.length })}
         </Chip>
       </div>
 
-      {shown.length === 0 ? <Empty>{onlyUnread ? "อ่านครบทุกรายการแล้ว" : "ยังไม่มีการแจ้งเตือน"}</Empty> : null}
+      {shown.length === 0 ? <Empty>{onlyUnread ? tr("notif.allRead") : tr("notif.none")}</Empty> : null}
 
       {GROUPS.map(([key, label]) => {
         const group = shown.filter((n) => dayBucket(n.at, today) === key);
         if (!group.length) return null;
         return (
           <section key={key} className="flex flex-col gap-2">
-            <h2 className="text-[13px] font-semibold text-muted">{label}</h2>
+            <h2 className="text-[13px] font-semibold text-muted">{tr(label)}</h2>
             <ListCard>
               {group.map((n) => (
                 <Row key={n.id} n={n} unread={isUnread(n, settings)} time={key === "earlier" ? shortDate(toISO(new Date(n.at)), false) : clock(n.at)} onOpen={() => open(n)} />
@@ -82,6 +84,7 @@ function clock(ms: number) {
 }
 
 function Row({ n, unread, time, onOpen }: { n: AppNotification; unread: boolean; time: string; onOpen: () => void }) {
+  const { t: tr } = useTranslation();
   const style = NOTIF_STYLE[n.kind];
   return (
     <button type="button" onClick={onOpen} className="flex min-h-[72px] w-full items-start gap-3 py-3 text-left">
@@ -93,7 +96,7 @@ function Row({ n, unread, time, onOpen }: { n: AppNotification; unread: boolean;
           <span className="truncate text-[15px] font-semibold">{n.title}</span>
           <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted">
             {time}
-            {unread ? <span aria-label="ยังไม่อ่าน" className="h-2 w-2 rounded-full bg-danger" /> : <span className="h-2 w-2" />}
+            {unread ? <span aria-label={tr("notif.unread")} className="h-2 w-2 rounded-full bg-danger" /> : <span className="h-2 w-2" />}
           </span>
         </span>
         <span className="text-[13px] text-muted">{n.body}</span>

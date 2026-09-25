@@ -3,9 +3,9 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "Tookbaht — บันทึกรายรับรายจ่าย",
+    name: "Tookbaht",
     short_name: "Tookbaht",
-    description: "บันทึกรายรับ รายจ่าย การโอน จัดการ subscriptions และตั้งเป้าหมายการเงิน",
+    description: "บันทึกรายรับ รายจ่าย การโอน subscriptions และเป้าหมายการเงิน · Track income, expenses, subscriptions and money goals",
     lang: "th",
     start_url: "/",
     scope: "/",

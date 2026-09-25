@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getSupabase } from "@/lib/supabase/client";
 
 /** Supabase's local mail catcher (supabase/config.toml → [local_smtp] port). */
@@ -12,6 +13,7 @@ const LOCAL_MAILBOX = "http://127.0.0.1:55324";
  * keep the Email provider disabled on the production Supabase project.
  */
 export function DevLogin() {
+  const { t: tr } = useTranslation();
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
@@ -28,7 +30,7 @@ export function DevLogin() {
 
   return (
     <form onSubmit={send} className="flex flex-col gap-2 rounded-2xl border border-dashed border-faint p-3.5">
-      <span className="text-xs font-semibold text-muted">โหมดทดสอบบนเครื่อง · เข้าสู่ระบบด้วยอีเมล</span>
+      <span className="text-xs font-semibold text-muted">{tr("dev.title")}</span>
       <div className="flex gap-2">
         <input
           type="email"
@@ -36,22 +38,22 @@ export function DevLogin() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
-          aria-label="อีเมลสำหรับทดสอบ"
+          aria-label={tr("dev.email")}
           className="min-h-11 min-w-0 grow rounded-xl border border-line bg-card px-3 text-sm outline-none"
         />
         <button type="submit" disabled={state === "sending"} className="min-h-11 shrink-0 rounded-xl bg-ink px-3.5 text-sm font-semibold text-on-ink">
-          {state === "sending" ? "กำลังส่ง…" : "ส่งลิงก์"}
+          {state === "sending" ? tr("dev.sending") : tr("dev.send")}
         </button>
       </div>
       {state === "sent" ? (
         <p className="text-xs text-muted">
-          ส่งแล้ว เปิดลิงก์ในกล่องจดหมายทดสอบที่{" "}
+          {tr("dev.sent")}{" "}
           <a href={LOCAL_MAILBOX} target="_blank" rel="noreferrer" className="font-semibold text-ink underline">
             {LOCAL_MAILBOX.replace("http://", "")}
           </a>
         </p>
       ) : null}
-      {state === "error" ? <p className="text-xs text-danger">ส่งไม่สำเร็จ — Supabase บนเครื่องเปิดอยู่หรือเปล่า?</p> : null}
+      {state === "error" ? <p className="text-xs text-danger">{tr("dev.error")}</p> : null}
     </form>
   );
 }

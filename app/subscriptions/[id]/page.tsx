@@ -7,6 +7,7 @@ import { PushScreen, SubMono } from "@/components/app";
 import { Empty, ListCard, PrimaryButton, PushHeader, SecondaryButton, Sheet, SwitchRow } from "@/components/ui/primitives";
 import { SUB_CATEGORIES } from "@/lib/constants";
 import { baht2, cycleLabel, cyclePer, diffDays, dueDatesUntil, fromISO, nextDueDate, relativeDue, shortDate, todayISO } from "@/lib/format";
+import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
 
 export default function SubscriptionDetailPage() {
@@ -16,6 +17,7 @@ export default function SubscriptionDetailPage() {
   const accounts = useStore((s) => s.accounts);
   const update = useStore((s) => s.updateSubscription);
   const remove = useStore((s) => s.deleteSubscription);
+  const { t: tr } = useTranslation();
   const [confirm, setConfirm] = useState(false);
   const today = todayISO();
 
@@ -23,7 +25,7 @@ export default function SubscriptionDetailPage() {
     return (
       <PushScreen>
         <PushHeader backHref="/subscriptions" />
-        <Empty>ไม่พบ subscription นี้</Empty>
+        <Empty>{tr("subs.notFound")}</Empty>
       </PushScreen>
     );
   }
@@ -32,7 +34,12 @@ export default function SubscriptionDetailPage() {
   const days = diffDays(due, today);
   const history = dueDatesUntil(sub.startDate, sub.cycle, today).reverse().slice(0, 3);
   const start = fromISO(sub.startDate);
-  const dayRule = sub.cycle === "week" ? "ทุกสัปดาห์" : sub.cycle === "year" ? `ทุกปี ${shortDate(sub.startDate, false)}` : `ทุกวันที่ ${start.getDate()}`;
+  const dayRule =
+    sub.cycle === "week"
+      ? tr("subs.everyWeek")
+      : sub.cycle === "year"
+        ? tr("subs.everyYear", { date: shortDate(sub.startDate, false) })
+        : tr("subs.everyMonthDay", { day: start.getDate() });
 
   return (
     <PushScreen>
@@ -40,7 +47,7 @@ export default function SubscriptionDetailPage() {
         backHref="/subscriptions"
         action={
           <Link href={`/subscriptions/${sub.id}/edit`} className="flex min-h-11 items-center rounded-full border border-line bg-card px-4 text-sm font-semibold">
-            แก้ไข
+            {tr("common.edit")}
           </Link>
         }
       />
@@ -53,24 +60,24 @@ export default function SubscriptionDetailPage() {
           <span className="font-sans text-[15px] font-medium tracking-normal text-muted"> {cyclePer(sub.cycle)}</span>
         </span>
         <span className="rounded-full bg-chip px-3 py-1 text-[13px] font-semibold">
-          {sub.paused ? "หยุดชั่วคราวอยู่" : `ตัดบัญชีครั้งถัดไป ${shortDate(due)} · ${relativeDue(days)}`}
+          {sub.paused ? tr("subs.pausedNow") : tr("subs.next", { date: shortDate(due), rel: relativeDue(days) })}
         </span>
       </section>
 
       <ListCard>
-        <Row label="รอบการชำระ" value={cycleLabel(sub.cycle)} />
-        <Row label="วันที่ตัดบัญชี" value={dayRule} />
-        <Row label="ชำระจาก" value={accounts.find((a) => a.id === sub.accountId)?.name ?? "—"} />
-        <Row label="หมวดหมู่" value={SUB_CATEGORIES.find((c) => c.key === sub.category)?.label ?? "—"} />
+        <Row label={tr("subs.cycle")} value={cycleLabel(sub.cycle)} />
+        <Row label={tr("subs.billingDay")} value={dayRule} />
+        <Row label={tr("subs.payFrom")} value={accounts.find((a) => a.id === sub.accountId)?.name ?? "—"} />
+        <Row label={tr("common.category")} value={SUB_CATEGORIES.find((c) => c.key === sub.category)?.label ?? "—"} />
       </ListCard>
 
       <ListCard>
-        <SwitchRow label="แจ้งเตือนก่อนตัดบัญชี" hint="ล่วงหน้า 1 วัน" checked={sub.remind} onChange={(remind) => update(sub.id, { remind })} />
-        <SwitchRow label="บันทึกเป็นรายจ่ายอัตโนมัติ" hint="เพิ่มในรายการเมื่อถึงวันตัดบัญชี" checked={sub.autoLog} onChange={(autoLog) => update(sub.id, { autoLog })} />
+        <SwitchRow label={tr("subs.remind")} hint={tr("subs.remindHint")} checked={sub.remind} onChange={(remind) => update(sub.id, { remind })} />
+        <SwitchRow label={tr("subs.autoLog")} hint={tr("subs.autoLogHint")} checked={sub.autoLog} onChange={(autoLog) => update(sub.id, { autoLog })} />
       </ListCard>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-base font-semibold">ประวัติการชำระ</h2>
+        <h2 className="text-base font-semibold">{tr("subs.history")}</h2>
         {history.length ? (
           <ListCard>
             {history.map((d) => (
@@ -81,19 +88,19 @@ export default function SubscriptionDetailPage() {
             ))}
           </ListCard>
         ) : (
-          <Empty>ยังไม่ถึงรอบตัดบัญชีแรก</Empty>
+          <Empty>{tr("subs.noHistory")}</Empty>
         )}
       </section>
 
       <div className="mt-auto grid grid-cols-2 gap-2">
-        <SecondaryButton onClick={() => update(sub.id, { paused: !sub.paused })}>{sub.paused ? "ใช้งานต่อ" : "หยุดชั่วคราว"}</SecondaryButton>
+        <SecondaryButton onClick={() => update(sub.id, { paused: !sub.paused })}>{sub.paused ? tr("subs.resume") : tr("subs.pause")}</SecondaryButton>
         <SecondaryButton tone="danger" onClick={() => setConfirm(true)}>
-          ยกเลิกการสมัคร
+          {tr("subs.cancel")}
         </SecondaryButton>
       </div>
 
-      <Sheet open={confirm} onClose={() => setConfirm(false)} title={`ยกเลิก ${sub.name}?`}>
-        <p className="text-sm text-muted">ลบ subscription นี้ออกจากรายการ รายจ่ายที่บันทึกไปแล้วยังอยู่ในประวัติ</p>
+      <Sheet open={confirm} onClose={() => setConfirm(false)} title={tr("subs.cancelTitle", { name: sub.name })}>
+        <p className="text-sm text-muted">{tr("subs.cancelLead")}</p>
         <PrimaryButton
           once
           tone="danger"
@@ -102,9 +109,9 @@ export default function SubscriptionDetailPage() {
             router.replace("/subscriptions");
           }}
         >
-          ยกเลิกการสมัคร
+          {tr("subs.cancel")}
         </PrimaryButton>
-        <SecondaryButton onClick={() => setConfirm(false)}>เก็บไว้</SecondaryButton>
+        <SecondaryButton onClick={() => setConfirm(false)}>{tr("subs.keep")}</SecondaryButton>
       </Sheet>
     </PushScreen>
   );

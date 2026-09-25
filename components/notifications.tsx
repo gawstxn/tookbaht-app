@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useSyncExternalStore } from "react";
 import { todayISO } from "@/lib/format";
 import { buildNotifications, isUnread, type NotifKind } from "@/lib/notifications";
+import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
 import { Icon, type IconName } from "./ui/Icon";
 
@@ -38,11 +39,12 @@ export const NOTIF_STYLE: Record<NotifKind, { icon: IconName; bg: string; fg: st
 /** Header bell with an unread badge. */
 export function NotificationBell() {
   const { unread } = useNotifications();
+  const { t: tr } = useTranslation();
   const n = unread.length;
   return (
     <Link
       href="/notifications"
-      aria-label={n ? `การแจ้งเตือน ยังไม่อ่าน ${n} รายการ` : "การแจ้งเตือน"}
+      aria-label={n ? tr("notif.unreadCount", { count: n }) : tr("notif.title")}
       className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line bg-card"
     >
       <Icon name="bell" size={20} strokeWidth={2} />

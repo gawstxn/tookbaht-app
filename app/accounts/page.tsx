@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { AccountMark, PushScreen } from "@/components/app";
 import { AccountEditSheet } from "@/components/AccountEditSheet";
@@ -9,9 +10,9 @@ import { baht } from "@/lib/format";
 import { accountBalance } from "@/lib/selectors";
 import { useStore } from "@/lib/store";
 
-const KIND_LABEL = { bank: "ธนาคาร", saving: "บัญชีออม", credit: "บัตรเครดิต", cash: "เงินสด" } as const;
 
 export default function AccountsPage() {
+  const { t } = useTranslation();
   const { accounts, transactions, addAccount, updateAccount, removeAccount } = useStore();
   // "" = closed, "new" = adding, otherwise the account id being edited.
   const [editing, setEditing] = useState("");
@@ -19,7 +20,7 @@ export default function AccountsPage() {
 
   return (
     <PushScreen>
-      <PushHeader title="บัญชีของฉัน" backHref="/profile" action={<IconButton icon="plus" label="เพิ่มบัญชี" onClick={() => setEditing("new")} />} />
+      <PushHeader title={t("accounts.title")} backHref="/profile" action={<IconButton icon="plus" label={t("accounts.add")} onClick={() => setEditing("new")} />} />
 
       <ListCard>
         {accounts.map((a) => (
@@ -27,17 +28,17 @@ export default function AccountsPage() {
             <AccountMark account={a} size={38} />
             <span className="flex min-w-0 grow flex-col">
               <span className="truncate text-[15px] font-medium">{a.name}</span>
-              <span className="text-xs text-muted">{KIND_LABEL[a.kind]}</span>
+              <span className="text-xs text-muted">{t(a.kind === "saving" ? "kind.savingLong" : `kind.${a.kind}`)}</span>
             </span>
             <span className="font-mono text-sm font-semibold">
-              {a.kind === "credit" ? "วงเงิน " : ""}
+              {a.kind === "credit" ? `${t("balance.limit")} ` : ""}
               {baht(accountBalance(a, transactions))}
             </span>
             <Icon name="chevronRight" size={16} strokeWidth={2} className="text-faint" />
           </button>
         ))}
       </ListCard>
-      <p className="text-center text-xs text-muted">ลบได้เฉพาะบัญชีที่ยังไม่มีรายการหรือ subscription</p>
+      <p className="text-center text-xs text-muted">{t("accounts.deleteHint")}</p>
 
       <AccountEditSheet
         open={editing !== ""}

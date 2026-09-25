@@ -1,7 +1,9 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { applyLang, preferredLang } from "@/lib/i18n";
 import { getSupabase } from "@/lib/supabase/client";
 import { useStore, type Toast } from "@/lib/store";
 import { Icon } from "./ui/Icon";
@@ -22,6 +24,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const noData = NO_DATA_PATHS.some((p) => pathname.startsWith(p));
   const onOnboarding = pathname === "/onboarding";
+  const { i18n } = useTranslation();
+
+  // Pages prerender in Thai; switch to the saved/device language once in the browser.
+  useEffect(() => {
+    applyLang(preferredLang());
+  }, []);
 
   useEffect(() => {
     const sb = getSupabase();
@@ -58,22 +66,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="relative mx-auto min-h-dvh w-full max-w-[430px] bg-paper">
-      {content}
+      {/* Remount on language change so memoised labels recompute. */}
+      <Fragment key={i18n.language}>{content}</Fragment>
       <ToastHost />
     </div>
   );
 }
 
 function LoadError() {
+  const { t } = useTranslation();
   const retry = () => {
     const { userId, load } = useStore.getState();
     if (userId) void load(userId);
   };
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
-      <h1 className="font-serif text-xl font-bold">โหลดข้อมูลไม่สำเร็จ</h1>
-      <p className="text-sm text-muted">ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต แล้วลองอีกครั้ง</p>
-      <PrimaryButton onClick={retry}>ลองอีกครั้ง</PrimaryButton>
+      <h1 className="font-serif text-xl font-bold">{t("shell.loadFailed")}</h1>
+      <p className="text-sm text-muted">{t("shell.checkConnection")}</p>
+      <PrimaryButton onClick={retry}>{t("common.retry")}</PrimaryButton>
     </main>
   );
 }

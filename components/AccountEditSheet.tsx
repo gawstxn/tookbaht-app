@@ -3,17 +3,15 @@
 import { useState } from "react";
 import { AccountMark } from "@/components/app";
 import { Card, PrimaryButton, Segmented, SecondaryButton, Sheet, cx } from "@/components/ui/primitives";
+import { useTranslation } from "react-i18next";
 import { MONO_TONES } from "@/lib/constants";
+import { t } from "@/lib/i18n";
 import type { Account, AccountKind } from "@/lib/types";
 
 export type AccountDraft = Omit<Account, "id">;
 
-export const KIND_OPTIONS: { value: AccountKind; label: string }[] = [
-  { value: "bank", label: "ธนาคาร" },
-  { value: "saving", label: "ออม" },
-  { value: "credit", label: "บัตรเครดิต" },
-  { value: "cash", label: "เงินสด" },
-];
+const KINDS: AccountKind[] = ["bank", "saving", "credit", "cash"];
+export const kindOptions = () => KINDS.map((value) => ({ value, label: t(`kind.${value}`) }));
 
 /** First letter for the monogram, skipping Thai leading vowels (เ แ โ ใ ไ). */
 export function monoFor(name: string): string {
@@ -22,7 +20,7 @@ export function monoFor(name: string): string {
 }
 
 export function balanceLabel(kind: AccountKind) {
-  return kind === "credit" ? "วงเงิน" : "ยอดเริ่มต้น";
+  return t(kind === "credit" ? "balance.limit" : "balance.opening");
 }
 
 /** Bottom sheet to add or edit an account. */
@@ -40,7 +38,7 @@ export function AccountEditSheet({
   onDelete?: () => void;
 }) {
   return (
-    <Sheet open={open} onClose={onClose} title={initial ? "แก้ไขบัญชี" : "เพิ่มบัญชี"}>
+    <Sheet open={open} onClose={onClose} title={t(initial ? "accounts.edit" : "accounts.add")}>
       {/* Remount per open so the form starts from `initial`. */}
       {open ? <AccountFields initial={initial} onSave={onSave} onDelete={onDelete} /> : null}
     </Sheet>
@@ -53,6 +51,7 @@ function AccountFields({ initial, onSave, onDelete }: { initial?: AccountDraft; 
   const [balanceText, setBalanceText] = useState(initial ? String(initial.openingBalance) : "");
   const [tone, setTone] = useState(initial?.tone ?? MONO_TONES[0]);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const { t: tr } = useTranslation();
   const canSave = name.trim().length > 0;
 
   return (
@@ -61,20 +60,20 @@ function AccountFields({ initial, onSave, onDelete }: { initial?: AccountDraft; 
         <AccountMark account={{ kind, tone }} size={48} />
         <div className="flex min-w-0 grow flex-col gap-0.5">
           <label htmlFor="accname" className="text-xs text-muted">
-            ชื่อบัญชี
+            {tr("accounts.name")}
           </label>
           <input
             id="accname"
             value={name}
             maxLength={60}
             onChange={(e) => setName(e.target.value)}
-            placeholder="เช่น บัญชีเงินเดือน, เงินสด"
+            placeholder={tr("accounts.namePlaceholder")}
             className="min-h-9 w-full border-b border-[#d0cbbf] bg-transparent pb-1 font-serif text-[20px] font-bold outline-none"
           />
         </div>
       </div>
 
-      <Segmented<AccountKind> size="sm" label="ประเภทบัญชี" value={kind} onChange={setKind} options={KIND_OPTIONS} />
+      <Segmented<AccountKind> size="sm" label={tr("accounts.kind")} value={kind} onChange={setKind} options={kindOptions()} />
 
       <Card className="px-4 py-3">
         <label className="flex items-baseline gap-2">
@@ -92,14 +91,14 @@ function AccountFields({ initial, onSave, onDelete }: { initial?: AccountDraft; 
         </label>
       </Card>
 
-      <div role="radiogroup" aria-label="สีบัญชี" className="flex gap-2.5">
+      <div role="radiogroup" aria-label={tr("accounts.color")} className="flex gap-2.5">
         {MONO_TONES.map((t) => (
           <button
             key={t}
             type="button"
             role="radio"
             aria-checked={t === tone}
-            aria-label={`สี ${t}`}
+            aria-label={tr("accounts.colorN", { color: t })}
             onClick={() => setTone(t)}
             className={cx("h-9 w-9 rounded-full border-2", t === tone ? "border-ink" : "border-transparent")}
             style={{ background: t, boxShadow: "inset 0 0 0 3px var(--color-paper)" }}
@@ -112,15 +111,15 @@ function AccountFields({ initial, onSave, onDelete }: { initial?: AccountDraft; 
         disabled={!canSave}
         onClick={() => onSave({ name: name.trim(), kind, openingBalance: parseFloat(balanceText) || 0, mono: monoFor(name), tone })}
       >
-        บันทึก
+        {tr("common.save")}
       </PrimaryButton>
       {onDelete ? (
         confirmDelete ? (
           <SecondaryButton tone="danger" onClick={onDelete}>
-            ยืนยันลบบัญชีนี้
+            {tr("accounts.confirmDelete")}
           </SecondaryButton>
         ) : (
-          <SecondaryButton onClick={() => setConfirmDelete(true)}>ลบบัญชี</SecondaryButton>
+          <SecondaryButton onClick={() => setConfirmDelete(true)}>{tr("accounts.delete")}</SecondaryButton>
         )
       ) : null}
     </>

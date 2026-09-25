@@ -1,5 +1,6 @@
 import { categoryLabel } from "./constants";
 import { baht } from "./format";
+import { t } from "./i18n";
 import { daysLeftInMonth, spendByCategory, summarize } from "./selectors";
 import type { Goals, Transaction } from "./types";
 
@@ -19,7 +20,7 @@ export function budgetLines(goals: Goals, monthTxs: Transaction[]) {
     .map(([key, budget]) => ({ key, label: categoryLabel(key), budget, spent: spent[key] ?? 0, pct: (spent[key] ?? 0) / budget }));
   const expense = summarize(monthTxs).expense;
   const total: BudgetLine | null = goals.expenseBudget > 0
-    ? { key: "total", label: "งบรวม", budget: goals.expenseBudget, spent: expense, pct: expense / goals.expenseBudget }
+    ? { key: "total", label: t("cat.total"), budget: goals.expenseBudget, spent: expense, pct: expense / goals.expenseBudget }
     : null;
   return { cats, total };
 }
@@ -45,7 +46,7 @@ const pct = (l: BudgetLine) => `${Math.round(l.pct * 100)}%`;
 export function budgetBanner(goals: Goals, monthTxs: Transaction[], month: string, today: string): BudgetBanner {
   const { cats, total } = budgetLines(goals, monthTxs);
   if (!total && !cats.length) {
-    return { tone: "setup", title: "ตั้งงบรายเดือน", detail: "รู้ทันทีเมื่อใช้ใกล้เกินงบ" };
+    return { tone: "setup", title: t("banner.setupTitle"), detail: t("banner.setupDetail") };
   }
   const over = cats.filter((c) => c.spent > c.budget).sort((a, b) => b.spent - b.budget - (a.spent - a.budget));
   const near = cats.filter((c) => c.pct >= 0.8 && c.spent <= c.budget).sort((a, b) => b.pct - a.pct);
@@ -54,9 +55,9 @@ export function budgetBanner(goals: Goals, monthTxs: Transaction[], month: strin
   if (total && total.spent > total.budget) {
     return {
       tone: "critical",
-      title: "เกินงบรวมแล้ว",
+      title: t("banner.totalOver"),
       amount: baht(total.spent - total.budget),
-      detail: over.length ? `เกินใน ${over.length} หมวด · ${over[0].label}เกินมากสุด` : "ดูงบทุกหมวด",
+      detail: over.length ? t("banner.overIn", { count: over.length, label: over[0].label }) : t("banner.seeAllBudgets"),
       count: over.length || undefined,
     };
   }
@@ -64,9 +65,9 @@ export function budgetBanner(goals: Goals, monthTxs: Transaction[], month: strin
     const shown = over.slice(0, 2).map((c) => `${c.label} ${baht(c.spent - c.budget)}`);
     return {
       tone: "danger",
-      title: `เกินงบ ${over.length} หมวด`,
+      title: t("banner.severalOver", { count: over.length }),
       amount: baht(over.reduce((a, c) => a + c.spent - c.budget, 0)),
-      detail: [...shown, ...(over.length > 2 ? [`+${over.length - 2} หมวด`] : [])].join(" · "),
+      detail: [...shown, ...(over.length > 2 ? [t("banner.moreCats", { count: over.length - 2 })] : [])].join(" · "),
       count: over.length,
     };
   }
@@ -74,14 +75,14 @@ export function budgetBanner(goals: Goals, monthTxs: Transaction[], month: strin
     const c = over[0];
     return {
       tone: "danger",
-      title: `งบ${c.label}เกินแล้ว`,
+      title: t("banner.oneOver", { label: c.label }),
       amount: baht(c.spent - c.budget),
       detail:
         near.length >= 2
-          ? `ใกล้เต็มอีก ${near.length} หมวด · ดูทั้งหมด`
+          ? t("banner.nearMore", { count: near.length })
           : near.length === 1
-            ? `${near[0].label}ใช้ไป ${pct(near[0])} · ดูงบทุกหมวด`
-            : "ดูงบทุกหมวด",
+            ? t("banner.nearOne", { label: near[0].label, pct: pct(near[0]) })
+            : t("banner.seeAllBudgets"),
       count: near.length >= 2 ? 1 + near.length : undefined,
     };
   }
@@ -89,8 +90,8 @@ export function budgetBanner(goals: Goals, monthTxs: Transaction[], month: strin
     const shown = near.slice(0, 2).map((c) => `${c.label} ${pct(c)}`);
     return {
       tone: "warn",
-      title: `ใกล้เต็ม ${near.length} หมวด`,
-      detail: [...shown, ...(near.length > 2 ? [`+${near.length - 2} หมวด`] : [])].join(" · "),
+      title: t("banner.severalNear", { count: near.length }),
+      detail: [...shown, ...(near.length > 2 ? [t("banner.moreCats", { count: near.length - 2 })] : [])].join(" · "),
       count: near.length,
     };
   }
@@ -98,14 +99,14 @@ export function budgetBanner(goals: Goals, monthTxs: Transaction[], month: strin
     const c = near[0];
     return {
       tone: "warn",
-      title: `${c.label}ใช้ไป ${pct(c)} ของงบ`,
-      detail: `เหลือ ${baht(c.budget - c.spent)}${daysLeft ? ` อีก ${daysLeft} วัน` : ""} · ดูงบทุกหมวด`,
+      title: t("banner.oneNear", { label: c.label, pct: pct(c) }),
+      detail: `${t("banner.leftFor", { amount: baht(c.budget - c.spent) })}${daysLeft ? t("banner.daysMore", { count: daysLeft }) : ""} · ${t("banner.seeAllBudgets")}`,
     };
   }
   const room = total ? total.budget - total.spent : 0;
   return {
     tone: "ok",
-    title: "ใช้จ่ายตามแผน",
-    detail: total && daysLeft ? `ใช้ได้อีก ≈ ${baht(room / (daysLeft + 1))}/วัน จนสิ้นเดือน` : "ดูงบทุกหมวด",
+    title: t("banner.onPlan"),
+    detail: total && daysLeft ? t("banner.perDayLeft", { amount: baht(room / (daysLeft + 1)) }) : t("banner.seeAllBudgets"),
   };
 }
