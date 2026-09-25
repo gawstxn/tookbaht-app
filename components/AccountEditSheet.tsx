@@ -30,22 +30,25 @@ export function AccountEditSheet({
   initial,
   onSave,
   onDelete,
+  onReconcile,
 }: {
   open: boolean;
   onClose: () => void;
   initial?: AccountDraft;
   onSave: (a: AccountDraft) => void;
   onDelete?: () => void;
+  /** Existing accounts: open the "match the real balance" sheet. */
+  onReconcile?: () => void;
 }) {
   return (
     <Sheet open={open} onClose={onClose} title={t(initial ? "accounts.edit" : "accounts.add")}>
       {/* Remount per open so the form starts from `initial`. */}
-      {open ? <AccountFields initial={initial} onSave={onSave} onDelete={onDelete} /> : null}
+      {open ? <AccountFields initial={initial} onSave={onSave} onDelete={onDelete} onReconcile={onReconcile} /> : null}
     </Sheet>
   );
 }
 
-function AccountFields({ initial, onSave, onDelete }: { initial?: AccountDraft; onSave: (a: AccountDraft) => void; onDelete?: () => void }) {
+function AccountFields({ initial, onSave, onDelete, onReconcile }: { initial?: AccountDraft; onSave: (a: AccountDraft) => void; onDelete?: () => void; onReconcile?: () => void }) {
   const [name, setName] = useState(initial?.name ?? "");
   const [kind, setKind] = useState<AccountKind>(initial?.kind ?? "bank");
   const [balanceText, setBalanceText] = useState(initial ? String(initial.openingBalance) : "");
@@ -140,6 +143,7 @@ function AccountFields({ initial, onSave, onDelete }: { initial?: AccountDraft; 
       >
         {tr("common.save")}
       </PrimaryButton>
+      {onReconcile ? <SecondaryButton onClick={onReconcile}>{tr("accounts.reconcile")}</SecondaryButton> : null}
       {onDelete ? (
         confirmDelete ? (
           <SecondaryButton tone="danger" onClick={onDelete}>

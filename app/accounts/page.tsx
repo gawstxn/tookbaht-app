@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { AccountMark, PushScreen } from "@/components/app";
 import { AccountEditSheet } from "@/components/AccountEditSheet";
+import { ReconcileSheet } from "@/components/ReconcileSheet";
 import { Icon } from "@/components/ui/Icon";
 import { IconButton, ListCard, PushHeader } from "@/components/ui/primitives";
 import { baht } from "@/lib/format";
@@ -17,6 +18,7 @@ export default function AccountsPage() {
   // "" = closed, "new" = adding, otherwise the account id being edited.
   const [editing, setEditing] = useState("");
   const current = accounts.find((a) => a.id === editing);
+  const [reconciling, setReconciling] = useState("");
 
   return (
     <PushScreen>
@@ -49,6 +51,14 @@ export default function AccountsPage() {
           else addAccount(a);
           setEditing("");
         }}
+        onReconcile={
+          current
+            ? () => {
+                setEditing("");
+                setReconciling(current.id);
+              }
+            : undefined
+        }
         onDelete={
           current
             ? () => {
@@ -58,6 +68,7 @@ export default function AccountsPage() {
             : undefined
         }
       />
+      <ReconcileSheet account={accounts.find((a) => a.id === reconciling)} onClose={() => setReconciling("")} />
     </PushScreen>
   );
 }
