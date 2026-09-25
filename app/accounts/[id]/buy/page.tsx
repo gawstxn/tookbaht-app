@@ -9,6 +9,7 @@ import { Card, Chip, Empty, ListCard, PickerRow, PrimaryButton, PushHeader } fro
 import { EXPENSE_CATEGORIES, MONO_TONES, categoryLabel } from "@/lib/constants";
 import { addDays, baht2, diffDays, shortDate, stepCycle, todayISO } from "@/lib/format";
 import { accountDue, creditSummary, planInterest } from "@/lib/selectors";
+import { useGoBack } from "@/lib/nav";
 import { useStore } from "@/lib/store";
 
 const MONTH_CHOICES = [3, 6, 10, 12];
@@ -18,6 +19,7 @@ const money = (s: string) => s.replace(/[^0-9.]/g, "");
 export default function BuyInInstallmentsPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const goBack = useGoBack(`/accounts/${id}`);
   const { t } = useTranslation();
   const account = useStore((s) => s.accounts.find((a) => a.id === id));
   const transactions = useStore((s) => s.transactions);
@@ -62,7 +64,7 @@ export default function BuyInInstallmentsPage() {
 
   return (
     <PushScreen className="gap-3.5">
-      <PushHeader title={t("pay.buy")} backIcon="close" onBack={() => router.back()} />
+      <PushHeader title={t("pay.buy")} backIcon="close" onBack={() => goBack()} />
       <p className="-mt-2 text-center text-[13px] text-muted">{account.name}</p>
 
       <Card className="flex flex-col gap-3 px-4 py-3.5">
