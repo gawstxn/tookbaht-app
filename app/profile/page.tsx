@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { TabScreen } from "@/components/app";
 import { Icon } from "@/components/ui/Icon";
 import { PushToggle } from "@/components/PushToggle";
@@ -9,14 +9,18 @@ import { useTranslation } from "react-i18next";
 import { ListCard, PrimaryButton, SecondaryButton, Segmented, Sheet, TabHeader, cx } from "@/components/ui/primitives";
 import { currentLang, type Lang } from "@/lib/i18n";
 import { setThemePref, themePref, type ThemePref } from "@/lib/theme";
+import { BackupError, backupFileName, makeBackup, parseBackup, type BackupData } from "@/lib/backup";
 import { TYPE_META, categoryLabel } from "@/lib/constants";
+import { replaceAllData } from "@/lib/legacyImport";
 import { useStore } from "@/lib/store";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, accounts, transactions, signOut, deleteAccount, setLanguage } = useStore();
+  const { user, userId, accounts, transactions, subscriptions, goals, settings, signOut, deleteAccount, setLanguage, load, notify } = useStore();
   const { t: tr } = useTranslation();
-  const [sheet, setSheet] = useState<"" | "logout" | "delete">("");
+  const [sheet, setSheet] = useState<"" | "logout" | "delete" | "restore">("");
+  const [restoring, setRestoring] = useState<BackupData | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [theme, setTheme] = useState<ThemePref>(themePref);
@@ -32,12 +36,46 @@ export default function ProfilePage() {
     // Prefix cells that spreadsheets would run as formulas (CSV injection).
     const cell = (c: string) => `"${(/^[=+\-@\t\r]/.test(c) ? "'" + c : c).replace(/"/g, '""')}"`;
     const csv = "﻿" + rows.map((r) => r.map(cell).join(",")).join("\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `tookbaht-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    download(new Blob([csv], { type: "text/csv;charset=utf-8" }), `tookbaht-${new Date().toISOString().slice(0, 10)}.csv`);
+  };
+
+  const exportBackup = () => {
+    const file = makeBackup({ accounts, transactions, subscriptions, goals, settings });
+    download(new Blob([JSON.stringify(file, null, 1)], { type: "application/json" }), backupFileName());
+  };
+
+  const pickBackup = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      setRestoring(parseBackup(await file.text()));
+      setConfirmed(false);
+      setSheet("restore");
+    } catch (e) {
+      const problem = e instanceof BackupError ? e.problem : "json";
+      notify(tr(`profile.file${problem[0].toUpperCase()}${problem.slice(1)}`), { tone: "error" });
+    }
+  };
+
+  const restore = async () => {
+    if (!userId || !restoring) return;
+    setBusy(true);
+    try {
+      // Keep this device's consent record; the backup may predate the current terms.
+      const keep = { termsAcceptedVersion: settings.termsAcceptedVersion, termsAcceptedAt: settings.termsAcceptedAt };
+      await replaceAllData(
+        userId,
+        { ...restoring, settings: restoring.settings ? { ...restoring.settings, ...keep } : undefined },
+        { accounts: accounts.map((a) => a.id), transactions: transactions.map((t) => t.id), subscriptions: subscriptions.map((s) => s.id) },
+      );
+      await load(userId);
+      notify(tr("profile.restored"));
+    } catch (e) {
+      console.error(e);
+      await load(userId);
+      notify(tr("profile.restoreFailed"), { tone: "error" });
+    }
+    setBusy(false);
+    setSheet("");
   };
 
   return (
@@ -64,7 +102,19 @@ export default function ProfilePage() {
         <NavRow label={tr("profile.myAccounts")} value={tr("common.accounts", { count: accounts.length })} onClick={() => router.push("/accounts")} />
         <NavRow label={tr("profile.currency")} value={tr("profile.currencyValue")} />
         <NavRow label={tr("profile.export")} value="CSV" icon="download" onClick={exportCsv} />
+        <NavRow label={tr("profile.backup")} value="JSON" icon="download" onClick={exportBackup} />
+        <NavRow label={tr("profile.restore")} onClick={() => fileInput.current?.click()} />
       </Group>
+      <input
+        ref={fileInput}
+        type="file"
+        accept="application/json,.json"
+        hidden
+        onChange={(e) => {
+          void pickBackup(e.target.files?.[0]);
+          e.target.value = "";
+        }}
+      />
 
       <Group title={tr("lang.title")}>
         <div className="py-3">
@@ -144,6 +194,23 @@ export default function ProfilePage() {
         <SecondaryButton onClick={() => setSheet("")}>{tr("common.cancel")}</SecondaryButton>
       </Sheet>
 
+      <Sheet open={sheet === "restore"} onClose={() => !busy && setSheet("")} title={tr("profile.restoreTitle")}>
+        {restoring ? (
+          <p className="text-sm text-muted">
+            {tr("profile.restoreLead", { accounts: restoring.accounts.length, transactions: restoring.transactions.length, subs: restoring.subscriptions.length })}
+          </p>
+        ) : null}
+        <p className="text-sm font-semibold text-danger">{tr("profile.restoreWarn")}</p>
+        <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-[14px] border border-line bg-card px-3.5 text-sm">
+          <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} className="h-5 w-5 accent-ink" />
+          {tr("profile.restoreConfirm")}
+        </label>
+        <PrimaryButton disabled={!confirmed || busy} onClick={restore}>
+          {busy ? tr("profile.restoring") : tr("profile.restore")}
+        </PrimaryButton>
+        <SecondaryButton onClick={() => !busy && setSheet("")}>{tr("common.cancel")}</SecondaryButton>
+      </Sheet>
+
       <Sheet open={sheet === "delete"} onClose={() => setSheet("")} title={tr("profile.deleteTitle")} titleClassName="text-danger">
         <p className="text-sm text-muted">{tr("profile.deleteLead")}</p>
         <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-[14px] border border-line bg-card px-3.5 text-sm">
@@ -165,6 +232,16 @@ export default function ProfilePage() {
       </Sheet>
     </TabScreen>
   );
+}
+
+/** Save a file from the browser (the share sheet on iOS). */
+function download(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function Group({ title, children }: { title: string; children: React.ReactNode }) {

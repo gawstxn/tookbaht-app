@@ -113,3 +113,20 @@ export async function importData(userId: string, data: LegacyData): Promise<void
     throw e;
   }
 }
+
+/**
+ * Restore a backup in place of the user's current data. The backup goes in
+ * first (importData rolls itself back on failure); the old rows are removed
+ * only once it is safely stored, so a failed restore loses nothing.
+ */
+export async function replaceAllData(userId: string, data: LegacyData, current: { accounts: string[]; transactions: string[]; subscriptions: string[] }): Promise<void> {
+  await importData(userId, data);
+  const sb = getSupabase();
+  // Transactions reference subscriptions and accounts, so they go first.
+  for (const [table, ids] of [["transactions", current.transactions], ["subscriptions", current.subscriptions], ["accounts", current.accounts]] as const) {
+    for (let i = 0; i < ids.length; i += CHUNK) {
+      const { error } = await sb.from(table).delete().in("id", ids.slice(i, i + CHUNK));
+      if (error) throw error;
+    }
+  }
+}

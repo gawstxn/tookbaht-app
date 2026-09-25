@@ -4,8 +4,10 @@ import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import { balanceLabel, monoFor } from "@/components/AccountEditSheet";
 import { AccountMark } from "@/components/app";
+import { MoneyField } from "@/components/MoneyField";
 import { TermsCheckbox } from "@/components/TermsConsent";
-import { Card, ListCard, PrimaryButton, SecondaryButton } from "@/components/ui/primitives";
+import { Card, Chip, ListCard, PrimaryButton, SecondaryButton } from "@/components/ui/primitives";
+import { baht } from "@/lib/format";
 import { dismissLegacyData, importData, importLegacyData, readLegacyData } from "@/lib/legacyImport";
 import { seedData } from "@/lib/seed";
 import { useTranslation } from "react-i18next";
@@ -33,10 +35,15 @@ const noop = () => () => {};
 let legacyCache: ReturnType<typeof readLegacyData> | undefined;
 const getLegacy = () => (legacyCache === undefined ? (legacyCache = readLegacyData()) : legacyCache);
 
-/** First run: pick starter accounts, or bring over data from the device-only version. */
+/** Suggested spending budgets, as a share of income. */
+const BUDGET_SHARES = [70, 80, 90];
+
+/** First run: pick starter accounts, then monthly goals (skippable), or bring over data from the device-only version. */
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user, userId, addAccount, load, acceptTerms } = useStore();
+  const { user, userId, accounts, addAccount, load, acceptTerms } = useStore();
+  // Accounts already exist when the page is reopened after step 1.
+  const [step, setStep] = useState<"accounts" | "goals">(() => (accounts.length ? "goals" : "accounts"));
   const [agreed, setAgreed] = useState(false);
   const { t: tr } = useTranslation();
   const legacy = useSyncExternalStore(noop, getLegacy, () => null);
@@ -53,9 +60,9 @@ export default function OnboardingPage() {
     for (const s of chosen) {
       addAccount({ name: s.name.trim(), kind: s.kind, openingBalance: parseFloat(s.balance) || 0, mono: monoFor(s.name), tone: s.tone, fxFeePct: 0 });
     }
-    // One message for the whole setup instead of one per account.
-    useStore.getState().notify(tr("onboarding.ready", { count: chosen.length }));
-    router.replace("/");
+    // The per-account toasts would sit over step 2; one "ready" message comes at the end.
+    useStore.getState().dismissToast();
+    setStep("goals");
   };
 
   const runImport = async (sample = false) => {
@@ -109,9 +116,11 @@ export default function OnboardingPage() {
     );
   }
 
+  if (step === "goals") return <GoalsStep name={user?.name} accountCount={accounts.length} />;
+
   return (
     <main className="flex min-h-dvh flex-col gap-5 px-6 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[calc(40px+env(safe-area-inset-top)+var(--standalone-top,0px))]">
-      <Heading name={user?.name} />
+      <Heading name={user?.name} step={1} />
       <section className="flex flex-col gap-2">
         <h2 className="text-base font-semibold">{tr("onboarding.pick")}</h2>
         <p className="text-sm text-muted">{tr("onboarding.pickLead")}</p>
@@ -167,12 +176,89 @@ export default function OnboardingPage() {
   );
 }
 
-function Heading({ name }: { name?: string }) {
+/** Step 2: monthly income target and spending budget, which drive the budget banner and alerts. */
+function GoalsStep({ name, accountCount }: { name?: string; accountCount: number }) {
+  const router = useRouter();
+  const { t: tr } = useTranslation();
+  const goals = useStore((s) => s.goals);
+  const setGoals = useStore((s) => s.setGoals);
+  const [income, setIncome] = useState(goals.incomeTarget);
+  const [expense, setExpense] = useState(goals.expenseBudget);
+  const finish = (save: boolean) => {
+    if (save) setGoals({ ...goals, incomeTarget: income, expenseBudget: expense });
+    // One message for the whole setup.
+    useStore.getState().notify(tr("onboarding.ready", { count: accountCount }));
+    router.replace("/");
+  };
+  const left = income - expense;
+
+  return (
+    <main className="flex min-h-dvh flex-col gap-5 px-6 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[calc(40px+env(safe-area-inset-top)+var(--standalone-top,0px))]">
+      <Heading
+        name={name}
+        step={2}
+        action={
+          <button type="button" onClick={() => finish(false)} className="min-h-9 rounded-full px-1 text-sm font-semibold text-muted">
+            {tr("onboarding.skipGoals")}
+          </button>
+        }
+      />
+      <section className="flex flex-col gap-2">
+        <h2 className="text-base font-semibold">{tr("onboarding.goalsTitle")}</h2>
+        <p className="text-sm text-muted">{tr("onboarding.goalsLead")}</p>
+      </section>
+      <div className="grid grid-cols-2 gap-2.5">
+        <MoneyField label={tr("goals.incomePerMonth")} icon="in" color="var(--color-income)" value={income} onChange={setIncome} />
+        <MoneyField label={tr("goals.expensePerMonth")} icon="out" color="var(--color-expense)" value={expense} onChange={setExpense} />
+      </div>
+      {income > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {BUDGET_SHARES.map((pct) => {
+            const amount = Math.round((income * pct) / 100 / 100) * 100;
+            return (
+              <Chip key={pct} size="sm" on={expense === amount} onClick={() => setExpense(amount)}>
+                {tr("onboarding.suggest", { pct })} · {baht(amount)}
+              </Chip>
+            );
+          })}
+        </div>
+      ) : null}
+      {income > 0 && expense > 0 ? (
+        <div className="flex items-center gap-2.5 rounded-2xl bg-hero px-4 py-3.5 text-[13px] text-on-hero">
+          <span className="h-2 w-2 shrink-0 rounded-full bg-lime" />
+          <span className="grow">{tr("goals.saving")}</span>
+          <span className="font-mono text-[15px] font-semibold text-lime">
+            {left < 0 ? "−" : ""}
+            {baht(Math.abs(left))} {tr("common.perMonth")}
+          </span>
+        </div>
+      ) : null}
+      <div className="mt-auto flex flex-col gap-2.5">
+        <PrimaryButton once disabled={!income && !expense} onClick={() => finish(true)}>
+          {tr("onboarding.finish")}
+        </PrimaryButton>
+      </div>
+    </main>
+  );
+}
+
+function Heading({ name, step, action }: { name?: string; step?: 1 | 2; action?: React.ReactNode }) {
   const { t: tr } = useTranslation();
   return (
     <header className="flex flex-col gap-1">
-      <span className="text-sm text-muted">{tr("onboarding.welcome")}{name ? ` ${name}` : ""}</span>
+      <div className="flex min-h-9 items-center justify-between gap-3">
+        <span className="text-sm text-muted">{tr("onboarding.welcome")}{name ? ` ${name}` : ""}</span>
+        {action}
+      </div>
       <h1 className="font-serif text-[28px] font-bold leading-tight">{tr("onboarding.title")}</h1>
+      {step ? (
+        <div className="mt-1 flex items-center gap-2" aria-label={tr("onboarding.step", { n: step })}>
+          {[1, 2].map((n) => (
+            <span key={n} aria-hidden="true" className={n <= step ? "h-1.5 w-6 rounded-full bg-ink" : "h-1.5 w-6 rounded-full bg-chip"} />
+          ))}
+          <span className="text-xs text-muted">{tr("onboarding.step", { n: step })}</span>
+        </div>
+      ) : null}
     </header>
   );
 }

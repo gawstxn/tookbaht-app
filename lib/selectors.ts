@@ -87,3 +87,34 @@ export function daysLeftInMonth(key: string, today: string): number {
   if (monthKey(today) !== key) return 0;
   return daysInMonth(y, m - 1) - Number(today.slice(8, 10));
 }
+
+export interface TxFilter {
+  accountId?: string;
+  category?: string;
+  /** Inclusive date range; either end may be open. */
+  from?: string;
+  to?: string;
+}
+
+/** Transactions matching the list filters. A transfer matches an account on either side. */
+export function filterTransactions(txs: Transaction[], f: TxFilter): Transaction[] {
+  return txs.filter(
+    (t) =>
+      (!f.accountId || t.accountId === f.accountId || t.fromId === f.accountId || t.toId === f.accountId) &&
+      (!f.category || t.category === f.category) &&
+      (!f.from || t.date >= f.from) &&
+      (!f.to || t.date <= f.to),
+  );
+}
+
+/**
+ * The entry that brings an account's balance in line with the real one
+ * (for cards: the available credit). Null when it already matches.
+ */
+export function reconcileEntry(account: Account, txs: Transaction[], actual: number, date: string, title: string): Omit<Transaction, "id" | "createdAt"> | null {
+  const diff = Math.round((actual - accountBalance(account, txs)) * 100) / 100;
+  if (diff === 0) return null;
+  return diff > 0
+    ? { type: "in", amount: diff, date, title, category: "other-in", accountId: account.id }
+    : { type: "out", amount: -diff, date, title, category: "other", accountId: account.id };
+}
