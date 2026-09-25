@@ -34,7 +34,7 @@ describe("PIN length", () => {
   it("locks set before the length was stored still check their 4-digit PIN", async () => {
     const { length, ...old } = await makeLock("2468");
     expect(length).toBe(4);
-    expect(old.length).toBeUndefined();
+    expect("length" in old).toBe(false);
     expect(await checkPin(old, "2468")).toBe(true);
   });
 });
