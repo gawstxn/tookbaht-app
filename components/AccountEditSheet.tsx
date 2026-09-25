@@ -50,6 +50,9 @@ function AccountFields({ initial, onSave, onDelete }: { initial?: AccountDraft; 
   const [kind, setKind] = useState<AccountKind>(initial?.kind ?? "bank");
   const [balanceText, setBalanceText] = useState(initial ? String(initial.openingBalance) : "");
   const [tone, setTone] = useState(initial?.tone ?? MONO_TONES[0]);
+  const [feeText, setFeeText] = useState(initial?.fxFeePct ? String(initial.fxFeePct) : "");
+  // Cards and bank accounts can pay foreign (USD) subscriptions.
+  const paysAbroad = kind === "credit" || kind === "bank";
   const [confirmDelete, setConfirmDelete] = useState(false);
   const { t: tr } = useTranslation();
   const canSave = name.trim().length > 0;
@@ -89,6 +92,23 @@ function AccountFields({ initial, onSave, onDelete }: { initial?: AccountDraft; 
             />
           </span>
         </label>
+        {paysAbroad ? (
+          <label className="mt-2 flex items-center gap-2 border-t border-divider pt-2.5">
+            <span className="flex grow flex-col">
+              <span className="text-[13px] text-muted">{tr("accounts.fxFee")}</span>
+              <span className="text-[11px] text-faint">{tr("accounts.fxFeeHint")}</span>
+            </span>
+            <input
+              inputMode="decimal"
+              value={feeText}
+              onChange={(e) => setFeeText(e.target.value.replace(/[^0-9.]/g, "").slice(0, 5))}
+              placeholder="0"
+              aria-label={tr("accounts.fxFee")}
+              className="w-14 bg-transparent text-right font-mono text-[17px] font-semibold outline-none"
+            />
+            <span className="font-mono text-[15px] font-semibold">%</span>
+          </label>
+        ) : null}
       </Card>
 
       <div role="radiogroup" aria-label={tr("accounts.color")} className="flex gap-2.5">
@@ -109,7 +129,14 @@ function AccountFields({ initial, onSave, onDelete }: { initial?: AccountDraft; 
       <PrimaryButton
         once
         disabled={!canSave}
-        onClick={() => onSave({ name: name.trim(), kind, openingBalance: parseFloat(balanceText) || 0, mono: monoFor(name), tone })}
+        onClick={() => onSave({
+            name: name.trim(),
+            kind,
+            openingBalance: parseFloat(balanceText) || 0,
+            mono: monoFor(name),
+            tone,
+            fxFeePct: paysAbroad ? Math.min(10, parseFloat(feeText) || 0) : 0,
+          })}
       >
         {tr("common.save")}
       </PrimaryButton>

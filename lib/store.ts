@@ -6,6 +6,7 @@ import { fetchAll, fromRow, toRow, type TransactionRow } from "./db";
 import { applyLang, currentLang, t, type Lang } from "./i18n";
 import { TERMS_VERSION } from "./legal";
 import { baht, todayISO } from "./format";
+import { impliedFeePct, type UsdRate } from "./fx";
 import { getSupabase } from "./supabase/client";
 import type { Account, Goals, Settings, Subscription, Transaction, User } from "./types";
 
@@ -34,6 +35,8 @@ interface State {
   viewMonth: string;
   /** Feedback for the last change (or failed save). */
   toast: Toast | null;
+  /** Latest THB per USD, for estimating USD subscriptions. */
+  usdRate: UsdRate | null;
 }
 
 interface Actions {
@@ -54,6 +57,10 @@ interface Actions {
   removeAccount: (id: string) => Promise<boolean>;
 
   addTransaction: (t: Omit<Transaction, "id" | "createdAt">) => void;
+  /** Edit a saved transaction. Correcting a USD charge also learns the card's real FX fee. */
+  updateTransaction: (id: string, patch: Partial<Omit<Transaction, "id" | "createdAt">>) => void;
+  /** Make sure a recent USD rate is loaded (fetches one when stored rates are old). */
+  ensureUsdRate: () => Promise<void>;
   deleteTransaction: (id: string) => void;
 
   addSubscription: (s: Omit<Subscription, "id">) => string;
@@ -83,6 +90,7 @@ const initial: State = {
   settings: { faceLock: false },
   viewMonth: todayISO().slice(0, 7),
   toast: null,
+  usdRate: null,
 };
 
 const SAVE_FAILED = () => t("toast.saveFailed");
@@ -137,6 +145,7 @@ export const useStore = create<State & Actions>()((set, get) => {
         if (data.settings.lang) applyLang(data.settings.lang);
         else get().setSettings({ lang: currentLang() });
         await get().runAutoLog();
+        if (data.subscriptions.some((s) => s.currency === "USD")) void get().ensureUsdRate();
       } catch (e) {
         console.error(e);
         if (get().userId === userId) set({ status: "error" });
@@ -200,6 +209,41 @@ export const useStore = create<State & Actions>()((set, get) => {
       const tx: Transaction = { ...input, id: crypto.randomUUID(), createdAt: Date.now() };
       void insertTransaction(tx);
       ok(t("toast.txSaved", { type: tx.type === "move" ? t("type.moveLong") : TYPE_META[tx.type].label, amount: baht(tx.amount) }));
+    },
+    updateTransaction: (id, patch) => {
+      const prev = get().transactions.find((x) => x.id === id);
+      if (!prev) return;
+      set((s) => ({ transactions: s.transactions.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
+      ok(t("toast.saved"));
+      void save(sb().from("transactions").update(toRow.transaction({ ...prev, ...patch })).eq("id", id), () =>
+        set((s) => ({ transactions: s.transactions.map((x) => (x.id === id ? prev : x)) })),
+      ).then((done) => {
+        // A corrected USD charge tells us what the card really adds on top of the rate.
+        const acc = get().accounts.find((a) => a.id === (patch.accountId ?? prev.accountId));
+        if (!done || !acc || !prev.origAmount || !prev.fxRate || patch.amount === undefined || patch.amount === prev.amount) return;
+        const fee = impliedFeePct(patch.amount, prev.origAmount, prev.fxRate);
+        if (Math.abs(fee - acc.fxFeePct) < 0.05) return;
+        const before = acc.fxFeePct;
+        get().updateAccount(acc.id, { fxFeePct: fee });
+        get().notify(t("toast.feeLearned", { name: acc.name, pct: fee }), {
+          action: { label: t("common.undo"), run: () => get().updateAccount(acc.id, { fxFeePct: before }) },
+        });
+      });
+    },
+    ensureUsdRate: async () => {
+      const current = get().usdRate;
+      if (current && Date.now() - Date.parse(current.date) < 40 * 3_600_000) return;
+      try {
+        const res = await fetch("/api/rates");
+        const body = (await res.json()) as { usd: UsdRate | null };
+        if (body.usd) {
+          set({ usdRate: body.usd });
+          // Charges waiting for a rate can be logged now.
+          await get().runAutoLog();
+        }
+      } catch (e) {
+        console.error(e);
+      }
     },
     deleteTransaction: (id) => {
       const prev = get().transactions.find((x) => x.id === id);

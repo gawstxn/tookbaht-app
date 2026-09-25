@@ -1,6 +1,8 @@
 export type TxType = "in" | "out" | "move";
 export type Cycle = "week" | "month" | "year";
 export type AccountKind = "bank" | "saving" | "credit" | "cash";
+/** Price currency of a subscription. Everything else is in baht. */
+export type Currency = "THB" | "USD";
 
 /** Calendar date in local time, formatted YYYY-MM-DD. */
 export type ISODate = string;
@@ -18,6 +20,8 @@ export interface Account {
   openingBalance: number;
   mono: string;
   tone: string;
+  /** Foreign-transaction fee in percent, added to converted charges. */
+  fxFeePct: number;
 }
 
 export interface Transaction {
@@ -36,13 +40,19 @@ export interface Transaction {
   toId?: string;
   /** Set when the entry was logged automatically from a subscription. */
   subscriptionId?: string;
+  /** Foreign charges: the original amount/currency and the THB rate used. */
+  origAmount?: number;
+  origCurrency?: Currency;
+  fxRate?: number;
   createdAt: number;
 }
 
 export interface Subscription {
   id: string;
   name: string;
+  /** Price in `currency` (for USD: what is actually charged, VAT included). */
   amount: number;
+  currency: Currency;
   cycle: Cycle;
   startDate: ISODate;
   accountId: string;

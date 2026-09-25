@@ -12,10 +12,10 @@ export function seedData() {
   };
 
   const accounts: Account[] = [
-    { id: "acc-salary", name: "บัญชีเงินเดือน", kind: "bank", openingBalance: 20000, mono: "ง", tone: "#2f5b45" },
-    { id: "acc-saving", name: "บัญชีออม", kind: "saving", openingBalance: 102000, mono: "อ", tone: "#33558f" },
-    { id: "acc-credit", name: "บัตรเครดิต", kind: "credit", openingBalance: 50000, mono: "ค", tone: "#8a2e22" },
-    { id: "acc-cash", name: "เงินสด", kind: "cash", openingBalance: 2000, mono: "ส", tone: "#5f6259" },
+    { id: "acc-salary", name: "บัญชีเงินเดือน", kind: "bank", openingBalance: 20000, mono: "ง", tone: "#2f5b45", fxFeePct: 0 },
+    { id: "acc-saving", name: "บัญชีออม", kind: "saving", openingBalance: 102000, mono: "อ", tone: "#33558f", fxFeePct: 0 },
+    { id: "acc-credit", name: "บัตรเครดิต", kind: "credit", openingBalance: 50000, mono: "ค", tone: "#8a2e22", fxFeePct: 2.5 },
+    { id: "acc-cash", name: "เงินสด", kind: "cash", openingBalance: 2000, mono: "ส", tone: "#5f6259", fxFeePct: 0 },
   ];
 
   const tx = (p: Omit<Transaction, "id" | "createdAt">): Transaction => ({ ...p, id: uid(), createdAt: Date.now() });
@@ -35,12 +35,13 @@ export function seedData() {
 
   const sub = (p: Omit<Subscription, "id">): Subscription => ({ ...p, id: uid() });
   const subscriptions: Subscription[] = [
-    sub({ name: "Spotify", amount: 149, cycle: "month", startDate: addDays(today, 4 - 60), accountId: "acc-credit", category: "music", remind: true, autoLog: true, paused: false, tone: "#2f5b45" }),
-    sub({ name: "iCloud+", amount: 35, cycle: "month", startDate: addDays(today, 7 - 90), accountId: "acc-credit", category: "cloud", remind: true, autoLog: true, paused: false, tone: "#33558f" }),
-    sub({ name: "Netflix", amount: 419, cycle: "month", startDate: addDays(today, 9 - 120), accountId: "acc-credit", category: "fun", remind: true, autoLog: true, paused: false, tone: "#8a2e22" }),
-    sub({ name: "YouTube Premium", amount: 179, cycle: "month", startDate: addDays(today, 14 - 60), accountId: "acc-salary", category: "fun", remind: false, autoLog: true, paused: false, tone: "#6e3a1c" }),
-    sub({ name: "สมาชิกฟิตเนส", amount: 1290, cycle: "month", startDate: addDays(today, 21 - 180), accountId: "acc-salary", category: "fit", remind: true, autoLog: true, paused: false, tone: "#1c1e1b" }),
-    sub({ name: "Google One", amount: 700, cycle: "year", startDate: addDays(today, 110 - 365), accountId: "acc-credit", category: "cloud", remind: true, autoLog: false, paused: false, tone: "#5b4a7a" }),
+    sub({ name: "Spotify", amount: 149, currency: "THB", cycle: "month", startDate: addDays(today, 4 - 60), accountId: "acc-credit", category: "music", remind: true, autoLog: true, paused: false, tone: "#2f5b45" }),
+    sub({ name: "iCloud+", amount: 35, currency: "THB", cycle: "month", startDate: addDays(today, 7 - 90), accountId: "acc-credit", category: "cloud", remind: true, autoLog: true, paused: false, tone: "#33558f" }),
+    sub({ name: "Netflix", amount: 419, currency: "THB", cycle: "month", startDate: addDays(today, 9 - 120), accountId: "acc-credit", category: "fun", remind: true, autoLog: true, paused: false, tone: "#8a2e22" }),
+    sub({ name: "YouTube Premium", amount: 179, currency: "THB", cycle: "month", startDate: addDays(today, 14 - 60), accountId: "acc-salary", category: "fun", remind: false, autoLog: true, paused: false, tone: "#6e3a1c" }),
+    sub({ name: "สมาชิกฟิตเนส", amount: 1290, currency: "THB", cycle: "month", startDate: addDays(today, 21 - 180), accountId: "acc-salary", category: "fit", remind: true, autoLog: true, paused: false, tone: "#1c1e1b" }),
+    sub({ name: "Claude Pro", amount: 21.4, currency: "USD", cycle: "month", startDate: addDays(today, 12 - 60), accountId: "acc-credit", category: "tools", remind: true, autoLog: true, paused: false, tone: "#D97757" }),
+    sub({ name: "Google One", amount: 700, currency: "THB", cycle: "year", startDate: addDays(today, 110 - 365), accountId: "acc-credit", category: "cloud", remind: true, autoLog: false, paused: false, tone: "#5b4a7a" }),
   ];
 
   const goals: Goals = {

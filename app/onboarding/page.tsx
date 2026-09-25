@@ -51,7 +51,7 @@ export default function OnboardingPage() {
   const start = () => {
     acceptTerms();
     for (const s of chosen) {
-      addAccount({ name: s.name.trim(), kind: s.kind, openingBalance: parseFloat(s.balance) || 0, mono: monoFor(s.name), tone: s.tone });
+      addAccount({ name: s.name.trim(), kind: s.kind, openingBalance: parseFloat(s.balance) || 0, mono: monoFor(s.name), tone: s.tone, fxFeePct: 0 });
     }
     // One message for the whole setup instead of one per account.
     useStore.getState().notify(tr("onboarding.ready", { count: chosen.length }));

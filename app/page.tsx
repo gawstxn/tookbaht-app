@@ -9,6 +9,7 @@ import { BudgetBannerCard } from "@/components/BudgetBanner";
 import { NotificationBell } from "@/components/notifications";
 import { Bar, Empty, HeroCard, ListCard, SectionHeader, TabHeader } from "@/components/ui/primitives";
 import { budgetBanner } from "@/lib/budget";
+import { formatMoney } from "@/lib/fx";
 import { baht, splitDecimals, todayISO } from "@/lib/format";
 import { monthTransactions, summarize, upcomingSubscriptions } from "@/lib/selectors";
 import { useTranslation } from "react-i18next";
@@ -77,7 +78,7 @@ export default function OverviewPage() {
                 </div>
                 <div className="flex min-w-0 flex-col">
                   <span className="truncate text-[13px] font-medium">{sub.name}</span>
-                  <span className="font-mono text-sm font-semibold">{baht(sub.amount)}</span>
+                  <span className="font-mono text-sm font-semibold">{formatMoney(sub.amount, sub.currency)}</span>
                 </div>
               </Link>
             ))}

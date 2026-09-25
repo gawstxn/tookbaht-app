@@ -22,10 +22,10 @@ export default function ProfilePage() {
   const exportCsv = () => {
     const name = (id?: string) => accounts.find((a) => a.id === id)?.name ?? "";
     const rows = [
-      ["date", "type", "title", "amount", "category", "account", "from", "to", "note"],
+      ["date", "type", "title", "amount", "category", "account", "from", "to", "note", "original_amount", "original_currency", "fx_rate"],
       ...[...transactions]
         .sort((a, b) => a.date.localeCompare(b.date))
-        .map((t) => [t.date, TYPE_META[t.type].label, t.title, String(t.amount), categoryLabel(t.category), name(t.accountId), name(t.fromId), name(t.toId), t.note ?? ""]),
+        .map((t) => [t.date, TYPE_META[t.type].label, t.title, String(t.amount), categoryLabel(t.category), name(t.accountId), name(t.fromId), name(t.toId), t.note ?? "", t.origAmount ? String(t.origAmount) : "", t.origCurrency ?? "", t.fxRate ? String(t.fxRate) : ""]),
     ];
     // Prefix cells that spreadsheets would run as formulas (CSV injection).
     const cell = (c: string) => `"${(/^[=+\-@\t\r]/.test(c) ? "'" + c : c).replace(/"/g, '""')}"`;
