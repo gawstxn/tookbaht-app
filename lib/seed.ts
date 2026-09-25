@@ -15,7 +15,8 @@ export function seedData() {
     { id: "acc-salary", name: "บัญชีเงินเดือน", kind: "bank", openingBalance: 20000, mono: "ง", tone: "#2f5b45", fxFeePct: 0 },
     { id: "acc-saving", name: "บัญชีออม", kind: "saving", openingBalance: 102000, mono: "อ", tone: "#33558f", fxFeePct: 0 },
     { id: "acc-credit", name: "บัตรเครดิต", kind: "credit", openingBalance: 50000, mono: "ค", tone: "#8a2e22", fxFeePct: 2.5, dueDay: 5 },
-    { id: "acc-paylater", name: "SPayLater", kind: "credit", openingBalance: 15000, mono: "S", tone: "#6e3a1c", fxFeePct: 0, dueDay: 1 },
+    // Due two days from now, so the payment reminder shows up in the demo.
+    { id: "acc-paylater", name: "SPayLater", kind: "credit", openingBalance: 15000, mono: "S", tone: "#6e3a1c", fxFeePct: 0, dueDay: Number(addDays(today, 2).slice(8)) },
     { id: "acc-cash", name: "เงินสด", kind: "cash", openingBalance: 2000, mono: "ส", tone: "#5f6259", fxFeePct: 0 },
   ];
 
@@ -29,6 +30,7 @@ export function seedData() {
     tx({ type: "out", amount: 85, date: addDays(today, -2), title: "กาแฟ", category: "food", accountId: "acc-cash" }),
     tx({ type: "in", amount: 3500, date: addDays(today, -1), title: "ค่าออกแบบโลโก้", category: "freelance", accountId: "acc-salary" }),
     tx({ type: "out", amount: 842, date: addDays(today, -1), title: "ซูเปอร์มาร์เก็ต", category: "shop", accountId: "acc-credit" }),
+    tx({ type: "out", amount: 2490, date: inMonth(5), title: "Shopee", category: "shop", accountId: "acc-paylater" }),
     tx({ type: "out", amount: 65, date: today, title: "ข้าวมันไก่", category: "food", accountId: "acc-cash" }),
     tx({ type: "out", amount: 47, date: today, title: "รถไฟฟ้า", category: "travel", accountId: "acc-salary" }),
     tx({ type: "move", amount: 5000, date: today, title: "โอนเข้าบัญชีออม", fromId: "acc-salary", toId: "acc-saving" }),

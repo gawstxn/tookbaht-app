@@ -11,6 +11,7 @@ import "./globals.css";
 import { AppShell } from "@/components/AppShell";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import splashScreens from "@/lib/splash.json";
+import { LOCK_BOOT_SCRIPT } from "@/lib/appLock";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 
 export const metadata: Metadata = {
@@ -37,7 +38,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     // data-theme is set by the boot script before paint, so React must not complain about it.
     <html lang="th" data-theme="light" className="h-full antialiased" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: `${THEME_BOOT_SCRIPT};${LOCK_BOOT_SCRIPT}` }} />
       </head>
       <body className="min-h-full">
         <AppShell>{children}</AppShell>

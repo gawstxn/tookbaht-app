@@ -5,6 +5,8 @@ import { useRef, useState } from "react";
 import { TabScreen } from "@/components/app";
 import { Icon } from "@/components/ui/Icon";
 import { PushToggle } from "@/components/PushToggle";
+import { LockSettings } from "@/components/LockSettings";
+import { readLock } from "@/lib/appLock";
 import { useTranslation } from "react-i18next";
 import { ListCard, PrimaryButton, SecondaryButton, Sheet, TabHeader, cx } from "@/components/ui/primitives";
 import { currentLang, type Lang } from "@/lib/i18n";
@@ -18,7 +20,9 @@ export default function ProfilePage() {
   const router = useRouter();
   const { user, userId, accounts, transactions, subscriptions, goals, settings, signOut, deleteAccount, setLanguage, load, notify } = useStore();
   const { t: tr } = useTranslation();
-  const [sheet, setSheet] = useState<"" | "logout" | "delete" | "restore" | "lang" | "theme">("");
+  const [sheet, setSheet] = useState<"" | "logout" | "delete" | "restore" | "lang" | "theme" | "lock">("");
+  // Per-device setting, read after mount (profile only renders once data has loaded).
+  const [lock, setLock] = useState(readLock);
   const [restoring, setRestoring] = useState<BackupData | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -130,6 +134,14 @@ export default function ProfilePage() {
         <NavRow label={tr("theme.title")} value={themeOptions.find((o) => o.value === theme)?.label} onClick={() => setSheet("theme")} />
       </Group>
 
+      <Group title={tr("lock.group")}>
+        <NavRow
+          label={tr("lock.row")}
+          value={!lock ? tr("lock.off") : lock.credentialId ? tr("lock.onBiometric") : tr("lock.onPin")}
+          onClick={() => setSheet("lock")}
+        />
+      </Group>
+
       <Group title={tr("profile.notifications")}>
         <PushToggle />
       </Group>
@@ -199,6 +211,8 @@ export default function ProfilePage() {
           setThemePref(v);
         }}
       />
+
+      <LockSettings open={sheet === "lock"} onClose={() => setSheet("")} onChange={setLock} />
 
       <Sheet open={sheet === "restore"} onClose={() => !busy && setSheet("")} title={tr("profile.restoreTitle")}>
         {restoring ? (

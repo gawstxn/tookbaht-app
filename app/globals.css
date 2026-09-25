@@ -40,6 +40,9 @@
   --color-warn-ink: #9a6a12;
   --color-lime-tint: #e9f3c7;
   --color-lime-ink: #4d6b12;
+  /* Chart series (validated for colour-vision deficiency against the card surface). */
+  --color-chart-in: #178a58;
+  --color-chart-out: #c4540f;
 
   --font-sans: "IBM Plex Sans Thai", system-ui, sans-serif;
   /* Plex Mono has no Thai or ฿ glyphs; fall back to Plex Sans Thai, not the system font. */
@@ -80,6 +83,8 @@
   --color-warn-ink: #e3ad4f;
   --color-lime-tint: #2c3614;
   --color-lime-ink: #c9e36a;
+  --color-chart-in: #2f9e6a;
+  --color-chart-out: #d9692c;
   --shadow-hero: 0 10px 24px rgba(0, 0, 0, 0.45);
   --shadow-fab: 0 6px 16px rgba(0, 0, 0, 0.5);
   --shadow-sheet: 0 -10px 30px rgba(0, 0, 0, 0.5);
@@ -148,6 +153,16 @@ body,
   :root {
     --standalone-top: 14px;
   }
+}
+
+/* While an app lock is set, the app stays hidden until the lock screen (outside .app-content) is passed. */
+:root[data-locked] .app-content {
+  visibility: hidden;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
 }
 
 @keyframes sheet-in {
