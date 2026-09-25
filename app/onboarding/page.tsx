@@ -128,7 +128,7 @@ export default function OnboardingPage() {
                 className="w-full min-w-0 bg-transparent text-[15px] font-medium outline-none"
               />
               <label className="flex items-baseline gap-1 text-xs text-muted">
-                {balanceLabel(s.kind)} ฿
+                <span className="shrink-0 whitespace-nowrap">{balanceLabel(s.kind)} ฿</span>
                 <input
                   inputMode="decimal"
                   value={s.balance}
