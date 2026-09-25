@@ -28,6 +28,7 @@ Personal-finance PWA used on an iPhone as an installed app. Thai-first (English 
 - **Database:** every table has `user_id` plus RLS; cross-row references use composite `(id, user_id)` foreign keys. Scheduled work (auto-log, reminders, alerts) belongs in SQL functions with DB tests in `tests/db`. A new migration must also be applied to production with `npx supabase db push` when its PR is merged.
 - **Navigation:** route changes animate with React `ViewTransition` (`PageTransition` in `components/AppShell.tsx`): deeper paths slide in, shallower ones slide back, tab roots switch instantly. For close / back buttons use `useGoBack(fallback)` from `lib/nav.ts`, not `router.back()`, which doesn't animate.
 - **Per-device settings** (theme, language before sign-in, app lock) live in localStorage; account-wide settings live in `profiles.settings`.
+- **Legal pages:** when a change affects what data is kept, why, where, or for how long (new fields, retention, notifications, on-device storage), update `components/legal/PrivacyContent.tsx` / `TermsContent.tsx` in both languages and bump `TERMS_VERSION` in `lib/legal.ts` so users accept the new version.
 
 ## Performance
 
