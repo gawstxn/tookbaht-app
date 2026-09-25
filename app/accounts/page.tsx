@@ -7,8 +7,8 @@ import { AccountEditSheet } from "@/components/AccountEditSheet";
 import { ReconcileSheet } from "@/components/ReconcileSheet";
 import { Icon } from "@/components/ui/Icon";
 import { IconButton, ListCard, PushHeader } from "@/components/ui/primitives";
-import { baht } from "@/lib/format";
-import { accountBalance } from "@/lib/selectors";
+import { baht, shortDate, todayISO } from "@/lib/format";
+import { accountBalance, accountDue } from "@/lib/selectors";
 import { useStore } from "@/lib/store";
 
 
@@ -18,6 +18,12 @@ export default function AccountsPage() {
   // "" = closed, "new" = adding, otherwise the account id being edited.
   const [editing, setEditing] = useState("");
   const current = accounts.find((a) => a.id === editing);
+  const today = todayISO();
+  /** "ครบกำหนด 5 ต.ค. · ค้างจ่าย ฿1,000" for cards and pay-later with a due day and something owed. */
+  const dueLine = (a: (typeof accounts)[number]) => {
+    const d = accountDue(a, transactions, today);
+    return d && d.owed > 0 ? t("accounts.dueLine", { date: shortDate(d.due, false), amount: baht(d.owed) }) : null;
+  };
   const [reconciling, setReconciling] = useState("");
 
   return (
@@ -30,7 +36,7 @@ export default function AccountsPage() {
             <AccountMark account={a} size={38} />
             <span className="flex min-w-0 grow flex-col">
               <span className="truncate text-[15px] font-medium">{a.name}</span>
-              <span className="text-xs text-muted">{t(a.kind === "saving" ? "kind.savingLong" : `kind.${a.kind}`)}</span>
+              <span className="text-xs text-muted">{dueLine(a) ?? t(a.kind === "saving" ? "kind.savingLong" : `kind.${a.kind}`)}</span>
             </span>
             <span className="font-mono text-sm font-semibold">
               {a.kind === "credit" ? `${t("balance.limit")} ` : ""}

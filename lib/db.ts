@@ -13,6 +13,7 @@ interface AccountRow {
   mono: string;
   tone: string;
   fx_fee_pct: Num;
+  due_day: number | null;
 }
 export interface TransactionRow {
   id: string;
@@ -33,6 +34,10 @@ export interface TransactionRow {
 }
 interface SubscriptionRow {
   id: string;
+  kind: Subscription["kind"];
+  entry_type: Subscription["entryType"];
+  to_account_id: string | null;
+  installments: number | null;
   name: string;
   amount: Num;
   currency: Currency;
@@ -68,6 +73,7 @@ export const fromRow = {
     mono: r.mono,
     tone: r.tone,
     fxFeePct: Number(r.fx_fee_pct ?? 0),
+    dueDay: r.due_day ?? null,
   }),
   transaction: (r: TransactionRow): Transaction => ({
     id: r.id,
@@ -88,6 +94,10 @@ export const fromRow = {
   }),
   subscription: (r: SubscriptionRow): Subscription => ({
     id: r.id,
+    kind: r.kind ?? "subscription",
+    entryType: r.entry_type ?? "out",
+    toAccountId: r.to_account_id,
+    installments: r.installments,
     name: r.name,
     amount: Number(r.amount),
     currency: r.currency ?? "THB",
@@ -118,6 +128,8 @@ export const toRow = {
       mono: a.mono,
       tone: a.tone,
       fx_fee_pct: a.fxFeePct,
+      // null clears it; undefined leaves it alone.
+      due_day: a.dueDay,
     }),
   transaction: (t: Partial<Transaction>) =>
     strip({
@@ -140,6 +152,10 @@ export const toRow = {
   subscription: (s: Partial<Subscription>) =>
     strip({
       id: s.id,
+      kind: s.kind,
+      entry_type: s.entryType,
+      to_account_id: s.toAccountId,
+      installments: s.installments,
       name: s.name,
       amount: s.amount,
       currency: s.currency,

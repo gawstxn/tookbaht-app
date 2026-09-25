@@ -1,4 +1,4 @@
-import { daysInMonth, diffDays, monthKey, monthlyEquivalent, nextDueDate } from "./format";
+import { daysInMonth, diffDays, dueDatesUntil, monthKey, monthlyEquivalent, stepCycle } from "./format";
 import { t } from "./i18n";
 import type { Account, Subscription, Transaction } from "./types";
 
@@ -43,24 +43,50 @@ export function accountSubtitle(a: Account, txs: Transaction[]): string {
   return t(a.kind === "credit" ? "balance.creditLeft" : "balance.left", { amount: f });
 }
 
+type Schedule = Pick<Subscription, "startDate" | "cycle" | "installments">;
+
+/** The next charge on or after `from` and its number (1 = first), or null once an installment plan is paid off. */
+export function nextCharge(s: Schedule, from: string): { due: string; n: number } | null {
+  let i = 0;
+  let due = s.startDate;
+  while (due < from && i < 2000) {
+    i++;
+    due = stepCycle(s.startDate, s.cycle, i);
+  }
+  if (s.installments && i >= s.installments) return null;
+  return { due, n: i + 1 };
+}
+
+/** Charges that have fallen due by `today`, capped at the plan's length. */
+export function chargesSoFar(s: Schedule, today: string): number {
+  const n = dueDatesUntil(s.startDate, s.cycle, today).length;
+  return s.installments ? Math.min(n, s.installments) : n;
+}
+
 export interface UpcomingSub {
   sub: Subscription;
   due: string;
   days: number;
+  /** Which charge this is (installment number for plans). */
+  n: number;
 }
+/** Active entries by next charge; finished installment plans drop out. */
 export function upcomingSubscriptions(subs: Subscription[], today: string): UpcomingSub[] {
   return subs
     .filter((s) => !s.paused)
-    .map((s) => {
-      const due = nextDueDate(s.startDate, s.cycle, today);
-      return { sub: s, due, days: diffDays(due, today) };
+    .flatMap((s) => {
+      const next = nextCharge(s, today);
+      return next ? [{ sub: s, due: next.due, days: diffDays(next.due, today), n: next.n }] : [];
     })
     .sort((a, b) => a.due.localeCompare(b.due));
 }
 
+/** Services (Netflix, Spotify…) as opposed to salary, rent, transfers and installments. */
+export const isService = (s: Pick<Subscription, "kind">) => s.kind !== "recurring";
+
 /** Totals in baht; `thb` converts a subscription's price (USD ones are estimates, 0 when no rate yet). */
 export function subscriptionTotals(subs: Subscription[], today: string, thb: (s: Subscription) => number = (s) => s.amount) {
-  const active = subs.filter((s) => !s.paused);
+  const active = subs.filter((s) => !s.paused && isService(s));
   const monthlyOnly = active.filter((s) => s.cycle !== "year");
   const yearly = active.filter((s) => s.cycle === "year");
   const perMonth = monthlyOnly.reduce((a, s) => a + monthlyEquivalent(thb(s), s.cycle), 0);
@@ -117,4 +143,22 @@ export function reconcileEntry(account: Account, txs: Transaction[], actual: num
   return diff > 0
     ? { type: "in", amount: diff, date, title, category: "other-in", accountId: account.id }
     : { type: "out", amount: -diff, date, title, category: "other", accountId: account.id };
+}
+
+/**
+ * Cards and pay-later with a due day: the next payment date (today or later,
+ * clamped to short months) and what is owed — spending not yet paid back.
+ */
+export function accountDue(a: Account, txs: Transaction[], today: string): { due: string; days: number; owed: number } | null {
+  if (a.kind !== "credit" || !a.dueDay) return null;
+  const [y, m, d] = today.split("-").map(Number);
+  const inMonth = (year: number, month0: number) => {
+    const day = Math.min(a.dueDay!, daysInMonth(year, month0));
+    const dt = new Date(year, month0, day);
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+  };
+  let due = inMonth(y, m - 1);
+  if (Number(due.slice(8)) < d) due = inMonth(m === 12 ? y + 1 : y, m % 12);
+  const owed = Math.round((a.openingBalance - accountBalance(a, txs)) * 100) / 100;
+  return { due, days: diffDays(due, today), owed };
 }

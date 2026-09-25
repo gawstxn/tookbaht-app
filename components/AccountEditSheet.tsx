@@ -56,6 +56,8 @@ function AccountFields({ initial, onSave, onDelete, onReconcile }: { initial?: A
   const [feeText, setFeeText] = useState(initial?.fxFeePct ? String(initial.fxFeePct) : "");
   // Cards and bank accounts can pay foreign (USD) subscriptions.
   const paysAbroad = kind === "credit" || kind === "bank";
+  const [dueText, setDueText] = useState(initial?.dueDay ? String(initial.dueDay) : "");
+  const dueDay = Math.min(31, parseInt(dueText, 10) || 0) || null;
   const [confirmDelete, setConfirmDelete] = useState(false);
   const { t: tr } = useTranslation();
   const canSave = name.trim().length > 0;
@@ -95,6 +97,22 @@ function AccountFields({ initial, onSave, onDelete, onReconcile }: { initial?: A
             />
           </span>
         </label>
+        {kind === "credit" ? (
+          <label className="mt-2 flex items-center gap-2 border-t border-divider pt-2.5">
+            <span className="flex grow flex-col">
+              <span className="text-[13px] text-muted">{tr("accounts.dueDay")}</span>
+              <span className="text-[11px] text-faint">{tr("accounts.dueDayHint")}</span>
+            </span>
+            <input
+              inputMode="numeric"
+              value={dueText}
+              onChange={(e) => setDueText(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
+              placeholder="—"
+              aria-label={tr("accounts.dueDay")}
+              className="w-12 bg-transparent text-right font-mono text-[17px] font-semibold outline-none"
+            />
+          </label>
+        ) : null}
         {paysAbroad ? (
           <label className="mt-2 flex items-center gap-2 border-t border-divider pt-2.5">
             <span className="flex grow flex-col">
@@ -139,6 +157,7 @@ function AccountFields({ initial, onSave, onDelete, onReconcile }: { initial?: A
             mono: monoFor(name),
             tone,
             fxFeePct: paysAbroad ? Math.min(10, parseFloat(feeText) || 0) : 0,
+            dueDay: kind === "credit" ? dueDay : null,
           })}
       >
         {tr("common.save")}

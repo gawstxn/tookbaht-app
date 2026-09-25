@@ -43,6 +43,8 @@ export function SubscriptionForm({
   const today = todayISO();
   const [d, setD] = useState<SubDraft>(
     initial ?? {
+      kind: "subscription",
+      entryType: "out",
       name: "",
       amount: 0,
       currency: "THB",

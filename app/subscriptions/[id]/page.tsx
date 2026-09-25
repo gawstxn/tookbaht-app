@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { PushScreen, SubMono } from "@/components/app";
+import { PushScreen, SubMono, TxIcon, TxRow } from "@/components/app";
 import { Empty, ListCard, PrimaryButton, PushHeader, SecondaryButton, Sheet, SwitchRow } from "@/components/ui/primitives";
-import { SUB_CATEGORIES } from "@/lib/constants";
-import { cycleLabel, cyclePer, diffDays, dueDatesUntil, fromISO, nextDueDate, relativeDue, shortDate, todayISO } from "@/lib/format";
+import { SUB_CATEGORIES, TYPE_META, categoryLabel } from "@/lib/constants";
+import { baht2, cycleLabel, cyclePer, diffDays, dueDatesUntil, fromISO, relativeDue, shortDate, todayISO } from "@/lib/format";
+import { chargesSoFar, nextCharge } from "@/lib/selectors";
 import { useTranslation } from "react-i18next";
 import { formatMoney, subTHB } from "@/lib/fx";
 import { useStore } from "@/lib/store";
@@ -16,6 +17,7 @@ export default function SubscriptionDetailPage() {
   const router = useRouter();
   const sub = useStore((s) => s.subscriptions.find((x) => x.id === id));
   const accounts = useStore((s) => s.accounts);
+  const transactions = useStore((s) => s.transactions);
   const update = useStore((s) => s.updateSubscription);
   const remove = useStore((s) => s.deleteSubscription);
   const usdRate = useStore((s) => s.usdRate);
@@ -32,9 +34,14 @@ export default function SubscriptionDetailPage() {
     );
   }
 
-  const due = nextDueDate(sub.startDate, sub.cycle, today);
-  const days = diffDays(due, today);
+  const recurring = sub.kind === "recurring";
+  const next = nextCharge(sub, today);
+  const days = next ? diffDays(next.due, today) : 0;
   const history = dueDatesUntil(sub.startDate, sub.cycle, today).reverse().slice(0, 3);
+  const logged = transactions.filter((t) => t.subscriptionId === sub.id).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+  const paid = chargesSoFar(sub, today);
+  const meta = TYPE_META[sub.entryType];
+  const accName = (id?: string | null) => accounts.find((a) => a.id === id)?.name ?? "—";
   const start = fromISO(sub.startDate);
   const estimate = subTHB(sub, accounts, usdRate);
   const dayRule =
@@ -56,9 +63,10 @@ export default function SubscriptionDetailPage() {
       />
 
       <section className="flex flex-col items-center gap-1.5 py-1">
-        <SubMono s={sub} size={64} />
+        {recurring ? <TxIcon type={sub.entryType} category={sub.category} size={64} /> : <SubMono s={sub} size={64} />}
         <h1 className="mt-1 font-serif text-2xl font-bold">{sub.name}</h1>
-        <span className="font-mono text-[30px] font-semibold tracking-tight">
+        <span className="font-mono text-[30px] font-semibold tracking-tight" style={recurring ? { color: meta.color } : undefined}>
+          {recurring ? meta.sign : ""}
           {formatMoney(sub.amount, sub.currency, true).replace(/.00$/, "")}
           <span className="font-sans text-[15px] font-medium tracking-normal text-muted"> {cyclePer(sub.cycle)}</span>
         </span>
@@ -68,22 +76,62 @@ export default function SubscriptionDetailPage() {
           </span>
         ) : null}
         <span className="rounded-full bg-chip px-3 py-1 text-[13px] font-semibold">
-          {sub.paused ? tr("subs.pausedNow") : tr("subs.next", { date: shortDate(due), rel: relativeDue(days) })}
+          {sub.paused
+            ? tr("subs.pausedNow")
+            : !next
+              ? tr("rec.paidOff")
+              : tr(recurring ? "rec.next" : "subs.next", { date: shortDate(next.due), rel: relativeDue(days) })}
         </span>
+        {sub.installments ? (
+          <span className="text-[13px] text-muted">
+            {tr("rec.progress", { n: paid, total: sub.installments })}
+            {paid < sub.installments ? ` · ${tr("rec.left", { count: sub.installments - paid, amount: baht2(sub.amount * (sub.installments - paid)) })}` : ""}
+          </span>
+        ) : null}
       </section>
 
       <ListCard>
         <Row label={tr("subs.cycle")} value={cycleLabel(sub.cycle)} />
         <Row label={tr("subs.billingDay")} value={dayRule} />
-        <Row label={tr("subs.payFrom")} value={accounts.find((a) => a.id === sub.accountId)?.name ?? "—"} />
-        <Row label={tr("common.category")} value={SUB_CATEGORIES.find((c) => c.key === sub.category)?.label ?? "—"} />
+        {sub.entryType === "move" ? (
+          <>
+            <Row label={tr("rec.from")} value={accName(sub.accountId)} />
+            <Row label={tr("rec.to")} value={accName(sub.toAccountId)} />
+          </>
+        ) : (
+          <>
+            <Row label={tr(sub.entryType === "in" ? "rec.intoAccount" : "subs.payFrom")} value={accName(sub.accountId)} />
+            <Row label={tr("common.category")} value={recurring ? categoryLabel(sub.category) : (SUB_CATEGORIES.find((c) => c.key === sub.category)?.label ?? "—")} />
+          </>
+        )}
       </ListCard>
 
       <ListCard>
-        <SwitchRow label={tr("subs.remind")} hint={tr("subs.remindHint")} checked={sub.remind} onChange={(remind) => update(sub.id, { remind })} />
-        <SwitchRow label={tr("subs.autoLog")} hint={tr("subs.autoLogHint")} checked={sub.autoLog} onChange={(autoLog) => update(sub.id, { autoLog })} />
+        {sub.entryType !== "in" ? (
+          <SwitchRow label={tr(recurring ? "rec.remind" : "subs.remind")} hint={recurring ? undefined : tr("subs.remindHint")} checked={sub.remind} onChange={(remind) => update(sub.id, { remind })} />
+        ) : null}
+        <SwitchRow
+          label={tr(!recurring ? "subs.autoLog" : sub.entryType === "in" ? "rec.autoLogIn" : sub.entryType === "move" ? "rec.autoLogMove" : "rec.autoLogOut")}
+          hint={tr(recurring ? "rec.autoLogHint" : "subs.autoLogHint")}
+          checked={sub.autoLog}
+          onChange={(autoLog) => update(sub.id, { autoLog })}
+        />
       </ListCard>
 
+      {recurring ? (
+        <section className="flex flex-col gap-2">
+          <h2 className="text-base font-semibold">{tr("rec.history")}</h2>
+          {logged.length ? (
+            <ListCard>
+              {logged.map((t) => (
+                <TxRow key={t.id} t={t} />
+              ))}
+            </ListCard>
+          ) : (
+            <Empty>{tr("subs.noHistory")}</Empty>
+          )}
+        </section>
+      ) : (
       <section className="flex flex-col gap-2">
         <h2 className="text-base font-semibold">{tr("subs.history")}</h2>
         {history.length ? (
@@ -99,16 +147,17 @@ export default function SubscriptionDetailPage() {
           <Empty>{tr("subs.noHistory")}</Empty>
         )}
       </section>
+      )}
 
       <div className="mt-auto grid grid-cols-2 gap-2">
         <SecondaryButton onClick={() => update(sub.id, { paused: !sub.paused })}>{sub.paused ? tr("subs.resume") : tr("subs.pause")}</SecondaryButton>
         <SecondaryButton tone="danger" onClick={() => setConfirm(true)}>
-          {tr("subs.cancel")}
+          {tr(recurring ? "rec.delete" : "subs.cancel")}
         </SecondaryButton>
       </div>
 
-      <Sheet open={confirm} onClose={() => setConfirm(false)} title={tr("subs.cancelTitle", { name: sub.name })}>
-        <p className="text-sm text-muted">{tr("subs.cancelLead")}</p>
+      <Sheet open={confirm} onClose={() => setConfirm(false)} title={tr(recurring ? "rec.deleteTitle" : "subs.cancelTitle", { name: sub.name })}>
+        <p className="text-sm text-muted">{tr(recurring ? "rec.deleteLead" : "subs.cancelLead")}</p>
         <PrimaryButton
           once
           tone="danger"
@@ -117,7 +166,7 @@ export default function SubscriptionDetailPage() {
             router.replace("/subscriptions");
           }}
         >
-          {tr("subs.cancel")}
+          {tr(recurring ? "rec.delete" : "subs.cancel")}
         </PrimaryButton>
         <SecondaryButton onClick={() => setConfirm(false)}>{tr("subs.keep")}</SecondaryButton>
       </Sheet>

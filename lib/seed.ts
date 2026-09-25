@@ -14,7 +14,8 @@ export function seedData() {
   const accounts: Account[] = [
     { id: "acc-salary", name: "บัญชีเงินเดือน", kind: "bank", openingBalance: 20000, mono: "ง", tone: "#2f5b45", fxFeePct: 0 },
     { id: "acc-saving", name: "บัญชีออม", kind: "saving", openingBalance: 102000, mono: "อ", tone: "#33558f", fxFeePct: 0 },
-    { id: "acc-credit", name: "บัตรเครดิต", kind: "credit", openingBalance: 50000, mono: "ค", tone: "#8a2e22", fxFeePct: 2.5 },
+    { id: "acc-credit", name: "บัตรเครดิต", kind: "credit", openingBalance: 50000, mono: "ค", tone: "#8a2e22", fxFeePct: 2.5, dueDay: 5 },
+    { id: "acc-paylater", name: "SPayLater", kind: "credit", openingBalance: 15000, mono: "S", tone: "#6e3a1c", fxFeePct: 0, dueDay: 1 },
     { id: "acc-cash", name: "เงินสด", kind: "cash", openingBalance: 2000, mono: "ส", tone: "#5f6259", fxFeePct: 0 },
   ];
 
@@ -33,7 +34,8 @@ export function seedData() {
     tx({ type: "move", amount: 5000, date: today, title: "โอนเข้าบัญชีออม", fromId: "acc-salary", toId: "acc-saving" }),
   ].map((x) => (x.date < monthStart ? { ...x, date: monthStart } : x));
 
-  const sub = (p: Omit<Subscription, "id">): Subscription => ({ ...p, id: uid() });
+  const sub = (p: Omit<Subscription, "id" | "kind" | "entryType">): Subscription => ({ ...p, kind: "subscription", entryType: "out", id: uid() });
+  const recurring = (p: Omit<Subscription, "id" | "kind" | "currency" | "tone">): Subscription => ({ ...p, kind: "recurring", currency: "THB", tone: "#1c1e1b", id: uid() });
   const subscriptions: Subscription[] = [
     sub({ name: "Spotify", amount: 149, currency: "THB", cycle: "month", startDate: addDays(today, 4 - 60), accountId: "acc-credit", category: "music", remind: true, autoLog: true, paused: false, tone: "#2f5b45" }),
     sub({ name: "iCloud+", amount: 35, currency: "THB", cycle: "month", startDate: addDays(today, 7 - 90), accountId: "acc-credit", category: "cloud", remind: true, autoLog: true, paused: false, tone: "#33558f" }),
@@ -42,6 +44,9 @@ export function seedData() {
     sub({ name: "สมาชิกฟิตเนส", amount: 1290, currency: "THB", cycle: "month", startDate: addDays(today, 21 - 180), accountId: "acc-salary", category: "fit", remind: true, autoLog: true, paused: false, tone: "#1c1e1b" }),
     sub({ name: "Claude Pro", amount: 21.4, currency: "USD", cycle: "month", startDate: addDays(today, 12 - 60), accountId: "acc-credit", category: "tools", remind: true, autoLog: true, paused: false, tone: "#D97757" }),
     sub({ name: "Google One", amount: 700, currency: "THB", cycle: "year", startDate: addDays(today, 110 - 365), accountId: "acc-credit", category: "cloud", remind: true, autoLog: false, paused: false, tone: "#5b4a7a" }),
+    recurring({ entryType: "in", name: "เงินเดือน", amount: 45000, cycle: "month", startDate: monthStart, accountId: "acc-salary", category: "salary", remind: false, autoLog: true, paused: false }),
+    recurring({ entryType: "move", name: "ออมทุกเดือน", amount: 5000, cycle: "month", startDate: inMonth(2), accountId: "acc-salary", toAccountId: "acc-saving", category: "other", remind: false, autoLog: true, paused: false }),
+    recurring({ entryType: "out", name: "หูฟังไร้สาย", amount: 1290, cycle: "month", startDate: addDays(today, 6 - 30), accountId: "acc-paylater", category: "shop", installments: 3, remind: true, autoLog: true, paused: false }),
   ];
 
   const goals: Goals = {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { SubMono, TabScreen, TxRow } from "@/components/app";
+import { SubMono, TabScreen, TxIcon, TxRow } from "@/components/app";
 import { MonthSwitcher } from "@/components/pickers";
 import { Icon } from "@/components/ui/Icon";
 import { BudgetBannerCard } from "@/components/BudgetBanner";
@@ -11,7 +11,7 @@ import { Bar, Empty, HeroCard, ListCard, SectionHeader, TabHeader } from "@/comp
 import { budgetBanner } from "@/lib/budget";
 import { formatMoney } from "@/lib/fx";
 import { baht, splitDecimals, todayISO } from "@/lib/format";
-import { monthTransactions, summarize, upcomingSubscriptions } from "@/lib/selectors";
+import { isService, monthTransactions, summarize, upcomingSubscriptions } from "@/lib/selectors";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
 
@@ -22,7 +22,7 @@ export default function OverviewPage() {
 
   const month = useMemo(() => monthTransactions(transactions, viewMonth), [transactions, viewMonth]);
   const sum = useMemo(() => summarize(month), [month]);
-  const upcoming = useMemo(() => upcomingSubscriptions(subscriptions, today).slice(0, 3), [subscriptions, today]);
+  const upcoming = useMemo(() => upcomingSubscriptions(subscriptions.filter((s) => s.entryType !== "in"), today).slice(0, 3), [subscriptions, today]);
   const recent = useMemo(
     () => [...month].sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt).slice(0, 5),
     [month],
@@ -71,7 +71,7 @@ export default function OverviewPage() {
             {upcoming.map(({ sub, days }) => (
               <Link key={sub.id} href={`/subscriptions/${sub.id}`} className="flex flex-col gap-2 rounded-2xl border border-line bg-card p-3">
                 <div className="flex items-center justify-between">
-                  <SubMono s={sub} size={30} />
+                  {isService(sub) ? <SubMono s={sub} size={30} /> : <TxIcon type={sub.entryType} category={sub.category} size={30} />}
                   <span className="whitespace-nowrap rounded-full bg-chip px-2 py-px text-[11px] font-semibold" style={days <= 7 ? { background: "var(--color-lime)", color: "var(--color-on-lime)" } : undefined}>
                     {days <= 0 ? tr("common.today") : tr("common.days", { count: days })}
                   </span>
