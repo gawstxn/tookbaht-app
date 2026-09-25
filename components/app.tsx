@@ -14,7 +14,7 @@ const TABS: { href: string; label: string; icon: IconName }[] = [
   { href: "/", label: "หน้าหลัก", icon: "home" },
   { href: "/transactions", label: "รายการ", icon: "list" },
   { href: "/subscriptions", label: "รายเดือน", icon: "repeat" },
-  { href: "/goals", label: "เป้าหมาย", icon: "target" },
+  { href: "/profile", label: "โปรไฟล์", icon: "user" },
 ];
 
 export function BottomNav() {

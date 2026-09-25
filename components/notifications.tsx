@@ -1,0 +1,56 @@
+"use client";
+
+import Link from "next/link";
+import { useMemo, useSyncExternalStore } from "react";
+import { todayISO } from "@/lib/format";
+import { buildNotifications, isUnread, type NotifKind } from "@/lib/notifications";
+import { useStore } from "@/lib/store";
+import { Icon, type IconName } from "./ui/Icon";
+
+// Re-read the clock once a minute so "due tomorrow 09:00" items appear on time.
+const subscribeMinute = (cb: () => void) => {
+  const t = setInterval(cb, 60_000);
+  return () => clearInterval(t);
+};
+const minuteNow = () => Math.floor(Date.now() / 60_000) * 60_000;
+
+/** The user's notifications plus unread count. */
+export function useNotifications() {
+  const { accounts, transactions, subscriptions, goals, settings } = useStore();
+  const now = useSyncExternalStore(subscribeMinute, minuteNow, () => 0);
+  const items = useMemo(
+    () => (now ? buildNotifications({ accounts, transactions, subscriptions, goals, today: todayISO(), now }) : []),
+    [accounts, transactions, subscriptions, goals, now],
+  );
+  const unread = items.filter((n) => isUnread(n, settings));
+  return { items, unread, settings };
+}
+
+export const NOTIF_STYLE: Record<NotifKind, { icon: IconName; bg: string; fg: string }> = {
+  due: { icon: "repeat", bg: "#e9f3c7", fg: "#4d6b12" },
+  over: { icon: "alert", bg: "var(--color-expense-tint)", fg: "var(--color-danger)" },
+  near: { icon: "gauge", bg: "#f6ead0", fg: "#9a6a12" },
+  autolog: { icon: "check", bg: "var(--color-transfer-tint)", fg: "var(--color-transfer)" },
+  income: { icon: "target", bg: "var(--color-income-tint)", fg: "var(--color-income)" },
+  weekly: { icon: "chart", bg: "var(--color-chip)", fg: "var(--color-ink)" },
+};
+
+/** Header bell with an unread badge. */
+export function NotificationBell() {
+  const { unread } = useNotifications();
+  const n = unread.length;
+  return (
+    <Link
+      href="/notifications"
+      aria-label={n ? `การแจ้งเตือน ยังไม่อ่าน ${n} รายการ` : "การแจ้งเตือน"}
+      className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line bg-card"
+    >
+      <Icon name="bell" size={20} strokeWidth={2} />
+      {n ? (
+        <span className="absolute right-1.5 top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold leading-none text-white">
+          {n > 9 ? "9+" : n}
+        </span>
+      ) : null}
+    </Link>
+  );
+}

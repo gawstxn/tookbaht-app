@@ -5,13 +5,16 @@ import { useMemo } from "react";
 import { SubMono, TabScreen, TxRow } from "@/components/app";
 import { MonthSwitcher } from "@/components/pickers";
 import { Icon } from "@/components/ui/Icon";
-import { Bar, Empty, HeroCard, IconButton, ListCard, SectionHeader, TabHeader } from "@/components/ui/primitives";
+import { BudgetBannerCard } from "@/components/BudgetBanner";
+import { NotificationBell } from "@/components/notifications";
+import { Bar, Empty, HeroCard, ListCard, SectionHeader, TabHeader } from "@/components/ui/primitives";
+import { budgetBanner } from "@/lib/budget";
 import { baht, splitDecimals, todayISO } from "@/lib/format";
 import { monthTransactions, summarize, upcomingSubscriptions } from "@/lib/selectors";
 import { useStore } from "@/lib/store";
 
 export default function OverviewPage() {
-  const { user, transactions, subscriptions, goals, viewMonth } = useStore();
+  const { transactions, subscriptions, goals, viewMonth } = useStore();
   const today = todayISO();
 
   const month = useMemo(() => monthTransactions(transactions, viewMonth), [transactions, viewMonth]);
@@ -21,6 +24,7 @@ export default function OverviewPage() {
     () => [...month].sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt).slice(0, 3),
     [month],
   );
+  const banner = useMemo(() => budgetBanner(goals, month, viewMonth, today), [goals, month, viewMonth, today]);
   const [whole, dec] = splitDecimals(sum.net);
   const incomePct = goals.incomeTarget ? sum.income / goals.incomeTarget : 0;
   const expensePct = goals.expenseBudget ? sum.expense / goals.expenseBudget : 0;
@@ -30,18 +34,7 @@ export default function OverviewPage() {
       <TabHeader
         title="ภาพรวม"
         subtitle={<MonthSwitcher />}
-        actions={
-          <>
-            <IconButton icon="bell" label="การแจ้งเตือน" />
-            <Link
-              href="/profile"
-              aria-label="โปรไฟล์"
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-ink text-[17px] font-bold text-lime"
-            >
-              {(user?.name.trim()[0] ?? "?").toUpperCase()}
-            </Link>
-          </>
-        }
+        actions={<NotificationBell />}
       />
 
       <HeroCard>
@@ -66,25 +59,7 @@ export default function OverviewPage() {
         </Link>
       </HeroCard>
 
-      <nav aria-label="เพิ่มรายการด่วน" className="grid grid-cols-3 gap-2">
-        {(
-          [
-            ["in", "รายรับ", "var(--color-income)"],
-            ["out", "รายจ่าย", "var(--color-expense)"],
-            ["move", "โอน", "var(--color-transfer)"],
-          ] as const
-        ).map(([type, label, color]) => (
-          <Link
-            key={type}
-            href={`/add?type=${type}`}
-            className="flex min-h-12 items-center justify-center gap-1.5 rounded-[14px] border border-line bg-card text-sm font-semibold"
-            style={{ color }}
-          >
-            <Icon name={type} size={16} strokeWidth={2.2} />
-            {label}
-          </Link>
-        ))}
-      </nav>
+      <BudgetBannerCard banner={banner} />
 
       <section className="flex flex-col gap-2.5">
         <SectionHeader title="ใกล้ตัดบัญชี" href="/subscriptions" />
