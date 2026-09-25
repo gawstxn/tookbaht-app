@@ -342,6 +342,7 @@ const en: Messages = {
     googleNote: "Signed in with Google · name and photo come from Google",
     finance: "Money",
     myAccounts: "My accounts",
+    display: "Display",
     currency: "Currency",
     currencyValue: "Thai baht (THB)",
     export: "Export data",

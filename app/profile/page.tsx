@@ -6,7 +6,7 @@ import { TabScreen } from "@/components/app";
 import { Icon } from "@/components/ui/Icon";
 import { PushToggle } from "@/components/PushToggle";
 import { useTranslation } from "react-i18next";
-import { ListCard, PrimaryButton, SecondaryButton, Segmented, Sheet, TabHeader, cx } from "@/components/ui/primitives";
+import { ListCard, PrimaryButton, SecondaryButton, Sheet, TabHeader, cx } from "@/components/ui/primitives";
 import { currentLang, type Lang } from "@/lib/i18n";
 import { setThemePref, themePref, type ThemePref } from "@/lib/theme";
 import { BackupError, backupFileName, makeBackup, parseBackup, type BackupData } from "@/lib/backup";
@@ -18,12 +18,21 @@ export default function ProfilePage() {
   const router = useRouter();
   const { user, userId, accounts, transactions, subscriptions, goals, settings, signOut, deleteAccount, setLanguage, load, notify } = useStore();
   const { t: tr } = useTranslation();
-  const [sheet, setSheet] = useState<"" | "logout" | "delete" | "restore">("");
+  const [sheet, setSheet] = useState<"" | "logout" | "delete" | "restore" | "lang" | "theme">("");
   const [restoring, setRestoring] = useState<BackupData | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [theme, setTheme] = useState<ThemePref>(themePref);
+  const langOptions: { value: Lang; label: string }[] = [
+    { value: "th", label: tr("lang.th") },
+    { value: "en", label: tr("lang.en") },
+  ];
+  const themeOptions: { value: ThemePref; label: string }[] = [
+    { value: "light", label: tr("theme.light") },
+    { value: "dark", label: tr("theme.dark") },
+    { value: "system", label: tr("theme.system") },
+  ];
 
   const exportCsv = () => {
     const name = (id?: string) => accounts.find((a) => a.id === id)?.name ?? "";
@@ -116,36 +125,9 @@ export default function ProfilePage() {
         }}
       />
 
-      <Group title={tr("lang.title")}>
-        <div className="py-3">
-          <Segmented<Lang>
-            label={tr("lang.title")}
-            value={currentLang()}
-            onChange={setLanguage}
-            options={[
-              { value: "th", label: tr("lang.th") },
-              { value: "en", label: tr("lang.en") },
-            ]}
-          />
-        </div>
-      </Group>
-
-      <Group title={tr("theme.title")}>
-        <div className="py-3">
-          <Segmented<ThemePref>
-            label={tr("theme.title")}
-            value={theme}
-            onChange={(v) => {
-              setTheme(v);
-              setThemePref(v);
-            }}
-            options={[
-              { value: "light", label: tr("theme.light") },
-              { value: "dark", label: tr("theme.dark") },
-              { value: "system", label: tr("theme.system") },
-            ]}
-          />
-        </div>
+      <Group title={tr("profile.display")}>
+        <NavRow label={tr("lang.title")} value={langOptions.find((o) => o.value === currentLang())?.label} onClick={() => setSheet("lang")} />
+        <NavRow label={tr("theme.title")} value={themeOptions.find((o) => o.value === theme)?.label} onClick={() => setSheet("theme")} />
       </Group>
 
       <Group title={tr("profile.notifications")}>
@@ -194,6 +176,30 @@ export default function ProfilePage() {
         <SecondaryButton onClick={() => setSheet("")}>{tr("common.cancel")}</SecondaryButton>
       </Sheet>
 
+      <ChoiceSheet
+        open={sheet === "lang"}
+        onClose={() => setSheet("")}
+        title={tr("lang.title")}
+        options={langOptions}
+        value={currentLang()}
+        onPick={(v) => {
+          setSheet("");
+          setLanguage(v);
+        }}
+      />
+      <ChoiceSheet
+        open={sheet === "theme"}
+        onClose={() => setSheet("")}
+        title={tr("theme.title")}
+        options={themeOptions}
+        value={theme}
+        onPick={(v) => {
+          setSheet("");
+          setTheme(v);
+          setThemePref(v);
+        }}
+      />
+
       <Sheet open={sheet === "restore"} onClose={() => !busy && setSheet("")} title={tr("profile.restoreTitle")}>
         {restoring ? (
           <p className="text-sm text-muted">
@@ -231,6 +237,24 @@ export default function ProfilePage() {
         <SecondaryButton onClick={() => setSheet("")}>{tr("common.cancel")}</SecondaryButton>
       </Sheet>
     </TabScreen>
+  );
+}
+
+/** Bottom drawer with one choice per row; picking closes it. */
+function ChoiceSheet<T extends string>({ open, onClose, title, options, value, onPick }: { open: boolean; onClose: () => void; title: string; options: { value: T; label: string }[]; value: T; onPick: (v: T) => void }) {
+  return (
+    <Sheet open={open} onClose={onClose} title={title}>
+      <ListCard>
+        <div role="radiogroup" aria-label={title} className="flex flex-col [&>*:not(:last-child)]:border-b [&>*:not(:last-child)]:border-divider">
+          {options.map((o) => (
+            <button key={o.value} type="button" role="radio" aria-checked={o.value === value} onClick={() => onPick(o.value)} className="flex min-h-[52px] w-full items-center gap-3 text-left">
+              <span className="grow text-[15px]">{o.label}</span>
+              {o.value === value ? <Icon name="check" size={18} strokeWidth={2.4} className="text-income" /> : null}
+            </button>
+          ))}
+        </div>
+      </ListCard>
+    </Sheet>
   );
 }
 

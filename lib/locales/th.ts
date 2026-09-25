@@ -340,6 +340,7 @@ const th = {
     googleNote: "เข้าสู่ระบบด้วยบัญชี Google · ชื่อและรูปดึงจาก Google",
     finance: "การเงิน",
     myAccounts: "บัญชีของฉัน",
+    display: "การแสดงผล",
     currency: "สกุลเงิน",
     currencyValue: "บาท (THB)",
     export: "ส่งออกข้อมูล",
