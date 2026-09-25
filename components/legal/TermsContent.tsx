@@ -62,7 +62,7 @@ function TermsTh() {
         <p>
           แอปให้บริการตามสภาพที่เป็นอยู่ เราพยายามให้แอปทำงานได้ต่อเนื่องและข้อมูลถูกต้อง แต่ไม่รับประกันว่าจะไม่มีข้อผิดพลาด
           ไม่หยุดชะงัก หรือการแจ้งเตือนจะถึงตรงเวลาทุกครั้ง เราอาจปรับปรุง เปลี่ยน หรือหยุดฟีเจอร์ได้
-          แนะนำให้ส่งออกข้อมูลเป็น CSV เก็บไว้เป็นระยะ
+          แนะนำให้สำรองข้อมูลเป็นไฟล์ JSON ที่หน้าโปรไฟล์เก็บไว้เป็นระยะ
         </p>
       </section>
 
@@ -76,7 +76,10 @@ function TermsTh() {
 
       <section>
         <h2>7. การยกเลิก</h2>
-        <p>คุณหยุดใช้งานและลบบัญชีได้ทุกเมื่อที่หน้าโปรไฟล์ เมื่อลบแล้วข้อมูลทั้งหมดจะถูกลบและกู้คืนไม่ได้</p>
+        <p>
+          คุณหยุดใช้งานและขอลบบัญชีได้ทุกเมื่อที่หน้าโปรไฟล์ บัญชีจะถูกปิดทันทีและกู้คืนได้โดยเข้าสู่ระบบภายใน 30 วัน
+          เมื่อครบ 30 วัน ข้อมูลทั้งหมดจะถูกลบถาวรและกู้คืนไม่ได้
+        </p>
       </section>
 
       <section>
@@ -143,8 +146,8 @@ function TermsEn() {
         <h2>5. The service</h2>
         <p>
           The app is provided as is. We work to keep it running and your data accurate, but can&apos;t guarantee it will be error-free,
-          uninterrupted, or that every notification arrives on time. We may improve, change or stop features. Exporting your data to CSV
-          from time to time is recommended.
+          uninterrupted, or that every notification arrives on time. We may improve, change or stop features. Backing up your data as a
+          JSON file from Profile from time to time is recommended.
         </p>
       </section>
 
@@ -158,7 +161,10 @@ function TermsEn() {
 
       <section>
         <h2>7. Ending use</h2>
-        <p>You can stop using the app and delete your account at any time in Profile. Deleted data can&apos;t be recovered.</p>
+        <p>
+          You can stop using the app and ask to delete your account at any time in Profile. The account closes at once and can be restored
+          by signing in within 30 days; after that all data is deleted for good and can&apos;t be recovered.
+        </p>
       </section>
 
       <section>

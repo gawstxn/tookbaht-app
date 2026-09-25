@@ -26,7 +26,8 @@ function PrivacyTh() {
             <b>ข้อมูลบัญชี Google</b> — ชื่อและอีเมลที่ Google ส่งให้ตอนเข้าสู่ระบบ เราไม่ได้รับรหัสผ่านของคุณ
           </li>
           <li>
-            <b>ข้อมูลการเงินที่คุณบันทึกเอง</b> — บัญชี ยอดเริ่มต้น รายรับ รายจ่าย การโอน โน้ต subscriptions เป้าหมาย และงบประมาณ
+            <b>ข้อมูลการเงินที่คุณบันทึกเอง</b> — บัญชี ยอดเริ่มต้น วงเงินและวันครบกำหนดชำระของบัตร/PayLater รายรับ รายจ่าย การโอน โน้ต
+            subscriptions รายการประจำ รายการผ่อน (ราคาสินค้า จำนวนงวด ยอดต่องวด) เป้าหมาย และงบประมาณ
           </li>
           <li>
             <b>การตั้งค่าในแอป</b> — เช่น สถานะการอ่านการแจ้งเตือน และเขตเวลาที่ใช้คำนวณวันตัดบัญชี
@@ -34,7 +35,14 @@ function PrivacyTh() {
           <li>
             <b>ข้อมูลการแจ้งเตือน</b> — ถ้าคุณเปิดการแจ้งเตือน เราเก็บรหัสรับแจ้งเตือน (push subscription) ของอุปกรณ์นั้น และชื่อเบราว์เซอร์/อุปกรณ์แบบย่อ
           </li>
+          <li>
+            <b>สถานะการลบบัญชี</b> — วันที่คุณขอลบบัญชี เพื่อให้กู้คืนได้ภายใน 30 วัน
+          </li>
         </ul>
+        <p>
+          PIN และ Face ID ของล็อกแอปอยู่บนอุปกรณ์ของคุณเท่านั้น PIN เก็บเป็นค่าแฮช ส่วน Face ID ใช้พาสคีย์ของอุปกรณ์
+          ข้อมูลใบหน้าไม่เคยออกจากอุปกรณ์และเราไม่ได้รับ
+        </p>
         <p>เราไม่เก็บตำแหน่งที่ตั้ง รายชื่อผู้ติดต่อ เลขบัญชีธนาคาร หรือข้อมูลบัตรจริง และไม่เชื่อมต่อกับธนาคารใดๆ</p>
       </section>
 
@@ -43,7 +51,8 @@ function PrivacyTh() {
         <ul>
           <li>ให้คุณเข้าสู่ระบบ และเห็นข้อมูลเดียวกันในทุกอุปกรณ์</li>
           <li>คำนวณยอดคงเหลือ สรุปรายเดือน งบประมาณ และเป้าหมาย</li>
-          <li>บันทึกรายจ่ายของ subscriptions อัตโนมัติ และแจ้งเตือนก่อนตัดบัญชีเมื่อคุณเปิดใช้</li>
+          <li>บันทึก subscriptions รายการประจำ และงวดผ่อนให้อัตโนมัติเมื่อถึงกำหนด</li>
+          <li>แจ้งเตือนก่อนตัดบัญชี ก่อนวันครบกำหนดชำระ และเมื่องบใกล้เต็มหรือเกิน เมื่อคุณเปิดการแจ้งเตือน</li>
         </ul>
         <p>
           เราประมวลผลข้อมูลเพื่อให้บริการตามที่คุณใช้งาน (ฐานสัญญา) และตามความยินยอมของคุณสำหรับการแจ้งเตือน
@@ -74,15 +83,17 @@ function PrivacyTh() {
       <section>
         <h2>4. คุกกี้และข้อมูลในเครื่อง</h2>
         <p>
-          แอปใช้คุกกี้เฉพาะที่จำเป็นสำหรับการเข้าสู่ระบบ และเก็บไฟล์ของแอปไว้ในเครื่องเพื่อให้เปิดได้เร็วและแสดงหน้าออฟไลน์
-          ไม่มีคุกกี้โฆษณาหรือคุกกี้ติดตาม
+          แอปใช้คุกกี้เฉพาะที่จำเป็นสำหรับการเข้าสู่ระบบ เก็บไฟล์ของแอปไว้ในเครื่องเพื่อให้เปิดได้เร็วและแสดงหน้าออฟไลน์
+          และเก็บการตั้งค่าเฉพาะเครื่องไว้ในเบราว์เซอร์ ได้แก่ ธีม ภาษา และล็อกแอป ไม่มีคุกกี้โฆษณาหรือคุกกี้ติดตาม
         </p>
       </section>
 
       <section>
         <h2>5. ระยะเวลาเก็บข้อมูล</h2>
         <p>
-          เราเก็บข้อมูลตราบเท่าที่คุณยังมีบัญชี เมื่อคุณลบบัญชีที่หน้าโปรไฟล์ ข้อมูลทั้งหมดของคุณจะถูกลบออกจากฐานข้อมูลทันทีและกู้คืนไม่ได้
+          เราเก็บข้อมูลตราบเท่าที่คุณยังมีบัญชี เมื่อคุณขอลบบัญชีที่หน้าโปรไฟล์ (ต้องยืนยันตัวตนด้วย Google อีกครั้ง)
+          บัญชีจะถูกปิดทันที การแจ้งเตือนหยุด และข้อมูลจะถูกเก็บไว้อีก 30 วันเพื่อให้คุณกู้คืนได้โดยเข้าสู่ระบบอีกครั้ง
+          เมื่อครบ 30 วัน ข้อมูลทั้งหมดของคุณจะถูกลบออกจากฐานข้อมูลโดยอัตโนมัติและกู้คืนไม่ได้
           สำเนาสำรองของผู้ให้บริการอาจยังคงอยู่ช่วงสั้นๆ ตามรอบการสำรองข้อมูลของผู้ให้บริการ
         </p>
       </section>
@@ -91,8 +102,8 @@ function PrivacyTh() {
         <h2>6. สิทธิ์ของคุณ</h2>
         <ul>
           <li>ดูและแก้ไขข้อมูลของคุณได้ในแอป</li>
-          <li>ส่งออกรายการทั้งหมดเป็นไฟล์ CSV ได้ที่หน้าโปรไฟล์</li>
-          <li>ลบบัญชีและข้อมูลทั้งหมดได้ด้วยตัวเองที่หน้าโปรไฟล์</li>
+          <li>ส่งออกรายการเป็นไฟล์ CSV หรือสำรองข้อมูลทั้งหมดเป็นไฟล์ JSON ได้ที่หน้าโปรไฟล์</li>
+          <li>ลบบัญชีและข้อมูลทั้งหมดได้ด้วยตัวเองที่หน้าโปรไฟล์ (ลบถาวรหลัง 30 วัน และกู้คืนได้ระหว่างนั้น)</li>
           <li>ปิดการแจ้งเตือนเมื่อไหร่ก็ได้ (ถอนความยินยอม)</li>
           <li>ขอข้อมูล คัดค้าน หรือร้องเรียนเรื่องการใช้ข้อมูลส่วนบุคคลได้ตาม PDPA</li>
         </ul>
@@ -140,7 +151,8 @@ function PrivacyEn() {
             <b>Google account details</b> — the name and email Google shares when you sign in. We never receive your password.
           </li>
           <li>
-            <b>Money data you enter</b> — accounts, opening balances, income, expenses, transfers, notes, subscriptions, goals and budgets.
+            <b>Money data you enter</b> — accounts, opening balances, card / pay-later limits and due days, income, expenses, transfers, notes,
+            subscriptions, recurring entries, installment purchases (price, number and amount of installments), goals and budgets.
           </li>
           <li>
             <b>App settings</b> — such as notification read state, language, and the time zone used for billing dates.
@@ -148,7 +160,14 @@ function PrivacyEn() {
           <li>
             <b>Notification data</b> — if you turn on notifications, the device&apos;s push subscription and a short browser/device name.
           </li>
+          <li>
+            <b>Account deletion status</b> — when you asked to delete your account, so it can be restored within 30 days.
+          </li>
         </ul>
+        <p>
+          The app lock&apos;s PIN and Face ID stay on your device. The PIN is stored as a hash; Face ID uses the device&apos;s passkey, so
+          face data never leaves the device and we never receive it.
+        </p>
         <p>We don&apos;t collect your location, contacts, real bank account or card numbers, and we don&apos;t connect to any bank.</p>
       </section>
 
@@ -157,7 +176,8 @@ function PrivacyEn() {
         <ul>
           <li>To sign you in and show the same data on all your devices</li>
           <li>To calculate balances, monthly summaries, budgets and goals</li>
-          <li>To log subscription charges automatically and remind you before billing when you turn that on</li>
+          <li>To log subscriptions, recurring entries and installments automatically when they fall due</li>
+          <li>With notifications on, to remind you before bills and payment due dates, and when a budget nears or passes its limit</li>
         </ul>
         <p>
           We process your data to provide the service you use (contract) and, for notifications, with your consent.
@@ -188,16 +208,19 @@ function PrivacyEn() {
       <section>
         <h2>4. Cookies and on-device storage</h2>
         <p>
-          The app only uses cookies needed to keep you signed in, and stores its own files on your device so it opens quickly and can show
-          an offline screen. There are no advertising or tracking cookies.
+          The app only uses cookies needed to keep you signed in, stores its own files on your device so it opens quickly and can show an
+          offline screen, and keeps per-device settings (theme, language and the app lock) in the browser. There are no advertising or
+          tracking cookies.
         </p>
       </section>
 
       <section>
         <h2>5. How long we keep data</h2>
         <p>
-          We keep your data while you have an account. When you delete your account in Profile, all your data is removed from the database
-          immediately and can&apos;t be recovered. Provider backups may keep a copy briefly, according to their backup cycle.
+          We keep your data while you have an account. When you ask to delete your account in Profile (after confirming with Google), the
+          account is closed at once and notifications stop, and your data is kept for 30 more days so you can restore it by signing in.
+          After 30 days all your data is removed from the database automatically and can&apos;t be recovered. Provider backups may keep a
+          copy briefly, according to their backup cycle.
         </p>
       </section>
 
@@ -205,8 +228,8 @@ function PrivacyEn() {
         <h2>6. Your rights</h2>
         <ul>
           <li>See and edit your data in the app</li>
-          <li>Export all transactions as CSV from Profile</li>
-          <li>Delete your account and all data yourself from Profile</li>
+          <li>Export transactions as CSV, or back up all your data as a JSON file, from Profile</li>
+          <li>Delete your account and all data yourself from Profile (deleted for good after 30 days; restorable until then)</li>
           <li>Turn notifications off at any time (withdraw consent)</li>
           <li>Request access, object, or complain about the use of your personal data under the PDPA</li>
         </ul>
