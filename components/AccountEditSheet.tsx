@@ -71,7 +71,7 @@ function AccountFields({ initial, onSave, onDelete }: { initial?: AccountDraft; 
             maxLength={60}
             onChange={(e) => setName(e.target.value)}
             placeholder={tr("accounts.namePlaceholder")}
-            className="min-h-9 w-full border-b border-[#d0cbbf] bg-transparent pb-1 font-serif text-[20px] font-bold outline-none"
+            className="min-h-9 w-full border-b border-line-strong bg-transparent pb-1 font-serif text-[20px] font-bold outline-none"
           />
         </div>
       </div>

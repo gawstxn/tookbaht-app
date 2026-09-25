@@ -8,6 +8,7 @@ import { PushToggle } from "@/components/PushToggle";
 import { useTranslation } from "react-i18next";
 import { ListCard, PrimaryButton, SecondaryButton, Segmented, Sheet, TabHeader, cx } from "@/components/ui/primitives";
 import { currentLang, type Lang } from "@/lib/i18n";
+import { setThemePref, themePref, type ThemePref } from "@/lib/theme";
 import { TYPE_META, categoryLabel } from "@/lib/constants";
 import { useStore } from "@/lib/store";
 
@@ -18,6 +19,7 @@ export default function ProfilePage() {
   const [sheet, setSheet] = useState<"" | "logout" | "delete">("");
   const [busy, setBusy] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [theme, setTheme] = useState<ThemePref>(themePref);
 
   const exportCsv = () => {
     const name = (id?: string) => accounts.find((a) => a.id === id)?.name ?? "";
@@ -42,9 +44,9 @@ export default function ProfilePage() {
     <TabScreen>
       <TabHeader title={tr("profile.title")} />
 
-      <section className="flex flex-col gap-4 rounded-[28px] bg-ink p-[22px] text-on-ink shadow-hero">
+      <section className="flex flex-col gap-4 rounded-[28px] bg-hero p-[22px] text-on-hero shadow-hero">
         <div className="flex items-center gap-4">
-          <span aria-hidden="true" className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full bg-lime text-2xl font-bold text-ink">
+          <span aria-hidden="true" className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full bg-lime text-2xl font-bold text-on-lime">
             {(user?.name.trim()[0] ?? "?").toUpperCase()}
           </span>
           <div className="flex min-w-0 flex-col gap-0.5">
@@ -73,6 +75,24 @@ export default function ProfilePage() {
             options={[
               { value: "th", label: tr("lang.th") },
               { value: "en", label: tr("lang.en") },
+            ]}
+          />
+        </div>
+      </Group>
+
+      <Group title={tr("theme.title")}>
+        <div className="py-3">
+          <Segmented<ThemePref>
+            label={tr("theme.title")}
+            value={theme}
+            onChange={(v) => {
+              setTheme(v);
+              setThemePref(v);
+            }}
+            options={[
+              { value: "light", label: tr("theme.light") },
+              { value: "dark", label: tr("theme.dark") },
+              { value: "system", label: tr("theme.system") },
             ]}
           />
         </div>

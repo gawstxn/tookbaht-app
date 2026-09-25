@@ -64,7 +64,7 @@ export default function GoalsPage() {
             <div className={goals.incomeTarget > 0 ? "flex flex-col gap-2 border-t border-ink-line pt-4" : "flex flex-col gap-2"}>
               <MeterHead icon="out" color="var(--color-peach)" label={tr("goals.expenseBudget")} pct={expensePct} />
               <Amount value={sum.expense} of={goals.expenseBudget} />
-              <Bar value={expensePct} color="var(--color-peach)" marker={pace > 0 && pace < 1 ? { at: pace, color: "var(--color-on-ink)" } : undefined} />
+              <Bar value={expensePct} color="var(--color-peach)" marker={pace > 0 && pace < 1 ? { at: pace, color: "var(--color-on-hero)" } : undefined} />
               <div className="flex items-center justify-between text-xs text-on-ink-muted">
                 {remaining < 0 ? (
                   <span className="font-semibold text-peach">{tr("goals.over", { amount: baht(-remaining) })}</span>

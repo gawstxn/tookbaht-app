@@ -72,7 +72,7 @@ export default function OverviewPage() {
               <Link key={sub.id} href={`/subscriptions/${sub.id}`} className="flex flex-col gap-2 rounded-2xl border border-line bg-card p-3">
                 <div className="flex items-center justify-between">
                   <SubMono s={sub} size={30} />
-                  <span className="whitespace-nowrap rounded-full bg-chip px-2 py-px text-[11px] font-semibold" style={days <= 7 ? { background: "var(--color-lime)" } : undefined}>
+                  <span className="whitespace-nowrap rounded-full bg-chip px-2 py-px text-[11px] font-semibold" style={days <= 7 ? { background: "var(--color-lime)", color: "var(--color-on-lime)" } : undefined}>
                     {days <= 0 ? tr("common.today") : tr("common.days", { count: days })}
                   </span>
                 </div>

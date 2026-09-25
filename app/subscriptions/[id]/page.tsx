@@ -63,7 +63,9 @@ export default function SubscriptionDetailPage() {
           <span className="font-sans text-[15px] font-medium tracking-normal text-muted"> {cyclePer(sub.cycle)}</span>
         </span>
         {sub.currency !== "THB" && estimate !== null ? (
-          <span className="-mt-1 font-mono text-sm text-muted">{tr("subs.estimate", { amount: formatMoney(estimate, "THB"), per: cyclePer(sub.cycle) })}</span>
+          <span className="-mt-1 text-sm text-muted">
+            ≈ <span className="font-mono">{formatMoney(estimate, "THB")}</span> {cyclePer(sub.cycle)}
+          </span>
         ) : null}
         <span className="rounded-full bg-chip px-3 py-1 text-[13px] font-semibold">
           {sub.paused ? tr("subs.pausedNow") : tr("subs.next", { date: shortDate(due), rel: relativeDue(days) })}

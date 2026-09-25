@@ -1,15 +1,20 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, ViewTransition, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { applyLang, preferredLang } from "@/lib/i18n";
+import { applyTheme, followSystemTheme, themePref } from "@/lib/theme";
 import { TERMS_VERSION } from "@/lib/legal";
 import { TermsGate } from "./TermsConsent";
 import { getSupabase } from "@/lib/supabase/client";
 import { useStore, type Toast } from "@/lib/store";
 import { Icon } from "./ui/Icon";
 import { PrimaryButton, cx } from "./ui/primitives";
+
+/** Tab roots sit at depth 0; everything else is pushed on top of them. */
+const TAB_ROOTS = ["/", "/transactions", "/subscriptions", "/profile"];
+const depth = (path: string) => (TAB_ROOTS.includes(path) ? 0 : path.split("/").filter(Boolean).length);
 
 /** Screens that work without a session or before any data exists. */
 const NO_DATA_PATHS = ["/login", "/auth/", "/terms", "/privacy"];
@@ -33,6 +38,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // Pages prerender in Thai; switch to the saved/device language once in the browser.
   useEffect(() => {
     applyLang(preferredLang());
+  }, []);
+
+  // The boot script already set the theme; keep "system" in step with the OS.
+  useEffect(() => {
+    applyTheme(themePref());
+    return followSystemTheme();
   }, []);
 
   useEffect(() => {
@@ -71,10 +82,34 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="relative mx-auto min-h-dvh w-full max-w-[430px] bg-paper">
-      {/* Remount on language change so memoised labels recompute. */}
-      <Fragment key={i18n.language}>{content}</Fragment>
+      <PageTransition path={pathname}>
+        {/* Remount on language change so memoised labels recompute. */}
+        <Fragment key={i18n.language}>{content}</Fragment>
+      </PageTransition>
       <ToastHost />
     </div>
+  );
+}
+
+/**
+ * Animates route changes (styles in globals.css): deeper screens slide in from
+ * the right, going up slides back, tab switches crossfade. Navigations are
+ * transitions, so keying by path makes React run a view transition.
+ */
+function PageTransition({ path, children }: { path: string; children: React.ReactNode }) {
+  const prev = useRef(path);
+  // Runs inside the transition's DOM update, before the animation starts.
+  useLayoutEffect(() => {
+    const from = prev.current;
+    prev.current = path;
+    if (from === path) return;
+    const [a, b] = [depth(from), depth(path)];
+    document.documentElement.dataset.nav = b > a ? "forward" : b < a ? "back" : "tab";
+  }, [path]);
+  return (
+    <ViewTransition key={path} enter="page" exit="page" default="none">
+      <div>{children}</div>
+    </ViewTransition>
   );
 }
 
@@ -129,7 +164,7 @@ function ToastHost() {
         className={cx(
           "flex min-h-12 w-full items-center gap-3 rounded-2xl py-2 pl-4 pr-2 text-sm shadow-hero",
           leaving ? "animate-toast-out" : "animate-toast pointer-events-auto",
-          shown.tone === "error" ? "bg-danger text-white" : "bg-ink text-on-ink",
+          shown.tone === "error" ? "bg-danger text-white" : "bg-hero text-on-hero",
         )}
       >
         {shown.tone === "ok" ? <Icon name="check" size={16} strokeWidth={2.4} className="shrink-0 text-lime" /> : null}

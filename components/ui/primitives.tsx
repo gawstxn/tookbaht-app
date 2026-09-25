@@ -20,7 +20,7 @@ export function HeroCard({ className, children, label }: { className?: string; c
   return (
     <section
       aria-label={label}
-      className={cx("flex flex-col gap-4 rounded-[28px] bg-ink p-[22px] text-on-ink shadow-hero", className)}
+      className={cx("flex flex-col gap-4 rounded-[28px] bg-hero p-[22px] text-on-hero shadow-hero", className)}
     >
       {children}
     </section>
@@ -189,7 +189,7 @@ export function Segmented<T extends string>({
             className={cx(
               "font-semibold",
               size === "md" ? "min-h-10 rounded-[10px] text-sm" : "min-h-9 rounded-[9px] text-[13px]",
-              on ? "bg-card" : "text-muted",
+              on ? "bg-card dark:bg-ink-3" : "text-muted",
             )}
             style={on && colorFor ? { color: colorFor(o.value) } : undefined}
           >
@@ -264,7 +264,7 @@ export function SecondaryButton({ children, onClick, tone }: { children: ReactNo
       onClick={onClick}
       className={cx(
         "min-h-[52px] w-full rounded-2xl border text-[15px] font-semibold",
-        tone === "danger" ? "border-[#e8c3aa] bg-expense-tint text-danger" : "border-line bg-card",
+        tone === "danger" ? "border-expense-line bg-expense-tint text-danger" : "border-line bg-card",
       )}
     >
       {children}
@@ -359,7 +359,7 @@ export function Sheet({ open, onClose, title, children, titleClassName }: { open
 
   if (!mounted) return null;
   return (
-    <div className={cx("fixed inset-0 z-50 flex justify-center bg-ink/45", closing ? "animate-fade-out pointer-events-none" : "animate-fade")}>
+    <div className={cx("fixed inset-0 z-50 flex justify-center bg-hero/45 dark:bg-black/60", closing ? "animate-fade-out pointer-events-none" : "animate-fade")}>
       <div className="flex w-full max-w-[430px] flex-col">
       <button type="button" aria-label={t("common.close")} tabIndex={-1} onClick={onClose} className="grow" />
       <div
@@ -373,7 +373,7 @@ export function Sheet({ open, onClose, title, children, titleClassName }: { open
         }}
         className={cx(closing ? "animate-sheet-out" : "animate-sheet", "flex max-h-[88dvh] flex-col gap-3.5 overflow-y-auto rounded-t-[28px] bg-paper px-6 pb-[calc(32px+env(safe-area-inset-bottom))] pt-2.5 shadow-sheet outline-none")}
       >
-        <span aria-hidden="true" className="h-1 w-10 self-center rounded-full bg-[#d0cbbf]" />
+        <span aria-hidden="true" className="h-1 w-10 self-center rounded-full bg-line-strong" />
         <div className="flex items-center justify-between">
           <h2 id={titleId} className={cx("font-serif text-xl font-bold", titleClassName)}>
             {closing ? kept.title : title}
