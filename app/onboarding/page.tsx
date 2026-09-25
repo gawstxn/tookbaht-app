@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import { balanceLabel, monoFor } from "@/components/AccountEditSheet";
-import { Card, ListCard, Monogram, PrimaryButton, SecondaryButton } from "@/components/ui/primitives";
+import { AccountMark } from "@/components/app";
+import { Card, ListCard, PrimaryButton, SecondaryButton } from "@/components/ui/primitives";
 import { dismissLegacyData, importData, importLegacyData, readLegacyData } from "@/lib/legacyImport";
 import { seedData } from "@/lib/seed";
 import { useStore } from "@/lib/store";
@@ -117,7 +118,7 @@ export default function OnboardingPage() {
               onChange={(e) => update(i, { on: e.target.checked })}
               className="h-5 w-5 shrink-0 accent-ink"
             />
-            <Monogram text={monoFor(s.name)} tone={s.tone} size={34} />
+            <AccountMark account={s} size={34} />
             <div className="flex min-w-0 grow flex-col">
               <input
                 aria-label="ชื่อบัญชี"

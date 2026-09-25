@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { AccountSheet, CategorySheet, DateSheet } from "@/components/pickers";
-import { Card, Chip, ListCard, PickerRow, PrimaryButton, PushHeader, Segmented, SwitchRow } from "@/components/ui/primitives";
+import { Icon } from "@/components/ui/Icon";
+import { Card, Chip, Empty, ListCard, PickerRow, PrimaryButton, PushHeader, Segmented, Sheet, SwitchRow } from "@/components/ui/primitives";
 import { BrandMark, PushScreen, SubMono } from "@/components/app";
-import { findBrand, suggestCategory } from "@/lib/brands";
-import { MONO_TONES, POPULAR_SUBS, SUB_CATEGORIES } from "@/lib/constants";
+import { findBrand, normalizeName, suggestCategory } from "@/lib/brands";
+import { MONO_TONES, POPULAR_SUBS, SUB_CATALOG, SUB_CATEGORIES } from "@/lib/constants";
 import { baht, fromISO, monthlyEquivalent, shortDate, todayISO, TH_MONTHS_SHORT } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { Cycle, Subscription } from "@/lib/types";
@@ -51,7 +52,8 @@ export function SubscriptionForm({
     },
   );
   const [amountText, setAmountText] = useState(initial ? String(initial.amount) : "");
-  const [sheet, setSheet] = useState<"" | "date" | "account" | "category">("");
+  const [sheet, setSheet] = useState<"" | "date" | "account" | "category" | "catalog">("");
+  const pick = (n: string) => set({ name: n, category: suggestCategory(n) ?? d.category });
   const set = (p: Partial<SubDraft>) => setD((x) => ({ ...x, ...p }));
 
   const monthly = monthlyEquivalent(d.amount, d.cycle);
@@ -94,7 +96,7 @@ export function SubscriptionForm({
         {POPULAR_SUBS.map((n) => {
           const brand = findBrand(n);
           return (
-            <Chip key={n} size="sm" on={d.name === n} onClick={() => set({ name: n, category: suggestCategory(n) ?? d.category })}>
+            <Chip key={n} size="sm" on={d.name === n} onClick={() => pick(n)}>
               <span className="flex items-center gap-1.5">
                 {brand ? <BrandMark brand={brand} size={18} /> : null}
                 {n}
@@ -102,6 +104,12 @@ export function SubscriptionForm({
             </Chip>
           );
         })}
+        <Chip size="sm" on={false} onClick={() => setSheet("catalog")}>
+          <span className="flex items-center gap-1">
+            ดูทั้งหมด
+            <Icon name="chevronRight" size={14} strokeWidth={2.2} />
+          </span>
+        </Chip>
       </div>
 
       <Card className="flex flex-col gap-3 px-4 py-3.5">
@@ -174,7 +182,44 @@ export function SubscriptionForm({
         hint={d.startDate < today ? `${hint} · รอบก่อนวันนี้จะไม่ถูกบันทึกย้อนหลัง` : hint}
       />
       <AccountSheet open={sheet === "account"} onClose={() => setSheet("")} title="ชำระจาก" value={d.accountId} onPick={(accountId) => set({ accountId })} />
+      <CatalogSheet
+        open={sheet === "catalog"}
+        onClose={() => setSheet("")}
+        onPick={(n) => {
+          pick(n);
+          setSheet("");
+        }}
+      />
       <CategorySheet open={sheet === "category"} onClose={() => setSheet("")} title="หมวดหมู่" options={SUB_CATEGORIES} value={d.category} onPick={(category) => set({ category })} />
     </PushScreen>
+  );
+}
+
+/** Full list of known services, grouped, with search. */
+function CatalogSheet({ open, onClose, onPick }: { open: boolean; onClose: () => void; onPick: (name: string) => void }) {
+  const [q, setQ] = useState("");
+  const query = normalizeName(q);
+  const groups = SUB_CATALOG.map((g) => ({ ...g, names: g.names.filter((n) => !query || normalizeName(n).includes(query)) })).filter((g) => g.names.length);
+  return (
+    <Sheet open={open} onClose={onClose} title="เลือกบริการ">
+      <label className="flex min-h-11 items-center gap-2 rounded-xl border border-line bg-card px-3">
+        <Icon name="search" size={16} strokeWidth={2} className="text-faint" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="ค้นหา เช่น Netflix, AIS" aria-label="ค้นหาบริการ" className="min-w-0 grow bg-transparent text-sm outline-none" />
+      </label>
+      {groups.length === 0 ? <Empty>ไม่พบ ลองพิมพ์ชื่อเองในช่องชื่อบริการได้เลย</Empty> : null}
+      {groups.map((g) => (
+        <section key={g.title} className="flex flex-col gap-1.5">
+          <h3 className="text-[13px] font-semibold text-muted">{g.title}</h3>
+          <ListCard>
+            {g.names.map((n) => (
+              <button key={n} type="button" onClick={() => onPick(n)} className="flex min-h-[52px] w-full items-center gap-3 text-left">
+                <SubMono s={{ name: n, tone: toneFor(n) }} size={32} />
+                <span className="grow text-[15px]">{n}</span>
+              </button>
+            ))}
+          </ListCard>
+        </section>
+      ))}
+    </Sheet>
   );
 }

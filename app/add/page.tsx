@@ -115,7 +115,10 @@ function AddForm() {
           <div className="flex flex-wrap gap-2">
             {cats.map((c) => (
               <Chip key={c.key} on={c.key === cat} onClick={() => setCat(c.key)}>
-                {c.label}
+                <span className="flex items-center gap-1.5">
+                  <Icon name={c.icon} size={15} strokeWidth={2} />
+                  {c.label}
+                </span>
               </Chip>
             ))}
           </div>

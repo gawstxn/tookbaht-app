@@ -101,7 +101,7 @@ export default function TransactionsPage() {
         {selected ? (
           <>
             <div className="flex items-center gap-3">
-              <TxIcon type={selected.type} size={48} />
+              <TxIcon type={selected.type} category={selected.category} size={48} />
               <div className="flex flex-col">
                 <span className="text-lg font-semibold">{selected.title}</span>
                 <span className="font-mono text-xl font-semibold" style={{ color: TYPE_META[selected.type].color }}>

@@ -6,7 +6,8 @@ import { TH_MONTHS, TH_MONTHS_SHORT, TH_WEEKDAYS_SHORT, daysInMonth, shiftMonth,
 import { accountSubtitle } from "@/lib/selectors";
 import type { CategoryDef } from "@/lib/constants";
 import { Icon } from "./ui/Icon";
-import { Monogram, PrimaryButton, Sheet, cx } from "./ui/primitives";
+import { AccountMark } from "./app";
+import { PrimaryButton, Sheet, cx } from "./ui/primitives";
 
 /* ---------- calendar ---------- */
 
@@ -159,7 +160,7 @@ export function AccountSheet({
               }}
               className={cx("flex min-h-[60px] items-center gap-3 text-left", i < accounts.length - 1 && "border-b border-divider", blocked && "opacity-45")}
             >
-              <Monogram text={a.mono} tone={a.tone} size={36} />
+              <AccountMark account={a} size={36} />
               <span className="flex grow flex-col">
                 <span className="text-[15px] font-medium">{a.name}</span>
                 <span className="text-xs text-muted">{blocked ? "เลือกไว้อีกฝั่งแล้ว" : accountSubtitle(a, txs)}</span>
@@ -211,7 +212,7 @@ export function CategorySheet({
               }}
               className={cx("flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-2xl border px-1.5 text-[13px] font-semibold", on ? "border-ink bg-ink text-on-ink" : "border-line bg-card")}
             >
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: c.dot }} />
+              <Icon name={c.icon} size={20} strokeWidth={2} />
               {c.label}
             </button>
           );

@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { TYPE_META, categoryLabel } from "@/lib/constants";
+import { ACCOUNT_KIND_ICON, TYPE_META, categoryIcon, categoryLabel } from "@/lib/constants";
 import { findBrand, onColor, type Brand } from "@/lib/brands";
 import { baht2, relativeDue } from "@/lib/format";
-import type { Subscription, Transaction } from "@/lib/types";
+import type { Account, Subscription, Transaction } from "@/lib/types";
 import { Icon, type IconName } from "./ui/Icon";
 import { Monogram, cx } from "./ui/primitives";
 
@@ -68,7 +68,8 @@ export function PushScreen({ children, className }: { children: React.ReactNode;
   return <main className={cx("flex min-h-dvh flex-col gap-4 px-6 pb-[calc(24px+env(safe-area-inset-bottom))] pt-[calc(12px+env(safe-area-inset-top)+var(--standalone-top,0px))]", className)}>{children}</main>;
 }
 
-export function TxIcon({ type, size = 38 }: { type: Transaction["type"]; size?: number }) {
+/** Round icon for a transaction: its category's icon in the income/expense colours (arrows for transfers). */
+export function TxIcon({ type, category, size = 38 }: { type: Transaction["type"]; category?: string; size?: number }) {
   const meta = TYPE_META[type];
   return (
     <span
@@ -76,7 +77,20 @@ export function TxIcon({ type, size = 38 }: { type: Transaction["type"]; size?: 
       className="flex shrink-0 items-center justify-center rounded-full"
       style={{ width: size, height: size, background: meta.tint, color: meta.color }}
     >
-      <Icon name={type} size={size * 0.46} strokeWidth={2} />
+      <Icon name={type === "move" || !category ? type : categoryIcon(category)} size={size * 0.46} strokeWidth={2} />
+    </span>
+  );
+}
+
+/** Account tile: the account's colour with an icon for its kind (bank, savings, card, cash). */
+export function AccountMark({ account, size = 40 }: { account: Pick<Account, "kind" | "tone">; size?: number }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="flex shrink-0 items-center justify-center text-white"
+      style={{ width: size, height: size, borderRadius: size * 0.3, background: account.tone }}
+    >
+      <Icon name={ACCOUNT_KIND_ICON[account.kind]} size={size * 0.5} strokeWidth={2} />
     </span>
   );
 }
@@ -92,7 +106,7 @@ export function TxRow({ t, onClick }: { t: Transaction; onClick?: () => void }) 
   const Tag = onClick ? "button" : "div";
   return (
     <Tag type={onClick ? "button" : undefined} onClick={onClick} className="flex min-h-[60px] w-full items-center gap-3 text-left">
-      <TxIcon type={t.type} />
+      <TxIcon type={t.type} category={t.category} />
       <div className="flex min-w-0 grow flex-col">
         <span className="truncate text-[15px] font-medium">{t.title}</span>
         <span className="truncate text-xs text-muted">{sub}</span>
