@@ -65,6 +65,11 @@ export default function ProfilePage() {
         <PushToggle />
       </Group>
 
+      <Group title="เกี่ยวกับ">
+        <NavRow label="ข้อกำหนดการใช้งาน" onClick={() => router.push("/terms")} />
+        <NavRow label="นโยบายความเป็นส่วนตัว" onClick={() => router.push("/privacy")} />
+      </Group>
+
       <Group title="บัญชี">
         <button type="button" onClick={() => setSheet("logout")} className="flex min-h-[52px] w-full items-center gap-3 text-left text-[15px]">
           <Icon name="logout" size={18} />

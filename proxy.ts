@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { supabaseEnv } from "@/lib/supabase/env";
 
 // /api/cron/ checks its own secret.
-const PUBLIC_PATHS = ["/login", "/auth/", "/api/cron/"];
+const PUBLIC_PATHS = ["/login", "/auth/", "/api/cron/", "/terms", "/privacy"];
 
 /** Refreshes the Supabase session cookie and keeps signed-out visitors on /login. */
 export async function proxy(request: NextRequest) {
