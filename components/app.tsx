@@ -29,7 +29,7 @@ export function BottomNav() {
         key={t.href}
         href={t.href}
         aria-current={on ? "page" : undefined}
-        className={cx("flex min-h-12 flex-col items-center justify-center gap-0.5 text-[11px]", on ? "font-semibold text-ink" : "text-[#6b6e65]")}
+        className={cx("flex min-h-12 flex-col items-center justify-center gap-0.5 text-[11px]", on ? "font-semibold text-ink" : "text-muted")}
       >
         <Icon name={t.icon} size={22} strokeWidth={on ? 2 : 1.8} />
         {tr(`nav.${t.label}`)}
@@ -39,6 +39,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label={tr("nav.menu")}
+      style={{ viewTransitionName: "bottom-nav" }}
       className="fixed inset-x-0 bottom-0 z-40 mx-auto grid max-w-[430px] grid-cols-5 items-center border-t border-line bg-card px-2 pb-[max(6px,calc(env(safe-area-inset-bottom)-8px))] pt-1"
     >
       {tab(TABS[0])}
@@ -46,7 +47,7 @@ export function BottomNav() {
       <Link
         href="/add"
         aria-label={tr("nav.add")}
-        className="-mt-[18px] flex h-14 w-14 items-center justify-center justify-self-center rounded-full bg-lime text-ink shadow-fab"
+        className="-mt-[18px] flex h-14 w-14 items-center justify-center justify-self-center rounded-full bg-lime text-on-lime shadow-fab"
       >
         <Icon name="plus" size={26} strokeWidth={2.4} />
       </Link>
@@ -124,7 +125,7 @@ export function TxRow({ t, onClick }: { t: Transaction; onClick?: () => void }) 
 
 export function DuePill({ days }: { days: number }) {
   return (
-    <span className={cx("whitespace-nowrap rounded-full px-2 py-px text-[11px] font-semibold", days <= 7 ? "bg-lime" : "bg-chip")}>{relativeDue(days)}</span>
+    <span className={cx("whitespace-nowrap rounded-full px-2 py-px text-[11px] font-semibold", days <= 7 ? "bg-lime text-on-lime" : "bg-chip")}>{relativeDue(days)}</span>
   );
 }
 

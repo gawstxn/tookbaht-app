@@ -28,9 +28,9 @@ export function useNotifications() {
 }
 
 export const NOTIF_STYLE: Record<NotifKind, { icon: IconName; bg: string; fg: string }> = {
-  due: { icon: "repeat", bg: "#e9f3c7", fg: "#4d6b12" },
+  due: { icon: "repeat", bg: "var(--color-lime-tint)", fg: "var(--color-lime-ink)" },
   over: { icon: "alert", bg: "var(--color-expense-tint)", fg: "var(--color-danger)" },
-  near: { icon: "gauge", bg: "#f6ead0", fg: "#9a6a12" },
+  near: { icon: "gauge", bg: "var(--color-warn-tint)", fg: "var(--color-warn-ink)" },
   autolog: { icon: "check", bg: "var(--color-transfer-tint)", fg: "var(--color-transfer)" },
   income: { icon: "target", bg: "var(--color-income-tint)", fg: "var(--color-income)" },
   weekly: { icon: "chart", bg: "var(--color-chip)", fg: "var(--color-ink)" },

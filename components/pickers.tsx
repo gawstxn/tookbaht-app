@@ -65,7 +65,7 @@ export function Calendar({
               onClick={() => onChange(iso)}
               className={cx(
                 "h-10 rounded-full border font-mono text-sm font-semibold",
-                on ? "border-ink bg-ink text-lime" : isToday ? "border-ink" : "border-transparent",
+                on ? "border-hero bg-hero text-lime dark:border-lime" : isToday ? "border-ink" : "border-transparent",
                 disabled && "text-switch-off",
               )}
             >
@@ -256,7 +256,7 @@ export function MonthSwitcher() {
                 className={cx("flex min-h-14 flex-col items-center justify-center rounded-2xl border", on ? "border-ink bg-ink text-on-ink" : "border-line bg-card")}
               >
                 <span className="text-sm font-semibold">{monthNamesShort()[mm - 1]}</span>
-                <span className={cx("text-xs", on ? "text-on-ink-muted" : "text-muted")}>{displayYear(yy)}</span>
+                <span className={cx("text-xs", on ? "text-on-ink/65" : "text-muted")}>{displayYear(yy)}</span>
               </button>
             );
           })}

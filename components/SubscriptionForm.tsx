@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { AccountSheet, CategorySheet, DateSheet } from "@/components/pickers";
 import { Icon } from "@/components/ui/Icon";
-import { Card, Chip, Empty, ListCard, PickerRow, PrimaryButton, PushHeader, Segmented, Sheet, SwitchRow } from "@/components/ui/primitives";
+import { Card, Chip, Empty, ListCard, PickerRow, PrimaryButton, PushHeader, Segmented, Sheet, SwitchRow, cx } from "@/components/ui/primitives";
 import { BrandMark, PushScreen, SubMono } from "@/components/app";
 import { findBrand, normalizeName, suggestCategory } from "@/lib/brands";
 import { MONO_TONES, POPULAR_SUBS, SUB_CATALOG, SUB_CATEGORIES } from "@/lib/constants";
@@ -58,6 +58,8 @@ export function SubscriptionForm({
   );
   const { t } = useTranslation();
   const [amountText, setAmountText] = useState(initial ? String(initial.amount) : "");
+  // The field holds the listed price; +VAT is a toggle on top of it, so tapping it twice doesn't add 7% twice.
+  const [vat, setVat] = useState(false);
   const [sheet, setSheet] = useState<"" | "date" | "account" | "category" | "catalog">("");
   const [categoryTouched, setCategoryTouched] = useState(!!initial);
   const pick = (n: string) => set({ name: n, category: suggestCategory(n) ?? d.category });
@@ -67,9 +69,17 @@ export function SubscriptionForm({
   // Baht per billing cycle (estimated for USD from the latest rate and the card's fee).
   const thb = toTHB(d.amount, d.currency, usdRate, account);
   const monthly = monthlyEquivalent(thb ?? 0, d.cycle);
+  const priced = (text: string, withVat: boolean) => {
+    const n = parseFloat(text) || 0;
+    return withVat ? Math.round(n * 107) / 100 : n;
+  };
   const setAmount = (v: string) => {
     setAmountText(v);
-    set({ amount: parseFloat(v) || 0 });
+    set({ amount: priced(v, vat && d.currency === "USD") });
+  };
+  const toggleVat = () => {
+    setVat(!vat);
+    set({ amount: priced(amountText, !vat) });
   };
   const canSave = d.name.trim().length > 0 && d.amount > 0 && !!d.accountId;
   const start = fromISO(d.startDate);
@@ -88,7 +98,7 @@ export function SubscriptionForm({
         {findBrand(d.name) ? (
           <SubMono s={{ name: d.name, tone: toneFor(d.name) }} size={56} />
         ) : (
-          <span aria-hidden="true" className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-ink text-2xl font-bold text-lime">
+          <span aria-hidden="true" className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-hero text-2xl font-bold text-lime">
             {(d.name.trim()[0] ?? "?").toUpperCase()}
           </span>
         )}
@@ -105,7 +115,7 @@ export function SubscriptionForm({
               set({ name: e.target.value, ...(suggested && !categoryTouched ? { category: suggested } : {}) });
             }}
             placeholder={t("subs.namePlaceholder")}
-            className="min-h-9 w-full border-b border-[#d0cbbf] bg-transparent pb-1 font-serif text-[22px] font-bold outline-none"
+            className="min-h-9 w-full border-b border-line-strong bg-transparent pb-1 font-serif text-[22px] font-bold outline-none"
           />
         </div>
       </div>
@@ -139,7 +149,7 @@ export function SubscriptionForm({
               label={t("subs.currency")}
               value={d.currency}
               onChange={(currency) => {
-                set({ currency });
+                set({ currency, amount: priced(amountText, vat && currency === "USD") });
                 if (currency === "USD") void ensureUsdRate();
               }}
               options={[
@@ -164,21 +174,31 @@ export function SubscriptionForm({
           {d.currency === "USD" ? (
             <button
               type="button"
-              onClick={() => setAmount((Math.round(d.amount * 107) / 100).toFixed(2))}
-              disabled={!d.amount}
-              className="shrink-0 rounded-full border border-line px-2.5 py-1 text-xs font-semibold disabled:text-faint"
+              aria-pressed={vat}
+              onClick={toggleVat}
+              className={cx(
+                "flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold",
+                vat ? "border-ink bg-ink text-on-ink" : "border-line",
+              )}
             >
+              {vat ? <Icon name="check" size={12} strokeWidth={2.6} /> : null}
               {t("subs.addVat")}
             </button>
           ) : null}
         </label>
         {d.currency === "USD" ? (
           <p className="-mt-1 text-xs leading-relaxed text-muted">
-            {t("subs.vatHint")}
+            {vat && d.amount > 0 ? (
+              <span className="font-semibold text-ink">{t("subs.withVat", { amount: formatMoney(d.amount, "USD") })}</span>
+            ) : (
+              t("subs.vatHint")
+            )}
             <br />
             {thb !== null && d.amount > 0 ? (
               <>
-                <span className="font-mono font-semibold text-ink">{t("subs.estimate", { amount: formatMoney(thb, "THB"), per: cyclePer(d.cycle) })}</span>
+                <span className="font-semibold text-ink">
+                  ≈ <span className="font-mono">{formatMoney(thb, "THB")}</span> {cyclePer(d.cycle)}
+                </span>
                 {" · "}
                 {t("subs.estimateNote", {
                   rate: usdRate!.rate.toFixed(2),

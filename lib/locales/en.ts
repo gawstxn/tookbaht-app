@@ -41,6 +41,7 @@ const en: Messages = {
     items_one: "{{count}} item",
   },
   lang: { title: "Language", th: "ไทย", en: "English" },
+  theme: { title: "Theme", light: "Light", dark: "Dark", system: "System" },
   nav: { home: "Home", transactions: "Activity", monthly: "Monthly", profile: "Profile", menu: "Main menu", add: "Add transaction" },
   type: { in: "Income", out: "Expense", move: "Transfer", moveLong: "transfer" },
   cat: {
@@ -73,12 +74,10 @@ const en: Messages = {
     privacy: "Privacy Policy",
   },
   dev: {
-    title: "Local test mode · sign in with email",
-    email: "Test email",
-    send: "Send link",
-    sending: "Sending…",
-    sent: "Sent. Open the link in the test mailbox at",
-    error: "Couldn't send — is local Supabase running?",
+    title: "Local test mode",
+    signIn: "Sign in instantly ({{email}})",
+    signingIn: "Signing in…",
+    error: "Sign-in failed — is local Supabase running?",
   },
   install: {
     button: "Add Tookbaht to Home Screen",
@@ -239,7 +238,7 @@ const en: Messages = {
     currency: "Currency",
     addVat: "+VAT 7%",
     vatHint: "Enter what you're actually charged — some services add 7% VAT at checkout",
-    estimate: "≈ {{amount}} {{per}}",
+    withVat: "{{amount}} with 7% VAT",
     estimateNote: "Rate {{rate}} THB/USD{{fee}} · check your statement for the exact amount",
     feeNote: " + {{pct}}% card fee",
     noRate: "No exchange rate yet — baht amounts appear once a rate loads",

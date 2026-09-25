@@ -6,9 +6,9 @@ import { Icon, type IconName } from "./ui/Icon";
 import { cx } from "./ui/primitives";
 
 const TONE: Record<BannerTone, { icon: IconName; tile: string; iconColor: string; card: string; amount: string; badge: string }> = {
-  critical: { icon: "alert", tile: "bg-danger", iconColor: "#fff", card: "border-[#e8c3aa] bg-expense-tint", amount: "text-danger", badge: "bg-danger" },
+  critical: { icon: "alert", tile: "bg-danger", iconColor: "#fff", card: "border-expense-line bg-expense-tint", amount: "text-danger", badge: "bg-danger" },
   danger: { icon: "alert", tile: "bg-expense-tint", iconColor: "var(--color-danger)", card: "border-line bg-card", amount: "text-danger", badge: "bg-danger" },
-  warn: { icon: "gauge", tile: "bg-[#f6ead0]", iconColor: "#9a6a12", card: "border-line bg-card", amount: "text-warn", badge: "bg-[#9a6a12]" },
+  warn: { icon: "gauge", tile: "bg-warn-tint", iconColor: "var(--color-warn-ink)", card: "border-line bg-card", amount: "text-warn", badge: "bg-warn-ink dark:text-on-ink" },
   ok: { icon: "check", tile: "bg-income-tint", iconColor: "var(--color-income)", card: "border-line bg-card", amount: "", badge: "" },
   setup: { icon: "target", tile: "bg-chip", iconColor: "var(--color-ink)", card: "border-line bg-card", amount: "", badge: "" },
 };

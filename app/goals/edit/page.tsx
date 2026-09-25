@@ -37,7 +37,7 @@ export default function GoalEditPage() {
         <MoneyField label={tr("goals.expensePerMonth")} icon="out" color="var(--color-expense)" value={expense} onChange={setExpense} />
       </div>
 
-      <div className="flex items-center gap-2.5 rounded-2xl bg-ink px-4 py-3.5 text-[13px] text-on-ink">
+      <div className="flex items-center gap-2.5 rounded-2xl bg-hero px-4 py-3.5 text-[13px] text-on-hero">
         <span className="h-2 w-2 shrink-0 rounded-full bg-lime" />
         <span className="grow">{tr("goals.saving")}</span>
         <span className="font-mono text-[15px] font-semibold text-lime">

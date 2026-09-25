@@ -38,9 +38,9 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-dvh flex-col gap-6 px-6 pb-[calc(36px+env(safe-area-inset-bottom))] pt-[calc(24px+env(safe-area-inset-top)+var(--standalone-top,0px))]">
-      <section className="flex grow flex-col justify-between gap-8 rounded-[28px] bg-ink px-6 py-7 text-on-ink shadow-hero">
+      <section className="flex grow flex-col justify-between gap-8 rounded-[28px] bg-hero px-6 py-7 text-on-hero shadow-hero">
         <div className="flex items-start justify-between">
-          <span aria-hidden="true" className="flex h-[52px] w-[52px] items-center justify-center rounded-2xl bg-lime font-mono text-[26px] font-semibold text-ink">
+          <span aria-hidden="true" className="flex h-[52px] w-[52px] items-center justify-center rounded-2xl bg-lime font-mono text-[26px] font-semibold text-on-lime">
             ฿
           </span>
           <button
@@ -71,7 +71,7 @@ export default function LoginPage() {
               <BrandMark brand={findBrand("Netflix")!} size={30} />
               <span className="flex flex-col text-[11px] text-on-ink-muted">
                 {tr("login.sampleDue")}
-                <span className="font-mono text-[13px] font-semibold text-on-ink">฿419</span>
+                <span className="font-mono text-[13px] font-semibold text-on-hero">฿419</span>
               </span>
             </div>
             <div className="flex flex-col justify-center gap-1.5 rounded-2xl bg-ink-2 px-3.5 py-3">
