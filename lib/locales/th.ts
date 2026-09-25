@@ -175,6 +175,12 @@ const th = {
     detail: "รายละเอียดรายการ",
     fromSub: "บันทึกอัตโนมัติจาก subscription",
     delete: "ลบรายการนี้",
+    edit: "แก้ไขรายการ",
+    editTitle: "แก้ไขรายการ",
+    saveEdit: "บันทึกการแก้ไข",
+    original: "ยอดต้นทาง",
+    originalValue: "{{amount}} × {{rate}} บาท/USD",
+    fixHint: "ถ้ายอดในสเตทเมนต์ต่างจากนี้ แก้ยอดได้ แอปจะปรับค่าธรรมเนียมบัตรให้ตรงขึ้นเอง",
   },
   subs: {
     title: "รายเดือน",
@@ -228,6 +234,13 @@ const th = {
     searchService: "ค้นหาบริการ",
     searchPlaceholder: "ค้นหา เช่น Netflix, AIS",
     noService: "ไม่พบ ลองพิมพ์ชื่อเองในช่องชื่อบริการได้เลย",
+    currency: "สกุลเงิน",
+    addVat: "+VAT 7%",
+    vatHint: "ใส่ยอดที่ถูกเก็บจริง บางบริการบวก VAT 7% ตอนชำระเงิน",
+    estimate: "≈ {{amount}} {{per}}",
+    estimateNote: "อัตรา {{rate}} บาท/USD{{fee}} · ยอดจริงดูจากสเตทเมนต์",
+    feeNote: " + ค่าธรรมเนียมบัตร {{pct}}%",
+    noRate: "ยังไม่มีอัตราแลกเปลี่ยน — จะคำนวณเป็นบาทเมื่อโหลดอัตราได้",
   },
   goals: {
     title: "เป้าหมาย",
@@ -271,6 +284,8 @@ const th = {
     colorN: "สี {{color}}",
     confirmDelete: "ยืนยันลบบัญชีนี้",
     delete: "ลบบัญชี",
+    fxFee: "ค่าธรรมเนียมแปลงสกุลเงิน",
+    fxFeeHint: "สำหรับรายการต่างประเทศ เช่น subscription ที่คิดเป็น USD",
   },
   onboarding: {
     welcome: "ยินดีต้อนรับ",
@@ -339,6 +354,7 @@ const th = {
     subResumed: "ใช้งาน {{name}} ต่อแล้ว",
     subDeleted: "ลบ {{name}} แล้ว",
     goalsSaved: "บันทึกเป้าหมายแล้ว",
+    feeLearned: "ปรับค่าธรรมเนียมแปลงสกุลเงินของ{{name}}เป็น {{pct}}% ตามยอดจริง",
   },
   legal: {
     updated: "ปรับปรุงล่าสุด {{date}}",

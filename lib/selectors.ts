@@ -58,17 +58,18 @@ export function upcomingSubscriptions(subs: Subscription[], today: string): Upco
     .sort((a, b) => a.due.localeCompare(b.due));
 }
 
-export function subscriptionTotals(subs: Subscription[], today: string) {
+/** Totals in baht; `thb` converts a subscription's price (USD ones are estimates, 0 when no rate yet). */
+export function subscriptionTotals(subs: Subscription[], today: string, thb: (s: Subscription) => number = (s) => s.amount) {
   const active = subs.filter((s) => !s.paused);
   const monthlyOnly = active.filter((s) => s.cycle !== "year");
   const yearly = active.filter((s) => s.cycle === "year");
-  const perMonth = monthlyOnly.reduce((a, s) => a + monthlyEquivalent(s.amount, s.cycle), 0);
-  const perYearExtra = yearly.reduce((a, s) => a + s.amount, 0);
+  const perMonth = monthlyOnly.reduce((a, s) => a + monthlyEquivalent(thb(s), s.cycle), 0);
+  const perYearExtra = yearly.reduce((a, s) => a + thb(s), 0);
   const next7 = upcomingSubscriptions(active, today)
     .filter((u) => u.days <= 7)
-    .reduce((a, u) => a + u.sub.amount, 0);
+    .reduce((a, u) => a + thb(u.sub), 0);
   const byCategory: Record<string, number> = {};
-  for (const s of monthlyOnly) byCategory[s.category] = (byCategory[s.category] ?? 0) + monthlyEquivalent(s.amount, s.cycle);
+  for (const s of monthlyOnly) byCategory[s.category] = (byCategory[s.category] ?? 0) + monthlyEquivalent(thb(s), s.cycle);
   return { perMonth, perYearExtra, next7, byCategory, count: active.length };
 }
 

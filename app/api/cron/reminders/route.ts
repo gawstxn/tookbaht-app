@@ -1,6 +1,7 @@
 import webpush from "web-push";
 import { NextResponse, type NextRequest } from "next/server";
-import { baht } from "@/lib/money";
+import { formatMoney } from "@/lib/fx";
+import { refreshUsdRate } from "@/lib/rates";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 
 interface PendingReminder {
@@ -8,6 +9,7 @@ interface PendingReminder {
   user_id: string;
   name: string;
   amount: number | string;
+  currency: "THB" | "USD";
   due_date: string;
   account_name: string;
 }
@@ -39,6 +41,8 @@ export async function GET(request: NextRequest) {
   webpush.setVapidDetails(subject, publicKey, privateKey);
 
   const db = createSupabaseAdmin();
+  // Daily job: also keep the USD rate fresh for auto-logging foreign subscriptions.
+  await refreshUsdRate(db).catch((e) => console.error("rate refresh failed", e));
   const { data, error } = await db.rpc("pending_reminders");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   const pending = (data ?? []) as PendingReminder[];
@@ -91,7 +95,7 @@ export async function GET(request: NextRequest) {
 
 /** Push text in the user's language (the server has no i18n instance). */
 function reminderText(lang: string, r: PendingReminder) {
-  const amount = baht(Number(r.amount));
+  const amount = formatMoney(Number(r.amount), r.currency ?? "THB");
   return lang === "en"
     ? { title: `${r.name} bills tomorrow`, body: `${amount} from ${r.account_name}` }
     : { title: `${r.name} ตัดบัญชีพรุ่งนี้`, body: `${amount} จาก${r.account_name}` };

@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Account, Goals, Settings, Subscription, Transaction, User } from "./types";
+import type { Account, Currency, Goals, Settings, Subscription, Transaction, User } from "./types";
 
 /* Row shapes as stored in Postgres (snake_case). Numeric columns may arrive as strings. */
 
@@ -12,6 +12,7 @@ interface AccountRow {
   opening_balance: Num;
   mono: string;
   tone: string;
+  fx_fee_pct: Num;
 }
 export interface TransactionRow {
   id: string;
@@ -25,12 +26,16 @@ export interface TransactionRow {
   from_id: string | null;
   to_id: string | null;
   subscription_id: string | null;
+  orig_amount: Num | null;
+  orig_currency: Currency | null;
+  fx_rate: Num | null;
   created_at: string;
 }
 interface SubscriptionRow {
   id: string;
   name: string;
   amount: Num;
+  currency: Currency;
   cycle: Subscription["cycle"];
   start_date: string;
   account_id: string;
@@ -62,6 +67,7 @@ export const fromRow = {
     openingBalance: Number(r.opening_balance),
     mono: r.mono,
     tone: r.tone,
+    fxFeePct: Number(r.fx_fee_pct ?? 0),
   }),
   transaction: (r: TransactionRow): Transaction => ({
     id: r.id,
@@ -75,12 +81,16 @@ export const fromRow = {
     fromId: opt(r.from_id),
     toId: opt(r.to_id),
     subscriptionId: opt(r.subscription_id),
+    origAmount: r.orig_amount === null ? undefined : Number(r.orig_amount),
+    origCurrency: opt(r.orig_currency),
+    fxRate: r.fx_rate === null ? undefined : Number(r.fx_rate),
     createdAt: Date.parse(r.created_at),
   }),
   subscription: (r: SubscriptionRow): Subscription => ({
     id: r.id,
     name: r.name,
     amount: Number(r.amount),
+    currency: r.currency ?? "THB",
     cycle: r.cycle,
     startDate: r.start_date,
     accountId: r.account_id,
@@ -107,6 +117,7 @@ export const toRow = {
       opening_balance: a.openingBalance,
       mono: a.mono,
       tone: a.tone,
+      fx_fee_pct: a.fxFeePct,
     }),
   transaction: (t: Partial<Transaction>) =>
     strip({
@@ -121,6 +132,9 @@ export const toRow = {
       from_id: t.fromId ?? null,
       to_id: t.toId ?? null,
       subscription_id: t.subscriptionId ?? null,
+      orig_amount: t.origAmount ?? null,
+      orig_currency: t.origCurrency ?? null,
+      fx_rate: t.fxRate ?? null,
       created_at: t.createdAt ? new Date(t.createdAt).toISOString() : undefined,
     }),
   subscription: (s: Partial<Subscription>) =>
@@ -128,6 +142,7 @@ export const toRow = {
       id: s.id,
       name: s.name,
       amount: s.amount,
+      currency: s.currency,
       cycle: s.cycle,
       start_date: s.startDate,
       account_id: s.accountId,
@@ -155,12 +170,13 @@ const PAGE = 1000;
 
 /** Everything the app shows for the signed-in user. */
 export async function fetchAll(sb: SupabaseClient, userId: string) {
-  const [profile, accounts, subscriptions, goals, transactions] = await Promise.all([
+  const [profile, accounts, subscriptions, goals, transactions, rate] = await Promise.all([
     sb.from("profiles").select("name, email, settings").eq("id", userId).single<ProfileRow>(),
     sb.from("accounts").select("*").order("sort_order").order("created_at").returns<AccountRow[]>(),
     sb.from("subscriptions").select("*").order("created_at").returns<SubscriptionRow[]>(),
     sb.from("goals").select("*").eq("user_id", userId).maybeSingle<GoalsRow>(),
     fetchTransactions(sb),
+    sb.from("exchange_rates").select("rate, date").eq("currency", "USD").order("date", { ascending: false }).limit(1).maybeSingle<{ rate: Num; date: string }>(),
   ]);
   for (const r of [profile, accounts, subscriptions, goals]) if (r.error) throw r.error;
 
@@ -172,6 +188,7 @@ export async function fetchAll(sb: SupabaseClient, userId: string) {
     subscriptions: subscriptions.data!.map(fromRow.subscription),
     goals: goals.data ? fromRow.goals(goals.data) : null,
     transactions,
+    usdRate: rate.data ? { rate: Number(rate.data.rate), date: rate.data.date } : null,
   };
 }
 

@@ -177,6 +177,12 @@ const en: Messages = {
     detail: "Transaction details",
     fromSub: "Logged automatically from a subscription",
     delete: "Delete transaction",
+    edit: "Edit transaction",
+    editTitle: "Edit transaction",
+    saveEdit: "Save changes",
+    original: "Original",
+    originalValue: "{{amount}} × {{rate}} THB/USD",
+    fixHint: "If your statement shows a different amount, edit it — the card's fee will be adjusted to match",
   },
   subs: {
     title: "Monthly",
@@ -230,6 +236,13 @@ const en: Messages = {
     searchService: "Search services",
     searchPlaceholder: "Search, e.g. Netflix, AIS",
     noService: "Not found — just type the name in the service name field",
+    currency: "Currency",
+    addVat: "+VAT 7%",
+    vatHint: "Enter what you're actually charged — some services add 7% VAT at checkout",
+    estimate: "≈ {{amount}} {{per}}",
+    estimateNote: "Rate {{rate}} THB/USD{{fee}} · check your statement for the exact amount",
+    feeNote: " + {{pct}}% card fee",
+    noRate: "No exchange rate yet — baht amounts appear once a rate loads",
   },
   goals: {
     title: "Goals",
@@ -273,6 +286,8 @@ const en: Messages = {
     colorN: "Color {{color}}",
     confirmDelete: "Confirm delete",
     delete: "Delete account",
+    fxFee: "Foreign transaction fee",
+    fxFeeHint: "For foreign charges, e.g. subscriptions billed in USD",
   },
   onboarding: {
     welcome: "Welcome",
@@ -341,6 +356,7 @@ const en: Messages = {
     subResumed: "Resumed {{name}}",
     subDeleted: "Deleted {{name}}",
     goalsSaved: "Goals saved",
+    feeLearned: "Set {{name}}'s FX fee to {{pct}}% from the actual charge",
   },
   legal: {
     updated: "Last updated {{date}}",

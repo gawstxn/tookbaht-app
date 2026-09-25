@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { DuePill, SubMono, TabScreen } from "@/components/app";
 import { Icon } from "@/components/ui/Icon";
 import { Empty, HeroCard, IconButton, ListCard, TabHeader, cx } from "@/components/ui/primitives";
 import { SUB_CATEGORIES } from "@/lib/constants";
 import { baht, cyclePer, shortDate, todayISO } from "@/lib/format";
+import { formatMoney, subTHB } from "@/lib/fx";
+import type { Subscription } from "@/lib/types";
 import { subscriptionTotals, upcomingSubscriptions } from "@/lib/selectors";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
@@ -19,11 +21,11 @@ export default function SubscriptionsPage() {
   const today = todayISO();
   const [sort, setSort] = useState<"due" | "price">("due");
 
-  const totals = useMemo(() => subscriptionTotals(subscriptions, today), [subscriptions, today]);
-  const active = useMemo(() => {
-    const list = upcomingSubscriptions(subscriptions, today);
-    return sort === "price" ? [...list].sort((a, b) => b.sub.amount - a.sub.amount) : list;
-  }, [subscriptions, today, sort]);
+  const usdRate = useStore((s) => s.usdRate);
+  const thb = (s: Subscription) => subTHB(s, accounts, usdRate) ?? 0;
+  const totals = subscriptionTotals(subscriptions, today, thb);
+  const list = upcomingSubscriptions(subscriptions, today);
+  const active = sort === "price" ? [...list].sort((a, b) => thb(b.sub) - thb(a.sub)) : list;
   const paused = subscriptions.filter((s) => s.paused);
 
   const segments = Object.entries(totals.byCategory)
@@ -101,7 +103,7 @@ export default function SubscriptionsPage() {
                 </div>
                 <div className="flex flex-col items-end gap-0.5">
                   <span className="font-mono text-[15px] font-semibold">
-                    {baht(sub.amount)}
+                    {formatMoney(sub.amount, sub.currency)}
                     <span className="font-sans text-[11px] font-normal text-muted"> {cyclePer(sub.cycle)}</span>
                   </span>
                   <DuePill days={days} />
@@ -122,7 +124,7 @@ export default function SubscriptionsPage() {
               <Link key={sub.id} href={`/subscriptions/${sub.id}`} className={cx("flex min-h-16 items-center gap-3 opacity-70")}>
                 <SubMono s={sub} />
                 <span className="grow text-[15px] font-medium">{sub.name}</span>
-                <span className="font-mono text-[15px] font-semibold">{baht(sub.amount)}</span>
+                <span className="font-mono text-[15px] font-semibold">{formatMoney(sub.amount, sub.currency)}</span>
               </Link>
             ))}
           </ListCard>

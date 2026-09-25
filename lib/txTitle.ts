@@ -13,11 +13,17 @@ const defaultCategoryTitles = (key?: string) =>
  * language was active; show those in the current language instead.
  */
 export function txTitle(tx: Transaction, accounts: Account[]): string {
+  if (!isDefaultTitle(tx, accounts)) return tx.title;
+  if (tx.type === "move") return t("add.transferTo", { name: accounts.find((a) => a.id === tx.toId)?.name ?? "" });
+  return categoryLabel(tx.category);
+}
+
+/** True when the title is one the app generated (no note was typed), in either language. */
+export function isDefaultTitle(tx: Pick<Transaction, "type" | "title" | "category" | "toId">, accounts: Account[]): boolean {
+  if (!tx.title) return true;
   if (tx.type === "move") {
     const to = accounts.find((a) => a.id === tx.toId)?.name ?? "";
-    const defaults = [th.add.transferTo, en.add.transferTo].map((p) => p.replace("{{name}}", to));
-    return !tx.title || defaults.includes(tx.title) ? t("add.transferTo", { name: to }) : tx.title;
+    return [th.add.transferTo, en.add.transferTo].map((p) => p.replace("{{name}}", to)).includes(tx.title);
   }
-  if (!tx.title || defaultCategoryTitles(tx.category).includes(tx.title)) return categoryLabel(tx.category);
-  return tx.title;
+  return defaultCategoryTitles(tx.category).includes(tx.title);
 }

@@ -6,8 +6,9 @@ import { useState } from "react";
 import { PushScreen, SubMono } from "@/components/app";
 import { Empty, ListCard, PrimaryButton, PushHeader, SecondaryButton, Sheet, SwitchRow } from "@/components/ui/primitives";
 import { SUB_CATEGORIES } from "@/lib/constants";
-import { baht2, cycleLabel, cyclePer, diffDays, dueDatesUntil, fromISO, nextDueDate, relativeDue, shortDate, todayISO } from "@/lib/format";
+import { cycleLabel, cyclePer, diffDays, dueDatesUntil, fromISO, nextDueDate, relativeDue, shortDate, todayISO } from "@/lib/format";
 import { useTranslation } from "react-i18next";
+import { formatMoney, subTHB } from "@/lib/fx";
 import { useStore } from "@/lib/store";
 
 export default function SubscriptionDetailPage() {
@@ -17,6 +18,7 @@ export default function SubscriptionDetailPage() {
   const accounts = useStore((s) => s.accounts);
   const update = useStore((s) => s.updateSubscription);
   const remove = useStore((s) => s.deleteSubscription);
+  const usdRate = useStore((s) => s.usdRate);
   const { t: tr } = useTranslation();
   const [confirm, setConfirm] = useState(false);
   const today = todayISO();
@@ -34,6 +36,7 @@ export default function SubscriptionDetailPage() {
   const days = diffDays(due, today);
   const history = dueDatesUntil(sub.startDate, sub.cycle, today).reverse().slice(0, 3);
   const start = fromISO(sub.startDate);
+  const estimate = subTHB(sub, accounts, usdRate);
   const dayRule =
     sub.cycle === "week"
       ? tr("subs.everyWeek")
@@ -56,9 +59,12 @@ export default function SubscriptionDetailPage() {
         <SubMono s={sub} size={64} />
         <h1 className="mt-1 font-serif text-2xl font-bold">{sub.name}</h1>
         <span className="font-mono text-[30px] font-semibold tracking-tight">
-          {baht2(sub.amount).replace(".00", "")}
+          {formatMoney(sub.amount, sub.currency, true).replace(/.00$/, "")}
           <span className="font-sans text-[15px] font-medium tracking-normal text-muted"> {cyclePer(sub.cycle)}</span>
         </span>
+        {sub.currency !== "THB" && estimate !== null ? (
+          <span className="-mt-1 font-mono text-sm text-muted">{tr("subs.estimate", { amount: formatMoney(estimate, "THB"), per: cyclePer(sub.cycle) })}</span>
+        ) : null}
         <span className="rounded-full bg-chip px-3 py-1 text-[13px] font-semibold">
           {sub.paused ? tr("subs.pausedNow") : tr("subs.next", { date: shortDate(due), rel: relativeDue(days) })}
         </span>
@@ -83,7 +89,7 @@ export default function SubscriptionDetailPage() {
             {history.map((d) => (
               <div key={d} className="flex min-h-11 items-center justify-between text-sm">
                 <span>{shortDate(d)}</span>
-                <span className="font-mono font-semibold text-expense">−{baht2(sub.amount)}</span>
+                <span className="font-mono font-semibold text-expense">−{formatMoney(sub.amount, sub.currency, true)}</span>
               </div>
             ))}
           </ListCard>

@@ -10,7 +10,9 @@ import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, TYPE_META } from "@/lib/constant
 import { addDays, shortDate, todayISO } from "@/lib/format";
 import { accountBalance } from "@/lib/selectors";
 import { useTranslation } from "react-i18next";
+import { formatMoney } from "@/lib/fx";
 import { useStore } from "@/lib/store";
+import { isDefaultTitle } from "@/lib/txTitle";
 import type { TxType } from "@/lib/types";
 
 
@@ -25,29 +27,32 @@ export default function AddPage() {
 function AddForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const initialType = (["in", "out", "move"].includes(params.get("type") ?? "") ? params.get("type") : "out") as TxType;
-
   const accounts = useStore((s) => s.accounts);
   const txs = useStore((s) => s.transactions);
   const addTransaction = useStore((s) => s.addTransaction);
+  const updateTransaction = useStore((s) => s.updateTransaction);
+  // /add?edit=<id> edits a saved transaction with the same form.
+  const editing = txs.find((x) => x.id === params.get("edit"));
+  const initialType = editing?.type ?? ((["in", "out", "move"].includes(params.get("type") ?? "") ? params.get("type") : "out") as TxType);
   const today = todayISO();
   const { t } = useTranslation();
 
   const [type, setType] = useState<TxType>(initialType);
-  const [amount, setAmount] = useState("");
-  const [cat, setCat] = useState(initialType === "in" ? INCOME_CATEGORIES[0].key : EXPENSE_CATEGORIES[0].key);
-  const [acc, setAcc] = useState(accounts[0]?.id ?? "");
-  const [from, setFrom] = useState(accounts[0]?.id ?? "");
-  const [to, setTo] = useState(accounts[1]?.id ?? "");
-  const [date, setDate] = useState(today);
-  const [note, setNote] = useState("");
+  const [amount, setAmount] = useState(editing ? String(editing.amount) : "");
+  const [cat, setCat] = useState(editing?.category ?? (initialType === "in" ? INCOME_CATEGORIES[0].key : EXPENSE_CATEGORIES[0].key));
+  const [acc, setAcc] = useState(editing?.accountId ?? accounts[0]?.id ?? "");
+  const [from, setFrom] = useState(editing?.fromId ?? accounts[0]?.id ?? "");
+  const [to, setTo] = useState(editing?.toId ?? accounts[1]?.id ?? "");
+  const [date, setDate] = useState(editing?.date ?? today);
+  const [note, setNote] = useState(editing?.note ?? "");
   const [sheet, setSheet] = useState<"" | "acc" | "from" | "to" | "date">("");
 
-  const cats = type === "in" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES.filter((c) => c.key !== "sub");
+  // "Subscriptions" is for auto-logged charges; offer it only when editing one.
+  const cats = type === "in" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES.filter((c) => c.key !== "sub" || cat === "sub");
   const meta = TYPE_META[type];
   const copy = {
     amountLabel: t(`add.amount_${type}`),
-    save: t(`add.save_${type}`),
+    save: editing ? t("tx.saveEdit") : t(`add.save_${type}`),
     acc: type === "move" ? "" : t(`add.acc_${type}`),
     note: t(`add.note_${type}`),
   };
@@ -78,13 +83,21 @@ function AddForm() {
   const save = () => {
     if (!canSave) return;
     const catLabel = cats.find((c) => c.key === cat)?.label ?? "";
-    const title = note.trim() || (type === "move" ? t("add.transferTo", { name: accountOf(to)?.name ?? "" }) : catLabel);
-    addTransaction(
+    const fallback = type === "move" ? t("add.transferTo", { name: accountOf(to)?.name ?? "" }) : catLabel;
+    // Keep a title the user or a subscription set (e.g. "Claude Pro") unless a note replaces it.
+    const kept = editing && editing.type === type && !isDefaultTitle(editing, accounts) ? editing.title : "";
+    const title = note.trim() || kept || fallback;
+    const fields =
       type === "move"
-        ? { type, amount: value, date, title, fromId: from, toId: to }
-        : { type, amount: value, date, title, note: note.trim() || undefined, category: cat, accountId: acc },
-    );
-    router.push("/");
+        ? { type, amount: value, date, title, note: undefined, category: undefined, accountId: undefined, fromId: from, toId: to }
+        : { type, amount: value, date, title, note: note.trim() || undefined, category: cat, accountId: acc, fromId: undefined, toId: undefined };
+    if (editing) {
+      updateTransaction(editing.id, fields);
+      router.back();
+    } else {
+      addTransaction(fields);
+      router.push("/");
+    }
   };
 
   const dateText =
@@ -96,7 +109,7 @@ function AddForm() {
 
   return (
     <PushScreen className="gap-3">
-      <PushHeader title={t("add.title")} backIcon="close" onBack={() => router.back()} />
+      <PushHeader title={editing ? t("tx.editTitle") : t("add.title")} backIcon="close" onBack={() => router.back()} />
 
       <Segmented
         label={t("add.typeLabel")}
@@ -116,6 +129,16 @@ function AddForm() {
           {meta.sign}฿{amountText}
         </span>
       </output>
+      {editing?.origAmount && editing.fxRate ? (
+        <p className="-mt-2 text-center text-xs leading-relaxed text-muted">
+          {t("tx.original")}{" "}
+          <span className="font-mono font-semibold text-ink">
+            {t("tx.originalValue", { amount: formatMoney(editing.origAmount, editing.origCurrency ?? "USD"), rate: editing.fxRate.toFixed(2) })}
+          </span>
+          <br />
+          {t("tx.fixHint")}
+        </p>
+      ) : null}
 
       {type !== "move" ? (
         <div className="flex flex-col gap-3">

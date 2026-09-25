@@ -8,9 +8,10 @@ import { BrandMark, PushScreen, SubMono } from "@/components/app";
 import { findBrand, normalizeName, suggestCategory } from "@/lib/brands";
 import { MONO_TONES, POPULAR_SUBS, SUB_CATALOG, SUB_CATEGORIES } from "@/lib/constants";
 import { useTranslation } from "react-i18next";
-import { baht, fromISO, monthlyEquivalent, shortDate, todayISO } from "@/lib/format";
+import { baht, cyclePer, fromISO, monthlyEquivalent, shortDate, todayISO } from "@/lib/format";
 import { useStore } from "@/lib/store";
-import type { Cycle, Subscription } from "@/lib/types";
+import { formatMoney, toTHB } from "@/lib/fx";
+import type { Currency, Cycle, Subscription } from "@/lib/types";
 
 export type SubDraft = Omit<Subscription, "id">;
 
@@ -37,11 +38,14 @@ export function SubscriptionForm({
   saveLabel: string;
 }) {
   const accounts = useStore((s) => s.accounts);
+  const usdRate = useStore((s) => s.usdRate);
+  const ensureUsdRate = useStore((s) => s.ensureUsdRate);
   const today = todayISO();
   const [d, setD] = useState<SubDraft>(
     initial ?? {
       name: "",
       amount: 0,
+      currency: "THB",
       cycle: "month",
       startDate: today,
       accountId: accounts.find((a) => a.kind === "credit")?.id ?? accounts[0]?.id ?? "",
@@ -55,10 +59,18 @@ export function SubscriptionForm({
   const { t } = useTranslation();
   const [amountText, setAmountText] = useState(initial ? String(initial.amount) : "");
   const [sheet, setSheet] = useState<"" | "date" | "account" | "category" | "catalog">("");
+  const [categoryTouched, setCategoryTouched] = useState(!!initial);
   const pick = (n: string) => set({ name: n, category: suggestCategory(n) ?? d.category });
   const set = (p: Partial<SubDraft>) => setD((x) => ({ ...x, ...p }));
 
-  const monthly = monthlyEquivalent(d.amount, d.cycle);
+  const account = accounts.find((a) => a.id === d.accountId);
+  // Baht per billing cycle (estimated for USD from the latest rate and the card's fee).
+  const thb = toTHB(d.amount, d.currency, usdRate, account);
+  const monthly = monthlyEquivalent(thb ?? 0, d.cycle);
+  const setAmount = (v: string) => {
+    setAmountText(v);
+    set({ amount: parseFloat(v) || 0 });
+  };
   const canSave = d.name.trim().length > 0 && d.amount > 0 && !!d.accountId;
   const start = fromISO(d.startDate);
   const hint =
@@ -87,7 +99,11 @@ export function SubscriptionForm({
           <input
             id="subname"
             value={d.name}
-            onChange={(e) => set({ name: e.target.value })}
+            onChange={(e) => {
+              // Typing a known service (e.g. "Claude Pro") picks its category too, until the user chooses one.
+              const suggested = suggestCategory(e.target.value);
+              set({ name: e.target.value, ...(suggested && !categoryTouched ? { category: suggested } : {}) });
+            }}
             placeholder={t("subs.namePlaceholder")}
             className="min-h-9 w-full border-b border-[#d0cbbf] bg-transparent pb-1 font-serif text-[22px] font-bold outline-none"
           />
@@ -115,23 +131,65 @@ export function SubscriptionForm({
       </div>
 
       <Card className="flex flex-col gap-3 px-4 py-3.5">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-[13px] text-muted">{t("subs.price")}</span>
+          <div className="w-32">
+            <Segmented<Currency>
+              size="sm"
+              label={t("subs.currency")}
+              value={d.currency}
+              onChange={(currency) => {
+                set({ currency });
+                if (currency === "USD") void ensureUsdRate();
+              }}
+              options={[
+                { value: "THB", label: "฿ THB" },
+                { value: "USD", label: "$ USD" },
+              ]}
+            />
+          </div>
+        </div>
         <label className="flex items-baseline gap-2">
-          <span className="shrink-0 text-[13px] text-muted">{t("subs.price")}</span>
           <span className="flex grow items-baseline gap-0.5 font-mono text-[30px] font-semibold">
-            ฿
+            {d.currency === "USD" ? "US$" : "฿"}
             <input
               inputMode="decimal"
               value={amountText}
-              onChange={(e) => {
-                const v = e.target.value.replace(/[^0-9.]/g, "");
-                setAmountText(v);
-                set({ amount: parseFloat(v) || 0 });
-              }}
+              onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
               placeholder="0"
+              aria-label={t("subs.price")}
               className="w-full min-w-0 bg-transparent outline-none"
             />
           </span>
+          {d.currency === "USD" ? (
+            <button
+              type="button"
+              onClick={() => setAmount((Math.round(d.amount * 107) / 100).toFixed(2))}
+              disabled={!d.amount}
+              className="shrink-0 rounded-full border border-line px-2.5 py-1 text-xs font-semibold disabled:text-faint"
+            >
+              {t("subs.addVat")}
+            </button>
+          ) : null}
         </label>
+        {d.currency === "USD" ? (
+          <p className="-mt-1 text-xs leading-relaxed text-muted">
+            {t("subs.vatHint")}
+            <br />
+            {thb !== null && d.amount > 0 ? (
+              <>
+                <span className="font-mono font-semibold text-ink">{t("subs.estimate", { amount: formatMoney(thb, "THB"), per: cyclePer(d.cycle) })}</span>
+                {" · "}
+                {t("subs.estimateNote", {
+                  rate: usdRate!.rate.toFixed(2),
+                  fee: account?.fxFeePct ? t("subs.feeNote", { pct: account.fxFeePct }) : "",
+                })}
+              </>
+            ) : thb === null ? (
+              t("subs.noRate")
+            ) : null}
+          </p>
+        ) : null}
         <Segmented<Cycle>
           size="sm"
           label={t("subs.cycle")}
@@ -192,7 +250,10 @@ export function SubscriptionForm({
           setSheet("");
         }}
       />
-      <CategorySheet open={sheet === "category"} onClose={() => setSheet("")} title={t("common.category")} options={SUB_CATEGORIES} value={d.category} onPick={(category) => set({ category })} />
+      <CategorySheet open={sheet === "category"} onClose={() => setSheet("")} title={t("common.category")} options={SUB_CATEGORIES} value={d.category} onPick={(category) => {
+          setCategoryTouched(true);
+          set({ category });
+        }} />
     </PushScreen>
   );
 }

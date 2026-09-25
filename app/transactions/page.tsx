@@ -4,12 +4,14 @@ import { useMemo, useState } from "react";
 import { TabScreen, TxIcon, TxRow } from "@/components/app";
 import { MonthSwitcher } from "@/components/pickers";
 import { Icon } from "@/components/ui/Icon";
-import { Chip, Empty, IconButton, ListCard, SecondaryButton, Sheet, TabHeader } from "@/components/ui/primitives";
+import { Chip, Empty, IconButton, ListCard, PrimaryButton, SecondaryButton, Sheet, TabHeader } from "@/components/ui/primitives";
 import { TYPE_META, categoryLabel } from "@/lib/constants";
 import { baht, baht2, dayHeading, shortDate, todayISO } from "@/lib/format";
 import { monthTransactions, summarize } from "@/lib/selectors";
 import { useTranslation } from "react-i18next";
 import { txTitle } from "@/lib/txTitle";
+import { useRouter } from "next/navigation";
+import { formatMoney } from "@/lib/fx";
 import { useStore } from "@/lib/store";
 import type { Transaction, TxType } from "@/lib/types";
 
@@ -18,6 +20,7 @@ type Filter = "all" | TxType;
 export default function TransactionsPage() {
   const { transactions, viewMonth, accounts, deleteTransaction } = useStore();
   const { t: tr } = useTranslation();
+  const router = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
@@ -129,7 +132,14 @@ export default function TransactionsPage() {
               )}
               {selected.note ? <Detail label={tr("common.note")} value={selected.note} /> : null}
               {selected.subscriptionId ? <Detail label={tr("common.source")} value={tr("tx.fromSub")} /> : null}
+              {selected.origAmount && selected.fxRate ? (
+                <Detail
+                  label={tr("tx.original")}
+                  value={tr("tx.originalValue", { amount: formatMoney(selected.origAmount, selected.origCurrency ?? "USD"), rate: selected.fxRate.toFixed(2) })}
+                />
+              ) : null}
             </ListCard>
+            <PrimaryButton onClick={() => router.push(`/add?edit=${selected.id}`)}>{tr("tx.edit")}</PrimaryButton>
             <SecondaryButton
               tone="danger"
               onClick={() => {

@@ -1,5 +1,6 @@
 import { budgetLines } from "./budget";
 import { baht, addDays, fromISO, monthKey, nextDueDate, toISO } from "./format";
+import { formatMoney } from "./fx";
 import { t } from "./i18n";
 import { daysLeftInMonth, monthTransactions, summarize } from "./selectors";
 import type { Account, Goals, Settings, Subscription, Transaction } from "./types";
@@ -60,7 +61,7 @@ export function buildNotifications(input: {
       kind: "due",
       at: Math.min(now, at(addDays(due, -1), 9)),
       title: t(due === today ? "notif.dueToday" : "notif.dueTomorrow", { name: s.name }),
-      body: t("notif.fromAccount", { amount: baht(s.amount), account: accName(s.accountId) }),
+      body: t("notif.fromAccount", { amount: formatMoney(s.amount, s.currency), account: accName(s.accountId) }),
       href: `/subscriptions/${s.id}`,
     });
   }
