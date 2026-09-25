@@ -264,7 +264,7 @@ const th = {
     enterPin: "ใส่ PIN",
     wrongPin: "PIN ไม่ถูกต้อง",
     setPin: "ตั้ง PIN",
-    setPinLead: "ตั้ง PIN 4 หลักสำหรับเครื่องนี้",
+    setPinLead: "ตั้ง PIN 6 หลักสำหรับเครื่องนี้",
     confirmPin: "ยืนยัน PIN",
     confirmPinLead: "ใส่ PIN อีกครั้ง",
     mismatch: "PIN ไม่ตรงกัน ลองใหม่",

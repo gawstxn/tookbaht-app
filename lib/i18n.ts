@@ -16,6 +16,11 @@ void i18n.use(initReactI18next).init({
   returnNull: false,
 });
 
+// Dev hot reload re-runs this module with edited strings, but init() keeps the
+// first bundles; refresh them in place so new keys don't show up as raw keys.
+i18n.addResourceBundle("th", "translation", th, true, true);
+i18n.addResourceBundle("en", "translation", en, true, true);
+
 /** Translate outside React (lib code, toasts). Components use useTranslation(). */
 export const t = i18n.t.bind(i18n);
 
