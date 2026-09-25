@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { Icon } from "./ui/Icon";
 import { PrimaryButton, Sheet } from "./ui/primitives";
 
@@ -45,6 +46,7 @@ function currentMode(): Mode {
 export function InstallPrompt() {
   const mode = useSyncExternalStore(subscribe, currentMode, () => "hidden" as Mode);
   const [help, setHelp] = useState(false);
+  const { t: tr } = useTranslation();
   if (mode === "hidden") return null;
 
   const install = async () => {
@@ -62,22 +64,22 @@ export function InstallPrompt() {
         className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-line bg-paper text-sm font-semibold"
       >
         <Icon name="addSquare" size={18} strokeWidth={2} />
-        เพิ่ม Tookbaht ลงหน้าจอหลัก
+        {tr("install.button")}
       </button>
-      <Sheet open={help} onClose={() => setHelp(false)} title="เพิ่มลงหน้าจอหลัก">
-        <p className="text-sm text-muted">เปิดจากไอคอนบนหน้าจอหลักแล้วจะใช้งานเหมือนแอป และเปิดการแจ้งเตือนก่อนตัดบัญชีได้</p>
+      <Sheet open={help} onClose={() => setHelp(false)} title={tr("install.title")}>
+        <p className="text-sm text-muted">{tr("install.lead")}</p>
         <ol className="flex flex-col gap-3">
           <Step n={1} icon="share">
-            ใน Safari แตะปุ่ม <b>แชร์</b> (อยู่ในเมนู <b>⋯</b> บน iOS รุ่นใหม่)
+            <Trans i18nKey="install.step1" components={{ b: <b /> }} />
           </Step>
           <Step n={2} icon="addSquare">
-            เลือก <b>เพิ่มไปยังหน้าจอโฮม</b> (Add to Home Screen)
+            <Trans i18nKey="install.step2" components={{ b: <b /> }} />
           </Step>
           <Step n={3} icon="check">
-            แตะ <b>เพิ่ม</b> แล้วเปิด Tookbaht จากไอคอนบนหน้าจอหลัก
+            <Trans i18nKey="install.step3" components={{ b: <b /> }} />
           </Step>
         </ol>
-        <PrimaryButton onClick={() => setHelp(false)}>เข้าใจแล้ว</PrimaryButton>
+        <PrimaryButton onClick={() => setHelp(false)}>{tr("common.gotIt")}</PrimaryButton>
       </Sheet>
     </>
   );

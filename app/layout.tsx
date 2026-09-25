@@ -13,8 +13,8 @@ import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import splashScreens from "@/lib/splash.json";
 
 export const metadata: Metadata = {
-  title: "Tookbaht — บันทึกรายรับรายจ่าย",
-  description: "บันทึกรายรับ รายจ่าย การโอน จัดการ subscriptions และตั้งเป้าหมายการเงิน",
+  title: "Tookbaht",
+  description: "บันทึกรายรับ รายจ่าย การโอน subscriptions และเป้าหมายการเงิน · Track income, expenses, subscriptions and money goals",
   applicationName: "Tookbaht",
   // startupImage: iOS launch screens (cream + logo) instead of a black screen while the app starts.
   appleWebApp: { capable: true, title: "Tookbaht", statusBarStyle: "default", startupImage: splashScreens },

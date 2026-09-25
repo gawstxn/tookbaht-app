@@ -11,10 +11,12 @@ import { Bar, Empty, HeroCard, ListCard, SectionHeader, TabHeader } from "@/comp
 import { budgetBanner } from "@/lib/budget";
 import { baht, splitDecimals, todayISO } from "@/lib/format";
 import { monthTransactions, summarize, upcomingSubscriptions } from "@/lib/selectors";
+import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
 
 export default function OverviewPage() {
   const { transactions, subscriptions, goals, viewMonth } = useStore();
+  const { t: tr } = useTranslation();
   const today = todayISO();
 
   const month = useMemo(() => monthTransactions(transactions, viewMonth), [transactions, viewMonth]);
@@ -24,7 +26,7 @@ export default function OverviewPage() {
     () => [...month].sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt).slice(0, 5),
     [month],
   );
-  const banner = useMemo(() => budgetBanner(goals, month, viewMonth, today), [goals, month, viewMonth, today]);
+  const banner = budgetBanner(goals, month, viewMonth, today);
   const [whole, dec] = splitDecimals(sum.net);
   const incomePct = goals.incomeTarget ? sum.income / goals.incomeTarget : 0;
   const expensePct = goals.expenseBudget ? sum.expense / goals.expenseBudget : 0;
@@ -32,14 +34,14 @@ export default function OverviewPage() {
   return (
     <TabScreen>
       <TabHeader
-        title="ภาพรวม"
+        title={tr("overview.title")}
         subtitle={<MonthSwitcher />}
         actions={<NotificationBell />}
       />
 
       <HeroCard>
         <div className="flex flex-col gap-1">
-          <span className="text-[13px] text-on-ink-muted">คงเหลือเดือนนี้</span>
+          <span className="text-[13px] text-on-ink-muted">{tr("overview.leftThisMonth")}</span>
           <span className="font-mono text-4xl font-semibold leading-tight tracking-tight">
             {sum.net < 0 ? "−" : ""}
             {whole.replace("-", "")}
@@ -47,13 +49,13 @@ export default function OverviewPage() {
           </span>
         </div>
         <div className="grid grid-cols-2 gap-2.5">
-          <GoalTile label="รายรับ" icon="in" iconColor="var(--color-lime)" amount={`+${baht(sum.income)}`} pct={incomePct} target={goals.incomeTarget ? `เป้า ${baht(goals.incomeTarget)}` : "ยังไม่ตั้งเป้า"} barColor="var(--color-lime)" />
-          <GoalTile label="รายจ่าย" icon="out" iconColor="var(--color-peach)" amount={`−${baht(sum.expense)}`} pct={expensePct} target={goals.expenseBudget ? `งบ ${baht(goals.expenseBudget)}` : "ยังไม่ตั้งงบ"} barColor="var(--color-peach)" />
+          <GoalTile label={tr("type.in")} icon="in" iconColor="var(--color-lime)" amount={`+${baht(sum.income)}`} pct={incomePct} target={goals.incomeTarget ? tr("overview.target", { amount: baht(goals.incomeTarget) }) : tr("overview.noTarget")} barColor="var(--color-lime)" />
+          <GoalTile label={tr("type.out")} icon="out" iconColor="var(--color-peach)" amount={`−${baht(sum.expense)}`} pct={expensePct} target={goals.expenseBudget ? tr("overview.budget", { amount: baht(goals.expenseBudget) }) : tr("overview.noBudget")} barColor="var(--color-peach)" />
         </div>
         <Link href="/goals" className="-mt-1 flex min-h-9 items-center justify-between border-t border-ink-line pt-2.5 text-xs text-on-ink-muted">
-          <span>โอนระหว่างบัญชี {baht(sum.moved)}</span>
+          <span>{tr("overview.moved", { amount: baht(sum.moved) })}</span>
           <span className="flex items-center gap-0.5 font-semibold text-lime">
-            ดูเป้าหมาย
+            {tr("overview.seeGoals")}
             <Icon name="chevronRight" size={14} strokeWidth={2.2} />
           </span>
         </Link>
@@ -62,7 +64,7 @@ export default function OverviewPage() {
       <BudgetBannerCard banner={banner} />
 
       <section className="flex flex-col gap-2.5">
-        <SectionHeader title="ใกล้ตัดบัญชี" href="/subscriptions" />
+        <SectionHeader title={tr("overview.upcoming")} href="/subscriptions" />
         {upcoming.length ? (
           <div className="grid grid-cols-3 gap-2">
             {upcoming.map(({ sub, days }) => (
@@ -70,7 +72,7 @@ export default function OverviewPage() {
                 <div className="flex items-center justify-between">
                   <SubMono s={sub} size={30} />
                   <span className="whitespace-nowrap rounded-full bg-chip px-2 py-px text-[11px] font-semibold" style={days <= 7 ? { background: "var(--color-lime)" } : undefined}>
-                    {days <= 0 ? "วันนี้" : `${days} วัน`}
+                    {days <= 0 ? tr("common.today") : tr("common.days", { count: days })}
                   </span>
                 </div>
                 <div className="flex min-w-0 flex-col">
@@ -81,12 +83,12 @@ export default function OverviewPage() {
             ))}
           </div>
         ) : (
-          <Empty>ยังไม่มี subscription</Empty>
+          <Empty>{tr("overview.noSubs")}</Empty>
         )}
       </section>
 
       <section className="flex flex-col gap-1.5">
-        <SectionHeader title="รายการล่าสุด" href="/transactions" />
+        <SectionHeader title={tr("overview.recent")} href="/transactions" />
         {recent.length ? (
           <ListCard>
             {recent.map((t) => (
@@ -94,7 +96,7 @@ export default function OverviewPage() {
             ))}
           </ListCard>
         ) : (
-          <Empty>ยังไม่มีรายการในเดือนนี้</Empty>
+          <Empty>{tr("overview.noTx")}</Empty>
         )}
       </section>
     </TabScreen>

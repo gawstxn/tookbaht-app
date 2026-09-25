@@ -8,12 +8,14 @@ import { Empty, HeroCard, IconButton, ListCard, TabHeader, cx } from "@/componen
 import { SUB_CATEGORIES } from "@/lib/constants";
 import { baht, cyclePer, shortDate, todayISO } from "@/lib/format";
 import { subscriptionTotals, upcomingSubscriptions } from "@/lib/selectors";
+import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
 
 const SEG_COLORS = ["var(--color-lime)", "var(--color-peach)", "var(--color-on-ink-faint)", "#7fa98f", "#8fa3c9"];
 
 export default function SubscriptionsPage() {
   const { subscriptions, accounts } = useStore();
+  const { t: tr } = useTranslation();
   const today = todayISO();
   const [sort, setSort] = useState<"due" | "price">("due");
 
@@ -37,20 +39,20 @@ export default function SubscriptionsPage() {
   return (
     <TabScreen>
       <TabHeader
-        title="รายเดือน"
-        subtitle={`Subscriptions ที่ใช้งานอยู่ ${totals.count} รายการ`}
-        actions={<IconButton href="/subscriptions/new" icon="plus" label="เพิ่ม subscription" variant="dark" />}
+        title={tr("subs.title")}
+        subtitle={tr("subs.active", { count: totals.count })}
+        actions={<IconButton href="/subscriptions/new" icon="plus" label={tr("subs.add")} variant="dark" />}
       />
 
       <HeroCard>
         <div className="flex items-end justify-between">
           <div className="flex flex-col gap-1">
-            <span className="text-[13px] text-on-ink-muted">ค่าใช้จ่ายต่อเดือน</span>
+            <span className="text-[13px] text-on-ink-muted">{tr("subs.perMonth")}</span>
             <span className="font-mono text-4xl font-semibold leading-tight tracking-tight">{baht(totals.perMonth)}</span>
           </div>
           {totals.perYearExtra > 0 ? (
             <div className="flex flex-col items-end gap-0.5">
-              <span className="text-xs text-on-ink-muted">รายปีอีก</span>
+              <span className="text-xs text-on-ink-muted">{tr("subs.yearlyMore")}</span>
               <span className="font-mono text-[15px] font-semibold">{baht(totals.perYearExtra)}</span>
             </div>
           ) : null}
@@ -74,16 +76,16 @@ export default function SubscriptionsPage() {
         ) : null}
         <div className="-mt-1 flex min-h-9 items-center gap-2 border-t border-ink-line pt-2.5 text-xs text-on-ink-muted">
           <Icon name="calendar" size={14} strokeWidth={2} className="text-lime" />
-          <span className="grow">ต้องจ่ายใน 7 วันข้างหน้า</span>
+          <span className="grow">{tr("subs.next7")}</span>
           <span className="font-mono text-[13px] font-semibold text-lime">{baht(totals.next7)}</span>
         </div>
       </HeroCard>
 
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold">{sort === "due" ? "เรียงตามวันตัดบัญชี" : "เรียงตามราคา"}</h2>
+          <h2 className="text-base font-semibold">{sort === "due" ? tr("subs.byDue") : tr("subs.byPrice")}</h2>
           <button type="button" onClick={() => setSort(sort === "due" ? "price" : "due")} className="min-h-9 text-[13px] font-medium text-muted">
-            เปลี่ยนการเรียง
+            {tr("subs.changeSort")}
           </button>
         </div>
         {active.length ? (
@@ -108,13 +110,13 @@ export default function SubscriptionsPage() {
             ))}
           </ListCard>
         ) : (
-          <Empty>ยังไม่มี subscription — กด + เพื่อเพิ่ม</Empty>
+          <Empty>{tr("subs.empty")}</Empty>
         )}
       </section>
 
       {paused.length ? (
         <section className="flex flex-col gap-2">
-          <h2 className="text-base font-semibold">หยุดชั่วคราว</h2>
+          <h2 className="text-base font-semibold">{tr("subs.paused")}</h2>
           <ListCard>
             {paused.map((sub) => (
               <Link key={sub.id} href={`/subscriptions/${sub.id}`} className={cx("flex min-h-16 items-center gap-3 opacity-70")}>

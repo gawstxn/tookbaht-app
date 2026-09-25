@@ -5,13 +5,16 @@ import { useState } from "react";
 import { TabScreen } from "@/components/app";
 import { Icon } from "@/components/ui/Icon";
 import { PushToggle } from "@/components/PushToggle";
-import { ListCard, PrimaryButton, SecondaryButton, Sheet, TabHeader, cx } from "@/components/ui/primitives";
+import { useTranslation } from "react-i18next";
+import { ListCard, PrimaryButton, SecondaryButton, Segmented, Sheet, TabHeader, cx } from "@/components/ui/primitives";
+import { currentLang, type Lang } from "@/lib/i18n";
 import { TYPE_META, categoryLabel } from "@/lib/constants";
 import { useStore } from "@/lib/store";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, accounts, transactions, signOut, deleteAccount } = useStore();
+  const { user, accounts, transactions, signOut, deleteAccount, setLanguage } = useStore();
+  const { t: tr } = useTranslation();
   const [sheet, setSheet] = useState<"" | "logout" | "delete">("");
   const [busy, setBusy] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -37,7 +40,7 @@ export default function ProfilePage() {
 
   return (
     <TabScreen>
-      <TabHeader title="โปรไฟล์" />
+      <TabHeader title={tr("profile.title")} />
 
       <section className="flex flex-col gap-4 rounded-[28px] bg-ink p-[22px] text-on-ink shadow-hero">
         <div className="flex items-center gap-4">
@@ -51,29 +54,43 @@ export default function ProfilePage() {
         </div>
         <div className="flex items-center gap-2 border-t border-ink-line pt-3 text-xs text-on-ink-muted">
           <Icon name="check" size={14} strokeWidth={2.2} className="text-lime" />
-          เข้าสู่ระบบด้วยบัญชี Google · ชื่อและรูปดึงจาก Google
+          {tr("profile.googleNote")}
         </div>
       </section>
 
-      <Group title="การเงิน">
-        <NavRow label="บัญชีของฉัน" value={`${accounts.length} บัญชี`} onClick={() => router.push("/accounts")} />
-        <NavRow label="สกุลเงิน" value="บาท (THB)" />
-        <NavRow label="ส่งออกข้อมูล" value="CSV" icon="download" onClick={exportCsv} />
+      <Group title={tr("profile.finance")}>
+        <NavRow label={tr("profile.myAccounts")} value={tr("common.accounts", { count: accounts.length })} onClick={() => router.push("/accounts")} />
+        <NavRow label={tr("profile.currency")} value={tr("profile.currencyValue")} />
+        <NavRow label={tr("profile.export")} value="CSV" icon="download" onClick={exportCsv} />
       </Group>
 
-      <Group title="การแจ้งเตือน">
+      <Group title={tr("lang.title")}>
+        <div className="py-3">
+          <Segmented<Lang>
+            label={tr("lang.title")}
+            value={currentLang()}
+            onChange={setLanguage}
+            options={[
+              { value: "th", label: tr("lang.th") },
+              { value: "en", label: tr("lang.en") },
+            ]}
+          />
+        </div>
+      </Group>
+
+      <Group title={tr("profile.notifications")}>
         <PushToggle />
       </Group>
 
-      <Group title="เกี่ยวกับ">
-        <NavRow label="ข้อกำหนดการใช้งาน" onClick={() => router.push("/terms")} />
-        <NavRow label="นโยบายความเป็นส่วนตัว" onClick={() => router.push("/privacy")} />
+      <Group title={tr("profile.about")}>
+        <NavRow label={tr("login.terms")} onClick={() => router.push("/terms")} />
+        <NavRow label={tr("login.privacy")} onClick={() => router.push("/privacy")} />
       </Group>
 
-      <Group title="บัญชี">
+      <Group title={tr("profile.account")}>
         <button type="button" onClick={() => setSheet("logout")} className="flex min-h-[52px] w-full items-center gap-3 text-left text-[15px]">
           <Icon name="logout" size={18} />
-          ออกจากระบบ
+          {tr("profile.logout")}
         </button>
         <button
           type="button"
@@ -84,7 +101,7 @@ export default function ProfilePage() {
           className="flex min-h-[52px] w-full items-center gap-3 text-left text-[15px] text-danger"
         >
           <Icon name="trash" size={18} />
-          ลบบัญชี
+          {tr("profile.delete")}
         </button>
       </Group>
 
@@ -92,8 +109,8 @@ export default function ProfilePage() {
         Tookbaht v{process.env.NEXT_PUBLIC_APP_VERSION} · {process.env.NEXT_PUBLIC_APP_COMMIT}
       </p>
 
-      <Sheet open={sheet === "logout"} onClose={() => setSheet("")} title="ออกจากระบบ?">
-        <p className="text-sm text-muted">ข้อมูลเก็บไว้ในบัญชีของคุณ เข้าสู่ระบบด้วย Google อีกครั้งเมื่อไหร่ก็ได้ ทุกเครื่อง</p>
+      <Sheet open={sheet === "logout"} onClose={() => setSheet("")} title={tr("profile.logoutTitle")}>
+        <p className="text-sm text-muted">{tr("profile.logoutLead")}</p>
         <PrimaryButton
           disabled={busy}
           onClick={async () => {
@@ -102,16 +119,16 @@ export default function ProfilePage() {
             router.replace("/login");
           }}
         >
-          {busy ? "กำลังออกจากระบบ…" : "ออกจากระบบ"}
+          {busy ? tr("profile.loggingOut") : tr("profile.logout")}
         </PrimaryButton>
-        <SecondaryButton onClick={() => setSheet("")}>ยกเลิก</SecondaryButton>
+        <SecondaryButton onClick={() => setSheet("")}>{tr("common.cancel")}</SecondaryButton>
       </Sheet>
 
-      <Sheet open={sheet === "delete"} onClose={() => setSheet("")} title="ลบบัญชีถาวร?" titleClassName="text-danger">
-        <p className="text-sm text-muted">รายการรายรับ รายจ่าย การโอน subscriptions และเป้าหมายทั้งหมดจะถูกลบ และกู้คืนไม่ได้</p>
+      <Sheet open={sheet === "delete"} onClose={() => setSheet("")} title={tr("profile.deleteTitle")} titleClassName="text-danger">
+        <p className="text-sm text-muted">{tr("profile.deleteLead")}</p>
         <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-[14px] border border-line bg-card px-3.5 text-sm">
           <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} className="h-5 w-5 accent-danger" />
-          ฉันเข้าใจว่าลบแล้วกู้คืนไม่ได้
+          {tr("profile.deleteConfirm")}
         </label>
         <PrimaryButton
           tone="danger"
@@ -122,9 +139,9 @@ export default function ProfilePage() {
             else setBusy(false);
           }}
         >
-          {busy ? "กำลังลบ…" : "ลบบัญชี"}
+          {busy ? tr("profile.deleting") : tr("profile.delete")}
         </PrimaryButton>
-        <SecondaryButton onClick={() => setSheet("")}>ยกเลิก</SecondaryButton>
+        <SecondaryButton onClick={() => setSheet("")}>{tr("common.cancel")}</SecondaryButton>
       </Sheet>
     </TabScreen>
   );

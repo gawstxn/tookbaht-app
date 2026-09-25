@@ -1,34 +1,30 @@
+import { currentLang, t } from "./i18n";
 import type { Cycle, ISODate } from "./types";
 
-export const TH_MONTHS = [
+const TH_MONTHS = [
   "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
   "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม",
 ];
-export const TH_MONTHS_SHORT = [
+const TH_MONTHS_SHORT = [
   "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
   "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.",
 ];
-export const TH_WEEKDAYS = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"];
-export const TH_WEEKDAYS_SHORT = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
+const TH_WEEKDAYS = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"];
+const TH_WEEKDAYS_SHORT = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
+const EN_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const EN_MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const EN_WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const EN_WEEKDAYS_SHORT = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
-const nf0 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
-const nf2 = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const en = () => currentLang() === "en";
+export const monthNames = () => (en() ? EN_MONTHS : TH_MONTHS);
+export const monthNamesShort = () => (en() ? EN_MONTHS_SHORT : TH_MONTHS_SHORT);
+export const weekdayNames = () => (en() ? EN_WEEKDAYS : TH_WEEKDAYS);
+export const weekdayNamesShort = () => (en() ? EN_WEEKDAYS_SHORT : TH_WEEKDAYS_SHORT);
+/** Buddhist-era year in Thai, Gregorian in English. */
+export const displayYear = (y: number) => (en() ? y : y + 543);
 
-/** ฿1,234 (whole baht) */
-export function baht(n: number): string {
-  return "฿" + nf0.format(Math.round(n));
-}
-/** ฿1,234.50 */
-export function baht2(n: number): string {
-  return "฿" + nf2.format(n);
-}
-export function num(n: number): string {
-  return nf0.format(Math.round(n));
-}
-export function splitDecimals(n: number): [string, string] {
-  const [i, d] = nf2.format(n).split(".");
-  return ["฿" + i, "." + d];
-}
+export { baht, baht2, num, splitDecimals } from "./money";
 
 /* ---------- dates (all local time, no timezone drift) ---------- */
 
@@ -65,29 +61,29 @@ export function shiftMonth(key: string, n: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-/** "กันยายน 2569" */
+/** "กันยายน 2569" / "September 2026" */
 export function monthLabel(key: string): string {
   const [y, m] = key.split("-").map(Number);
-  return `${TH_MONTHS[m - 1]} ${y + 543}`;
+  return `${monthNames()[m - 1]} ${displayYear(y)}`;
 }
-/** "3 ต.ค. 2569" (year omitted when `withYear` is false) */
+/** "3 ต.ค. 2569" / "3 Oct 2026" (year omitted when `withYear` is false) */
 export function shortDate(s: ISODate, withYear = true): string {
   const d = fromISO(s);
-  return `${d.getDate()} ${TH_MONTHS_SHORT[d.getMonth()]}${withYear ? " " + (d.getFullYear() + 543) : ""}`;
+  return `${d.getDate()} ${monthNamesShort()[d.getMonth()]}${withYear ? " " + displayYear(d.getFullYear()) : ""}`;
 }
-/** "วันนี้", "เมื่อวาน", or "พุธ 23 ก.ย." */
+/** "วันนี้ · 3 ต.ค.", "เมื่อวาน · …", or "พุธ 23 ก.ย." */
 export function dayHeading(s: ISODate, today: ISODate): string {
   const diff = diffDays(today, s);
   const d = fromISO(s);
-  const base = `${d.getDate()} ${TH_MONTHS_SHORT[d.getMonth()]}`;
-  if (diff === 0) return `วันนี้ · ${base}`;
-  if (diff === 1) return `เมื่อวาน · ${base}`;
-  return `${TH_WEEKDAYS[d.getDay()]} ${base}`;
+  const base = `${d.getDate()} ${monthNamesShort()[d.getMonth()]}`;
+  if (diff === 0) return `${t("common.today")} · ${base}`;
+  if (diff === 1) return `${t("common.yesterday")} · ${base}`;
+  return `${weekdayNames()[d.getDay()]} ${base}`;
 }
 export function relativeDue(days: number): string {
-  if (days <= 0) return "วันนี้";
-  if (days === 1) return "พรุ่งนี้";
-  return `อีก ${days} วัน`;
+  if (days <= 0) return t("common.today");
+  if (days === 1) return t("common.tomorrow");
+  return t("common.inDays", { count: days });
 }
 
 /** Next date on/after `from` when a subscription bills. */
@@ -130,10 +126,10 @@ export function monthlyEquivalent(amount: number, cycle: Cycle): number {
   return amount;
 }
 export function cycleLabel(c: Cycle): string {
-  return c === "week" ? "รายสัปดาห์" : c === "year" ? "รายปี" : "รายเดือน";
+  return t(`cycle.${c}`);
 }
 export function cyclePer(c: Cycle): string {
-  return c === "week" ? "/ สัปดาห์" : c === "year" ? "/ ปี" : "/ เดือน";
+  return t(c === "week" ? "cycle.perWeek" : c === "year" ? "cycle.perYear" : "cycle.perMonth");
 }
 
 export function uid(): string {

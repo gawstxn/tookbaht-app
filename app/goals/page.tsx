@@ -7,10 +7,12 @@ import { Bar, Empty, HeroCard, IconButton, ListCard, PushHeader } from "@/compon
 import { categoryLabel } from "@/lib/constants";
 import { baht, todayISO } from "@/lib/format";
 import { daysLeftInMonth, monthPace, monthTransactions, spendByCategory, summarize } from "@/lib/selectors";
+import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
 
 export default function GoalsPage() {
   const { transactions, goals, viewMonth } = useStore();
+  const { t: tr } = useTranslation();
   const today = todayISO();
   const month = monthTransactions(transactions, viewMonth);
   const sum = summarize(month);
@@ -40,51 +42,51 @@ export default function GoalsPage() {
 
   return (
     <PushScreen>
-      <PushHeader title="เป้าหมาย" backHref="/" action={<IconButton href="/goals/edit" icon="pencil" label="ตั้งเป้าหมาย" variant="dark" />} />
+      <PushHeader title={tr("goals.title")} backHref="/" action={<IconButton href="/goals/edit" icon="pencil" label={tr("goals.set")} variant="dark" />} />
       <div className="-mt-2 flex items-center justify-center gap-1 text-[13px] text-muted">
         <MonthSwitcher />
-        {left > 0 ? <span>· เหลืออีก {left} วัน</span> : null}
+        {left > 0 ? <span>{tr("goals.left", { count: left })}</span> : null}
       </div>
 
       {hasGoals ? (
-        <HeroCard label="สรุปเป้าหมายเดือนนี้" className="gap-[18px]">
+        <HeroCard label={tr("goals.summary")} className="gap-[18px]">
           {goals.incomeTarget > 0 ? (
             <div className="flex flex-col gap-2">
-              <MeterHead icon="in" color="var(--color-lime)" label="เป้ารายรับ" pct={incomePct} />
+              <MeterHead icon="in" color="var(--color-lime)" label={tr("goals.incomeGoal")} pct={incomePct} />
               <Amount value={sum.income} of={goals.incomeTarget} />
               <Bar value={incomePct} color="var(--color-lime)" />
               <span className="text-xs text-on-ink-muted">
-                {sum.income >= goals.incomeTarget ? "ถึงเป้าแล้ว" : `ขาดอีก ${baht(goals.incomeTarget - sum.income)} ก็ถึงเป้า`}
+                {sum.income >= goals.incomeTarget ? tr("goals.reached") : tr("goals.toGo", { amount: baht(goals.incomeTarget - sum.income) })}
               </span>
             </div>
           ) : null}
           {goals.expenseBudget > 0 ? (
             <div className={goals.incomeTarget > 0 ? "flex flex-col gap-2 border-t border-ink-line pt-4" : "flex flex-col gap-2"}>
-              <MeterHead icon="out" color="var(--color-peach)" label="งบรายจ่าย" pct={expensePct} />
+              <MeterHead icon="out" color="var(--color-peach)" label={tr("goals.expenseBudget")} pct={expensePct} />
               <Amount value={sum.expense} of={goals.expenseBudget} />
               <Bar value={expensePct} color="var(--color-peach)" marker={pace > 0 && pace < 1 ? { at: pace, color: "var(--color-on-ink)" } : undefined} />
               <div className="flex items-center justify-between text-xs text-on-ink-muted">
                 {remaining < 0 ? (
-                  <span className="font-semibold text-peach">เกินงบ {baht(-remaining)}</span>
+                  <span className="font-semibold text-peach">{tr("goals.over", { amount: baht(-remaining) })}</span>
                 ) : ahead > 0 && pace < 1 ? (
-                  <span className="font-semibold text-peach">ใช้เร็วกว่าแผน {baht(ahead)}</span>
+                  <span className="font-semibold text-peach">{tr("goals.ahead", { amount: baht(ahead) })}</span>
                 ) : (
-                  <span>เป็นไปตามแผน</span>
+                  <span>{tr("goals.onPlan")}</span>
                 )}
-                {left > 0 && remaining > 0 ? <span>เหลือ ≈ {baht(perDay)}/วัน</span> : null}
+                {left > 0 && remaining > 0 ? <span>{tr("goals.perDayLeft", { amount: baht(perDay) })}</span> : null}
               </div>
             </div>
           ) : null}
         </HeroCard>
       ) : (
-        <Empty>ยังไม่ได้ตั้งเป้าหมาย — กดปุ่มดินสอเพื่อเริ่ม</Empty>
+        <Empty>{tr("goals.empty")}</Empty>
       )}
 
       {cats.length ? (
         <section className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold">งบตามหมวด</h2>
-            {pace > 0 && pace < 1 ? <span className="text-xs text-muted">ขีดตั้ง = ควรใช้ถึงวันนี้</span> : null}
+            <h2 className="text-base font-semibold">{tr("goals.byCategory")}</h2>
+            {pace > 0 && pace < 1 ? <span className="text-xs text-muted">{tr("goals.paceHint")}</span> : null}
           </div>
           <ListCard className="py-1">
             {cats.map((c) => (
@@ -104,7 +106,7 @@ export default function GoalsPage() {
                   marker={pace > 0 && pace < 1 ? { at: pace, color: "var(--color-ink)" } : undefined}
                 />
                 <span className={c.over ? "text-xs font-semibold text-danger" : "text-xs text-muted"}>
-                  {c.over ? `เกินงบ ${baht(c.spent - c.budget)}` : `เหลือ ${baht(c.budget - c.spent)}${c.fast ? " · ใช้เร็วกว่าแผน" : ""}`}
+                  {c.over ? tr("goals.over", { amount: baht(c.spent - c.budget) }) : tr("goals.catLeft", { amount: baht(c.budget - c.spent) }) + (c.fast ? tr("goals.fast") : "")}
                 </span>
               </div>
             ))}

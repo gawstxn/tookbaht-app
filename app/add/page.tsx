@@ -9,14 +9,10 @@ import { Chip, PrimaryButton, PushHeader, Segmented, cx } from "@/components/ui/
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, TYPE_META } from "@/lib/constants";
 import { addDays, shortDate, todayISO } from "@/lib/format";
 import { accountBalance } from "@/lib/selectors";
+import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
 import type { TxType } from "@/lib/types";
 
-const COPY: Record<TxType, { amountLabel: string; save: string; acc: string; note: string }> = {
-  out: { amountLabel: "จำนวนเงินที่จ่าย", save: "บันทึกรายจ่าย", acc: "จ่ายจาก", note: "เช่น มื้อกลางวันกับทีม" },
-  in: { amountLabel: "จำนวนเงินที่ได้รับ", save: "บันทึกรายรับ", acc: "เข้าบัญชี", note: "เช่น ค่าจ้างงานเดือนนี้" },
-  move: { amountLabel: "จำนวนเงินที่โอน", save: "บันทึกการโอน", acc: "", note: "เช่น เก็บเงินเที่ยวสิ้นปี" },
-};
 
 export default function AddPage() {
   return (
@@ -35,6 +31,7 @@ function AddForm() {
   const txs = useStore((s) => s.transactions);
   const addTransaction = useStore((s) => s.addTransaction);
   const today = todayISO();
+  const { t } = useTranslation();
 
   const [type, setType] = useState<TxType>(initialType);
   const [amount, setAmount] = useState("");
@@ -48,7 +45,12 @@ function AddForm() {
 
   const cats = type === "in" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES.filter((c) => c.key !== "sub");
   const meta = TYPE_META[type];
-  const copy = COPY[type];
+  const copy = {
+    amountLabel: t(`add.amount_${type}`),
+    save: t(`add.save_${type}`),
+    acc: type === "move" ? "" : t(`add.acc_${type}`),
+    note: t(`add.note_${type}`),
+  };
   const value = parseFloat(amount) || 0;
   const accountOf = (id: string) => accounts.find((a) => a.id === id);
   const canSave = value > 0 && (type !== "move" || (from && to && from !== to));
@@ -76,7 +78,7 @@ function AddForm() {
   const save = () => {
     if (!canSave) return;
     const catLabel = cats.find((c) => c.key === cat)?.label ?? "";
-    const title = note.trim() || (type === "move" ? `โอนเข้า${accountOf(to)?.name ?? ""}` : catLabel);
+    const title = note.trim() || (type === "move" ? t("add.transferTo", { name: accountOf(to)?.name ?? "" }) : catLabel);
     addTransaction(
       type === "move"
         ? { type, amount: value, date, title, fromId: from, toId: to }
@@ -85,20 +87,25 @@ function AddForm() {
     router.push("/");
   };
 
-  const dateText = date === today ? `วันนี้, ${shortDate(date, false)}` : date === addDays(today, -1) ? `เมื่อวาน, ${shortDate(date, false)}` : shortDate(date);
+  const dateText =
+    date === today
+      ? t("add.todayDate", { date: shortDate(date, false) })
+      : date === addDays(today, -1)
+        ? t("add.yesterdayDate", { date: shortDate(date, false) })
+        : shortDate(date);
 
   return (
     <PushScreen className="gap-3">
-      <PushHeader title="เพิ่มรายการ" backIcon="close" onBack={() => router.back()} />
+      <PushHeader title={t("add.title")} backIcon="close" onBack={() => router.back()} />
 
       <Segmented
-        label="ประเภทรายการ"
+        label={t("add.typeLabel")}
         value={type}
         onChange={changeType}
         options={[
-          { value: "out", label: "รายจ่าย" },
-          { value: "in", label: "รายรับ" },
-          { value: "move", label: "โอน" },
+          { value: "out", label: t("type.out") },
+          { value: "in", label: t("type.in") },
+          { value: "move", label: t("type.move") },
         ]}
         colorFor={(v) => TYPE_META[v].color}
       />
@@ -123,18 +130,18 @@ function AddForm() {
             ))}
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <FieldButton label={copy.acc} value={accountOf(acc)?.name ?? "เลือกบัญชี"} onClick={() => setSheet("acc")} />
-            <FieldButton label="วันที่" value={dateText} onClick={() => setSheet("date")} />
+            <FieldButton label={copy.acc} value={accountOf(acc)?.name ?? t("common.selectAccount")} onClick={() => setSheet("acc")} />
+            <FieldButton label={t("common.date")} value={dateText} onClick={() => setSheet("date")} />
           </div>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
           <div className="relative flex flex-col gap-1.5">
-            <TransferRow label="จากบัญชี" name={accountOf(from)?.name} balance={accountOf(from) ? accountBalance(accountOf(from)!, txs) : 0} onClick={() => setSheet("from")} />
-            <TransferRow label="ไปยังบัญชี" name={accountOf(to)?.name} balance={accountOf(to) ? accountBalance(accountOf(to)!, txs) : 0} onClick={() => setSheet("to")} />
+            <TransferRow label={t("common.fromAccount")} name={accountOf(from)?.name} balance={accountOf(from) ? accountBalance(accountOf(from)!, txs) : 0} onClick={() => setSheet("from")} />
+            <TransferRow label={t("common.toAccount")} name={accountOf(to)?.name} balance={accountOf(to) ? accountBalance(accountOf(to)!, txs) : 0} onClick={() => setSheet("to")} />
             <button
               type="button"
-              aria-label="สลับบัญชีต้นทางและปลายทาง"
+              aria-label={t("add.swap")}
               onClick={() => {
                 setFrom(to);
                 setTo(from);
@@ -144,13 +151,13 @@ function AddForm() {
               <Icon name="swap" size={16} strokeWidth={2.2} />
             </button>
           </div>
-          <FieldButton label="วันที่" value={dateText} onClick={() => setSheet("date")} />
+          <FieldButton label={t("common.date")} value={dateText} onClick={() => setSheet("date")} />
         </div>
       )}
 
       <div className="flex flex-col gap-1">
         <label htmlFor="note" className="pl-0.5 text-[11px] text-muted">
-          โน้ต
+          {t("common.note")}
         </label>
         <input
           id="note"
@@ -166,7 +173,7 @@ function AddForm() {
           <button
             key={k}
             type="button"
-            aria-label={k === "del" ? "ลบ" : k}
+            aria-label={k === "del" ? t("add.del") : k}
             onClick={() => press(k)}
             className={cx("flex min-h-[50px] items-center justify-center rounded-xl font-mono text-[22px] font-medium", k === "del" || k === "." ? "bg-chip" : "bg-card")}
           >
@@ -179,19 +186,19 @@ function AddForm() {
         {copy.save}
       </PrimaryButton>
 
-      <AccountSheet open={sheet === "acc"} onClose={() => setSheet("")} title={copy.acc || "บัญชี"} value={acc} onPick={setAcc} />
-      <AccountSheet open={sheet === "from"} onClose={() => setSheet("")} title="โอนจากบัญชี" value={from} exclude={to} onPick={setFrom} />
-      <AccountSheet open={sheet === "to"} onClose={() => setSheet("")} title="โอนไปยังบัญชี" value={to} exclude={from} onPick={setTo} />
+      <AccountSheet open={sheet === "acc"} onClose={() => setSheet("")} title={copy.acc || t("common.account")} value={acc} onPick={setAcc} />
+      <AccountSheet open={sheet === "from"} onClose={() => setSheet("")} title={t("add.fromTitle")} value={from} exclude={to} onPick={setFrom} />
+      <AccountSheet open={sheet === "to"} onClose={() => setSheet("")} title={t("add.toTitle")} value={to} exclude={from} onPick={setTo} />
       <DateSheet
         open={sheet === "date"}
         onClose={() => setSheet("")}
-        title="เลือกวันที่"
+        title={t("add.pickDate")}
         value={date}
         onChange={setDate}
         max={today}
         quick={[
-          { label: "วันนี้", value: today },
-          { label: "เมื่อวาน", value: addDays(today, -1) },
+          { label: t("common.today"), value: today },
+          { label: t("common.yesterday"), value: addDays(today, -1) },
         ]}
       />
     </PushScreen>
@@ -208,11 +215,12 @@ function FieldButton({ label, value, onClick }: { label: string; value: string; 
 }
 
 function TransferRow({ label, name, balance, onClick }: { label: string; name?: string; balance: number; onClick: () => void }) {
+  const { t } = useTranslation();
   return (
     <button type="button" aria-haspopup="dialog" onClick={onClick} className="flex min-h-[60px] items-center justify-between rounded-[14px] border border-line bg-card px-3.5 text-left">
       <span className="flex flex-col">
         <span className="text-[11px] text-muted">{label}</span>
-        <span className="text-[15px] font-semibold">{name ?? "เลือกบัญชี"}</span>
+        <span className="text-[15px] font-semibold">{name ?? t("common.selectAccount")}</span>
       </span>
       <span className="font-mono text-[13px] text-muted">฿{balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
     </button>

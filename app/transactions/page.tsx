@@ -8,6 +8,8 @@ import { Chip, Empty, IconButton, ListCard, SecondaryButton, Sheet, TabHeader } 
 import { TYPE_META, categoryLabel } from "@/lib/constants";
 import { baht, baht2, dayHeading, shortDate, todayISO } from "@/lib/format";
 import { monthTransactions, summarize } from "@/lib/selectors";
+import { useTranslation } from "react-i18next";
+import { txTitle } from "@/lib/txTitle";
 import { useStore } from "@/lib/store";
 import type { Transaction, TxType } from "@/lib/types";
 
@@ -15,6 +17,7 @@ type Filter = "all" | TxType;
 
 export default function TransactionsPage() {
   const { transactions, viewMonth, accounts, deleteTransaction } = useStore();
+  const { t: tr } = useTranslation();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
@@ -28,44 +31,44 @@ export default function TransactionsPage() {
     const q = query.trim().toLowerCase();
     const rows = month
       .filter((t) => filter === "all" || t.type === filter)
-      .filter((t) => !q || t.title.toLowerCase().includes(q) || (t.note ?? "").toLowerCase().includes(q))
+      .filter((t) => !q || txTitle(t, accounts).toLowerCase().includes(q) || t.title.toLowerCase().includes(q) || (t.note ?? "").toLowerCase().includes(q))
       .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
     const map = new Map<string, Transaction[]>();
     for (const t of rows) map.set(t.date, [...(map.get(t.date) ?? []), t]);
     return [...map.entries()].map(([date, items]) => ({ date, items, net: summarize(items).net }));
-  }, [month, filter, query]);
+  }, [month, filter, query, accounts]);
 
   const accName = (id?: string) => accounts.find((a) => a.id === id)?.name ?? "—";
 
   return (
     <TabScreen>
       <TabHeader
-        title="รายการ"
+        title={tr("tx.title")}
         subtitle={<MonthSwitcher />}
-        actions={<IconButton icon={searching ? "close" : "search"} label={searching ? "ปิดการค้นหา" : "ค้นหา"} onClick={() => { setSearching(!searching); setQuery(""); }} />}
+        actions={<IconButton icon={searching ? "close" : "search"} label={tr(searching ? "tx.closeSearch" : "tx.search")} onClick={() => { setSearching(!searching); setQuery(""); }} />}
       />
 
       {searching ? (
         <label className="flex min-h-12 items-center gap-2 rounded-[14px] border border-line bg-card px-3.5">
           <Icon name="search" size={18} className="text-muted" />
-          <span className="sr-only">ค้นหารายการ</span>
-          <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="ค้นหาชื่อรายการหรือโน้ต" className="grow bg-transparent text-[15px] outline-none" />
+          <span className="sr-only">{tr("tx.searchLabel")}</span>
+          <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tr("tx.searchPlaceholder")} className="grow bg-transparent text-[15px] outline-none" />
         </label>
       ) : null}
 
       <div className="grid grid-cols-3 rounded-2xl border border-line bg-card px-1 py-3">
-        <Stat label="รายรับ" value={`+${baht(sum.income).slice(1)}`} color="var(--color-income)" />
-        <Stat label="รายจ่าย" value={`−${baht(sum.expense).slice(1)}`} color="var(--color-expense)" divided />
-        <Stat label="โอน" value={baht(sum.moved).slice(1)} color="var(--color-transfer)" />
+        <Stat label={tr("type.in")} value={`+${baht(sum.income).slice(1)}`} color="var(--color-income)" />
+        <Stat label={tr("type.out")} value={`−${baht(sum.expense).slice(1)}`} color="var(--color-expense)" divided />
+        <Stat label={tr("type.move")} value={baht(sum.moved).slice(1)} color="var(--color-transfer)" />
       </div>
 
-      <div role="group" aria-label="กรองตามประเภท" className="flex gap-2">
+      <div role="group" aria-label={tr("tx.filter")} className="flex gap-2">
         {(
           [
-            ["all", "ทั้งหมด"],
-            ["in", "รายรับ"],
-            ["out", "รายจ่าย"],
-            ["move", "โอน"],
+            ["all", tr("common.all")],
+            ["in", tr("type.in")],
+            ["out", tr("type.out")],
+            ["move", tr("type.move")],
           ] as [Filter, string][]
         ).map(([k, l]) => (
           <Chip key={k} on={filter === k} onClick={() => setFilter(k)}>
@@ -94,16 +97,16 @@ export default function TransactionsPage() {
           </section>
         ))
       ) : (
-        <Empty>{query ? "ไม่พบรายการที่ค้นหา" : "ยังไม่มีรายการ"}</Empty>
+        <Empty>{query ? tr("tx.notFound") : tr("tx.none")}</Empty>
       )}
 
-      <Sheet open={!!selected} onClose={() => setSelected(null)} title="รายละเอียดรายการ">
+      <Sheet open={!!selected} onClose={() => setSelected(null)} title={tr("tx.detail")}>
         {selected ? (
           <>
             <div className="flex items-center gap-3">
               <TxIcon type={selected.type} category={selected.category} size={48} />
               <div className="flex flex-col">
-                <span className="text-lg font-semibold">{selected.title}</span>
+                <span className="text-lg font-semibold">{txTitle(selected, accounts)}</span>
                 <span className="font-mono text-xl font-semibold" style={{ color: TYPE_META[selected.type].color }}>
                   {TYPE_META[selected.type].sign}
                   {baht2(selected.amount)}
@@ -111,21 +114,21 @@ export default function TransactionsPage() {
               </div>
             </div>
             <ListCard>
-              <Detail label="ประเภท" value={TYPE_META[selected.type].label} />
-              <Detail label="วันที่" value={shortDate(selected.date)} />
+              <Detail label={tr("common.type")} value={TYPE_META[selected.type].label} />
+              <Detail label={tr("common.date")} value={shortDate(selected.date)} />
               {selected.type === "move" ? (
                 <>
-                  <Detail label="จากบัญชี" value={accName(selected.fromId)} />
-                  <Detail label="ไปยังบัญชี" value={accName(selected.toId)} />
+                  <Detail label={tr("common.fromAccount")} value={accName(selected.fromId)} />
+                  <Detail label={tr("common.toAccount")} value={accName(selected.toId)} />
                 </>
               ) : (
                 <>
-                  <Detail label="หมวดหมู่" value={categoryLabel(selected.category)} />
-                  <Detail label="บัญชี" value={accName(selected.accountId)} />
+                  <Detail label={tr("common.category")} value={categoryLabel(selected.category)} />
+                  <Detail label={tr("common.account")} value={accName(selected.accountId)} />
                 </>
               )}
-              {selected.note ? <Detail label="โน้ต" value={selected.note} /> : null}
-              {selected.subscriptionId ? <Detail label="ที่มา" value="บันทึกอัตโนมัติจาก subscription" /> : null}
+              {selected.note ? <Detail label={tr("common.note")} value={selected.note} /> : null}
+              {selected.subscriptionId ? <Detail label={tr("common.source")} value={tr("tx.fromSub")} /> : null}
             </ListCard>
             <SecondaryButton
               tone="danger"
@@ -134,7 +137,7 @@ export default function TransactionsPage() {
                 setSelected(null);
               }}
             >
-              ลบรายการนี้
+              {tr("tx.delete")}
             </SecondaryButton>
           </>
         ) : null}

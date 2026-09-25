@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Icon, type IconName } from "./Icon";
 
 export function cx(...c: (string | false | null | undefined)[]) {
@@ -82,9 +83,10 @@ export function PushHeader({
   onBack?: () => void;
   action?: ReactNode;
 }) {
+  const { t } = useTranslation();
   return (
     <header className="flex min-h-12 items-center justify-between">
-      <IconButton icon={backIcon} label={backIcon === "close" ? "ปิด" : "กลับ"} href={backHref} onClick={onBack} />
+      <IconButton icon={backIcon} label={t(backIcon === "close" ? "common.close" : "common.back")} href={backHref} onClick={onBack} />
       {title ? <h1 className="font-serif text-xl font-bold">{title}</h1> : <span />}
       {action ?? <span className="h-11 w-11" />}
     </header>
@@ -104,7 +106,9 @@ export function TabHeader({ title, subtitle, actions }: { title: string; subtitl
   );
 }
 
-export function SectionHeader({ title, href, linkLabel = "ดูทั้งหมด", aside }: { title: string; href?: string; linkLabel?: string; aside?: ReactNode }) {
+export function SectionHeader({ title, href, linkLabel, aside }: { title: string; href?: string; linkLabel?: string; aside?: ReactNode }) {
+  const { t } = useTranslation();
+  linkLabel ??= t("common.seeAll");
   return (
     <div className="flex items-center justify-between">
       <h2 className="text-base font-semibold">{title}</h2>
@@ -318,6 +322,7 @@ export function Empty({ children }: { children: ReactNode }) {
 /* ---------- bottom sheet ---------- */
 
 export function Sheet({ open, onClose, title, children, titleClassName }: { open: boolean; onClose: () => void; title: string; children: ReactNode; titleClassName?: string }) {
+  const { t } = useTranslation();
   const titleId = useId();
   const panel = useRef<HTMLDivElement>(null);
   // Stay mounted after `open` turns false so the sheet can slide out, showing
@@ -356,7 +361,7 @@ export function Sheet({ open, onClose, title, children, titleClassName }: { open
   return (
     <div className={cx("fixed inset-0 z-50 flex justify-center bg-ink/45", closing ? "animate-fade-out pointer-events-none" : "animate-fade")}>
       <div className="flex w-full max-w-[430px] flex-col">
-      <button type="button" aria-label="ปิด" tabIndex={-1} onClick={onClose} className="grow" />
+      <button type="button" aria-label={t("common.close")} tabIndex={-1} onClick={onClose} className="grow" />
       <div
         ref={panel}
         tabIndex={-1}
@@ -373,7 +378,7 @@ export function Sheet({ open, onClose, title, children, titleClassName }: { open
           <h2 id={titleId} className={cx("font-serif text-xl font-bold", titleClassName)}>
             {closing ? kept.title : title}
           </h2>
-          <button type="button" aria-label="ปิด" onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-card">
+          <button type="button" aria-label={t("common.close")} onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-card">
             <Icon name="close" size={18} strokeWidth={2} />
           </button>
         </div>

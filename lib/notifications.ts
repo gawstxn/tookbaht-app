@@ -1,5 +1,6 @@
 import { budgetLines } from "./budget";
 import { baht, addDays, fromISO, monthKey, nextDueDate, toISO } from "./format";
+import { t } from "./i18n";
 import { daysLeftInMonth, monthTransactions, summarize } from "./selectors";
 import type { Account, Goals, Settings, Subscription, Transaction } from "./types";
 
@@ -23,11 +24,11 @@ const at = (date: string, h: number, m = 0) => {
 };
 
 /** When a running total first went past `limit`, i.e. the transaction that crossed it. */
-function crossedAt(txs: Transaction[], limit: number, pick: (t: Transaction) => number): number | null {
+function crossedAt(txs: Transaction[], limit: number, pick: (tx: Transaction) => number): number | null {
   let sum = 0;
-  for (const t of [...txs].sort((a, b) => a.date.localeCompare(b.date) || a.createdAt - b.createdAt)) {
-    sum += pick(t);
-    if (sum > limit) return Math.max(t.createdAt, at(t.date, 0));
+  for (const tx of [...txs].sort((a, b) => a.date.localeCompare(b.date) || a.createdAt - b.createdAt)) {
+    sum += pick(tx);
+    if (sum > limit) return Math.max(tx.createdAt, at(tx.date, 0));
   }
   return null;
 }
@@ -58,8 +59,8 @@ export function buildNotifications(input: {
       id: `due:${s.id}:${due}`,
       kind: "due",
       at: Math.min(now, at(addDays(due, -1), 9)),
-      title: due === today ? `วันนี้ตัดบัญชี ${s.name}` : `พรุ่งนี้ตัดบัญชี ${s.name}`,
-      body: `${baht(s.amount)} จาก${accName(s.accountId)}`,
+      title: t(due === today ? "notif.dueToday" : "notif.dueTomorrow", { name: s.name }),
+      body: t("notif.fromAccount", { amount: baht(s.amount), account: accName(s.accountId) }),
       href: `/subscriptions/${s.id}`,
     });
   }
@@ -77,8 +78,8 @@ export function buildNotifications(input: {
         id: `over:${line.key}:${month}`,
         kind: "over",
         at: overAt,
-        title: line.key === "total" ? "เกินงบรวมแล้ว" : `งบ${line.label}เกินแล้ว`,
-        body: `ใช้ไป ${baht(line.spent)} จากงบ ${baht(line.budget)}`,
+        title: line.key === "total" ? t("banner.totalOver") : t("banner.oneOver", { label: line.label }),
+        body: t("notif.usedOf", { spent: baht(line.spent), budget: baht(line.budget) }),
         href: "/goals",
       });
     }
@@ -88,8 +89,11 @@ export function buildNotifications(input: {
         id: `near:${line.key}:${month}`,
         kind: "near",
         at: nearAt,
-        title: `${line.label}ใช้ไป ${Math.min(99, Math.round(line.pct * 100))}% ของงบ`,
-        body: line.spent <= line.budget ? `เหลือ ${baht(line.budget - line.spent)}${daysLeft ? ` อีก ${daysLeft} วัน` : ""}` : "ใช้เกิน 80% แล้ว",
+        title: t("banner.oneNear", { label: line.label, pct: `${Math.min(99, Math.round(line.pct * 100))}%` }),
+        body:
+          line.spent <= line.budget
+            ? t("banner.leftFor", { amount: baht(line.budget - line.spent) }) + (daysLeft ? t("banner.daysMore", { count: daysLeft }) : "")
+            : t("notif.over80"),
         href: "/goals",
       });
     }
@@ -107,22 +111,22 @@ export function buildNotifications(input: {
         id: `income:${reachedAt ? "reached" : "close"}:${month}`,
         kind: "income",
         at: when,
-        title: reachedAt ? "รายรับถึงเป้าแล้ว" : "รายรับใกล้ถึงเป้าแล้ว",
-        body: `${baht(income)} จากเป้า ${baht(goals.incomeTarget)}`,
+        title: t(reachedAt ? "notif.incomeReached" : "notif.incomeClose"),
+        body: t("notif.incomeOf", { income: baht(income), target: baht(goals.incomeTarget) }),
         href: "/goals",
       });
     }
   }
 
   // Charges the database logged automatically.
-  for (const t of transactions) {
-    if (!t.subscriptionId || now - t.createdAt > 30 * DAY) continue;
+  for (const tx of transactions) {
+    if (!tx.subscriptionId || now - tx.createdAt > 30 * DAY) continue;
     out.push({
-      id: `autolog:${t.id}`,
+      id: `autolog:${tx.id}`,
       kind: "autolog",
-      at: t.createdAt,
-      title: `บันทึก ${t.title} อัตโนมัติแล้ว`,
-      body: `−${baht(t.amount)} จาก${accName(t.accountId)}`,
+      at: tx.createdAt,
+      title: t("notif.autoLogged", { name: tx.title }),
+      body: t("notif.fromAccount", { amount: `−${baht(tx.amount)}`, account: accName(tx.accountId) }),
       href: "/transactions",
     });
   }
@@ -139,8 +143,8 @@ export function buildNotifications(input: {
       id: `weekly:${start}`,
       kind: "weekly",
       at: at(addDays(end, 1), 8),
-      title: "สรุปสัปดาห์ที่ผ่านมา",
-      body: `ใช้จ่ายไป ${baht(spent)} · ดูรายการทั้งหมด`,
+      title: t("notif.weekly"),
+      body: t("notif.weeklyBody", { amount: baht(spent) }),
       href: "/transactions",
     });
   }
