@@ -62,6 +62,7 @@ interface ProfileRow {
   name: string;
   email: string;
   settings: Partial<Settings> | null;
+  deletion_requested_at: string | null;
 }
 
 const opt = <T>(v: T | null): T | undefined => (v === null ? undefined : v);
@@ -193,7 +194,7 @@ const PAGE = 1000;
 /** Everything the app shows for the signed-in user. */
 export async function fetchAll(sb: SupabaseClient, userId: string) {
   const [profile, accounts, subscriptions, goals, transactions, rate] = await Promise.all([
-    sb.from("profiles").select("name, email, settings").eq("id", userId).single<ProfileRow>(),
+    sb.from("profiles").select("name, email, settings, deletion_requested_at").eq("id", userId).single<ProfileRow>(),
     sb.from("accounts").select("*").order("sort_order").order("created_at").returns<AccountRow[]>(),
     sb.from("subscriptions").select("*").order("created_at").returns<SubscriptionRow[]>(),
     sb.from("goals").select("*").eq("user_id", userId).maybeSingle<GoalsRow>(),
@@ -206,6 +207,7 @@ export async function fetchAll(sb: SupabaseClient, userId: string) {
   return {
     user,
     settings: { faceLock: false, ...profile.data!.settings },
+    deletionRequestedAt: profile.data!.deletion_requested_at,
     accounts: accounts.data!.map(fromRow.account),
     subscriptions: subscriptions.data!.map(fromRow.subscription),
     goals: goals.data ? fromRow.goals(goals.data) : null,

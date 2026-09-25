@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/Icon";
 import { PushToggle } from "@/components/PushToggle";
 import { LockSettings } from "@/components/LockSettings";
 import { readLock } from "@/lib/appLock";
+import { startReauth } from "@/lib/reauth";
 import { useTranslation } from "react-i18next";
 import { ListCard, PrimaryButton, SecondaryButton, Sheet, TabHeader, cx } from "@/components/ui/primitives";
 import { currentLang, type Lang } from "@/lib/i18n";
@@ -18,7 +19,7 @@ import { useStore } from "@/lib/store";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, userId, accounts, transactions, subscriptions, goals, settings, signOut, deleteAccount, setLanguage, load, notify } = useStore();
+  const { user, userId, accounts, transactions, subscriptions, goals, settings, signOut, setLanguage, load, notify } = useStore();
   const { t: tr } = useTranslation();
   const [sheet, setSheet] = useState<"" | "logout" | "delete" | "restore" | "lang" | "theme" | "lock">("");
   // Per-device setting, read after mount (profile only renders once data has loaded).
@@ -233,6 +234,7 @@ export default function ProfilePage() {
 
       <Sheet open={sheet === "delete"} onClose={() => setSheet("")} title={tr("profile.deleteTitle")} titleClassName="text-danger">
         <p className="text-sm text-muted">{tr("profile.deleteLead")}</p>
+        <SecondaryButton onClick={exportBackup}>{tr("profile.deleteBackup")}</SecondaryButton>
         <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-[14px] border border-line bg-card px-3.5 text-sm">
           <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} className="h-5 w-5 accent-danger" />
           {tr("profile.deleteConfirm")}
@@ -241,12 +243,15 @@ export default function ProfilePage() {
           tone="danger"
           disabled={!confirmed || busy}
           onClick={async () => {
+            // Google asks again; AppShell finishes the deletion when we come back.
             setBusy(true);
-            if (await deleteAccount()) router.replace("/login");
-            else setBusy(false);
+            if (!(await startReauth("delete"))) {
+              setBusy(false);
+              notify(tr("reauth.failed"), { tone: "error" });
+            }
           }}
         >
-          {busy ? tr("profile.deleting") : tr("profile.delete")}
+          {busy ? tr("profile.deleting") : tr("profile.deleteGo")}
         </PrimaryButton>
         <SecondaryButton onClick={() => setSheet("")}>{tr("common.cancel")}</SecondaryButton>
       </Sheet>

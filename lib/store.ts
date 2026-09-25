@@ -5,7 +5,7 @@ import { TYPE_META } from "./constants";
 import { fetchAll, fromRow, toRow, type TransactionRow } from "./db";
 import { applyLang, currentLang, t, type Lang } from "./i18n";
 import { TERMS_VERSION } from "./legal";
-import { baht, todayISO } from "./format";
+import { baht, toISO, todayISO } from "./format";
 import { impliedFeePct, type UsdRate } from "./fx";
 import { getSupabase } from "./supabase/client";
 import type { Account, Goals, Settings, Subscription, Transaction, User } from "./types";
@@ -37,6 +37,8 @@ interface State {
   toast: Toast | null;
   /** Latest THB per USD, for estimating USD subscriptions. */
   usdRate: UsdRate | null;
+  /** Set while the account is closed and waiting to be deleted (30 days after this). */
+  deletionRequestedAt: string | null;
 }
 
 interface Actions {
@@ -45,8 +47,10 @@ interface Actions {
   /** Clear in-memory data (after sign-out). */
   reset: () => void;
   signOut: () => Promise<void>;
-  /** Permanently delete the user and all their data. */
-  deleteAccount: () => Promise<boolean>;
+  /** Close the account (deleted for good after 30 days) and sign out. Needs a fresh sign-in; resolves the purge date. */
+  deleteAccount: () => Promise<string | null>;
+  /** Restore an account that is waiting to be deleted. */
+  cancelDeletion: () => Promise<boolean>;
   setViewMonth: (key: string) => void;
   notify: (text: string, opts?: { tone?: Toast["tone"]; action?: Toast["action"] }) => void;
   dismissToast: () => void;
@@ -91,6 +95,7 @@ const initial: State = {
   viewMonth: todayISO().slice(0, 7),
   toast: null,
   usdRate: null,
+  deletionRequestedAt: null,
 };
 
 const SAVE_FAILED = () => t("toast.saveFailed");
@@ -157,14 +162,26 @@ export const useStore = create<State & Actions>()((set, get) => {
       get().reset();
     },
     deleteAccount: async () => {
-      const { error } = await sb().rpc("delete_my_account");
+      const { data, error } = await sb().rpc("request_account_deletion");
       if (error) {
         console.error(error);
         get().notify(t("toast.deleteAccountFailed"), { tone: "error" });
-        return false;
+        return null;
       }
       await sb().auth.signOut({ scope: "local" });
       get().reset();
+      // The purge date in this device's calendar (the server returns a UTC timestamp).
+      return toISO(new Date(String(data)));
+    },
+    cancelDeletion: async () => {
+      const { error } = await sb().rpc("cancel_account_deletion");
+      if (error) {
+        console.error(error);
+        get().notify(t("toast.saveFailed"), { tone: "error" });
+        return false;
+      }
+      set({ deletionRequestedAt: null });
+      get().notify(t("deletion.restored"));
       return true;
     },
     setViewMonth: (viewMonth) => set({ viewMonth }),

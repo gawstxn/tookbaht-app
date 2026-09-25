@@ -6,6 +6,9 @@ import { useTranslation } from "react-i18next";
 import { applyLang, preferredLang } from "@/lib/i18n";
 import { applyTheme, followSystemTheme, themePref } from "@/lib/theme";
 import { isManualBack, notifyPathCommitted } from "@/lib/nav";
+import { hasPendingReauth, takeReauth } from "@/lib/reauth";
+import { setUnlocked, writeLock } from "@/lib/appLock";
+import { shortDate, toISO } from "@/lib/format";
 import { TERMS_VERSION } from "@/lib/legal";
 import { TermsGate } from "./TermsConsent";
 import { LockGate } from "./AppLock";
@@ -74,9 +77,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (needsOnboarding && !onOnboarding && !noData) router.replace("/onboarding");
   }, [needsOnboarding, onOnboarding, noData, router]);
 
+  // Back from confirming with Google: finish what it was for.
+  useEffect(() => {
+    if (status !== "ready" || !hasPendingReauth()) return;
+    void takeReauth().then(async (intent) => {
+      const { notify, deleteAccount } = useStore.getState();
+      if (intent === "unlock") {
+        writeLock(null);
+        setUnlocked(true);
+        notify(i18n.t("lock.resetDone"));
+      } else if (intent === "delete") {
+        const until = await deleteAccount();
+        if (until) router.replace(`/login?deleted=${until}`);
+      } else {
+        notify(i18n.t("reauth.failed"), { tone: "error" });
+      }
+    });
+  }, [status, router, i18n]);
+  const deletionRequestedAt = useStore((s) => s.deletionRequestedAt);
+
   let content: React.ReactNode;
   if (noData) content = children;
   else if (status === "error") content = <LoadError />;
+  else if (status === "ready" && deletionRequestedAt) content = <DeletionPending requestedAt={deletionRequestedAt} />;
   else if (needsTerms) content = <TermsGate />;
   // Plain background while loading: iOS already showed its launch image.
   else if (status !== "ready" || (needsOnboarding && !onOnboarding)) content = <div aria-busy="true" className="min-h-dvh" />;
@@ -118,6 +141,46 @@ function PageTransition({ path, children }: { path: string; children: React.Reac
       {/* Opaque and full-height, so the outgoing page never shows through the incoming one. */}
       <div className="min-h-dvh bg-paper">{children}</div>
     </ViewTransition>
+  );
+}
+
+/** Signed in to an account that is closed and waiting to be deleted: restore it, or leave. */
+function DeletionPending({ requestedAt }: { requestedAt: string }) {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const cancelDeletion = useStore((s) => s.cancelDeletion);
+  const signOut = useStore((s) => s.signOut);
+  const [busy, setBusy] = useState(false);
+  const purgeOn = toISO(new Date(Date.parse(requestedAt) + 30 * 86_400_000));
+  return (
+    <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
+      <span aria-hidden="true" className="flex h-14 w-14 items-center justify-center rounded-2xl bg-expense-tint text-danger">
+        <Icon name="alert" size={26} strokeWidth={2} />
+      </span>
+      <h1 className="font-serif text-2xl font-bold">{t("deletion.title")}</h1>
+      <p className="text-sm leading-relaxed text-muted">{t("deletion.lead", { date: shortDate(purgeOn) })}</p>
+      <div className="mt-4 flex w-full flex-col gap-2.5">
+        <PrimaryButton
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            if (!(await cancelDeletion())) setBusy(false);
+          }}
+        >
+          {t("deletion.restore")}
+        </PrimaryButton>
+        <button
+          type="button"
+          onClick={async () => {
+            await signOut();
+            router.replace("/login");
+          }}
+          className="min-h-11 text-sm font-medium text-muted"
+        >
+          {t("profile.logout")}
+        </button>
+      </div>
+    </main>
   );
 }
 

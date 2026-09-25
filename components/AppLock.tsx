@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Icon } from "@/components/ui/Icon";
 import { cx } from "@/components/ui/primitives";
 import { PIN_LENGTH, RELOCK_AFTER_MS, SERVER_LOCK_STATE, checkPin, getLockState, setUnlocked, subscribeLock, unlockWithBiometric, writeLock, type LockConfig } from "@/lib/appLock";
+import { startReauth } from "@/lib/reauth";
 import { useStore } from "@/lib/store";
 
 const setLockedAttr = (on: boolean) => {
@@ -47,6 +48,7 @@ const REVEAL_MS = 420;
 function LockScreen({ config, onUnlock }: { config: LockConfig; onUnlock: () => void }) {
   const { t } = useTranslation();
   const signOut = useStore((s) => s.signOut);
+  const notify = useStore((s) => s.notify);
   const [error, setError] = useState(false);
   const [forgot, setForgot] = useState(false);
   // idle → success (green dots) → leaving (lock lifts away, app zooms in) → unlocked
@@ -102,8 +104,23 @@ function LockScreen({ config, onUnlock }: { config: LockConfig; onUnlock: () => 
         }
       />
       {forgot ? (
-        <div className="mt-auto flex flex-col items-center gap-2 text-center">
-          <p className="text-[13px] text-muted">{t("lock.forgotLead")}</p>
+        <div className="mt-auto flex w-full flex-col items-center gap-2.5 text-center">
+          <p className="px-2 text-[13px] leading-relaxed text-muted">{t("lock.forgotLead")}</p>
+          {config.credentialId ? (
+            <button type="button" onClick={tryBiometric} className="flex min-h-11 items-center gap-2 rounded-full border border-line bg-card px-5 text-sm font-semibold">
+              <Icon name="faceId" size={18} strokeWidth={1.8} />
+              {t("lock.useBiometric")}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={async () => {
+              if (!(await startReauth("unlock"))) notify(t("reauth.failed"), { tone: "error" });
+            }}
+            className="min-h-11 rounded-full bg-ink px-5 text-sm font-semibold text-on-ink"
+          >
+            {t("reauth.google")}
+          </button>
           <button
             type="button"
             onClick={async () => {
@@ -111,7 +128,7 @@ function LockScreen({ config, onUnlock }: { config: LockConfig; onUnlock: () => 
               await signOut();
               window.location.replace("/login");
             }}
-            className="min-h-11 rounded-full border border-line bg-card px-5 text-sm font-semibold text-danger"
+            className="min-h-9 text-xs font-medium text-muted"
           >
             {t("lock.signOut")}
           </button>
