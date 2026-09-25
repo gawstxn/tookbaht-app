@@ -9,7 +9,8 @@ import { ReconcileSheet } from "@/components/ReconcileSheet";
 import { Icon } from "@/components/ui/Icon";
 import { IconButton, ListCard, PushHeader } from "@/components/ui/primitives";
 import { baht, shortDate, todayISO } from "@/lib/format";
-import { accountBalance, accountDue, creditSummary } from "@/lib/selectors";
+import { accountBalance, accountDeleteBlock, accountDue, creditSummary } from "@/lib/selectors";
+import { deleteBlockedText } from "@/components/accountDeleteText";
 import { useStore } from "@/lib/store";
 
 
@@ -83,6 +84,7 @@ export default function AccountsPage() {
               }
             : undefined
         }
+        deleteBlocked={current ? deleteBlockedText(accountDeleteBlock(current.id, accounts, transactions, subscriptions)) : null}
         onDelete={
           current
             ? () => {

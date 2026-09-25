@@ -192,3 +192,15 @@ export function planInterest(s: Pick<Subscription, "amount" | "installments" | "
   const total = Math.round((s.amount * s.installments - s.principal) * 100) / 100;
   return { total, monthlyPct: Math.round((total / s.principal / s.installments) * 10000) / 100 };
 }
+
+/**
+ * Why an account can't be deleted, or null when it can: it's the last one
+ * (the app needs at least one), or transactions / scheduled entries use it.
+ * The database refuses these deletes too; this lets the UI explain instead.
+ */
+export function accountDeleteBlock(id: string, accounts: Account[], txs: Transaction[], subs: Subscription[]): { reason: "last" } | { reason: "used"; transactions: number; schedules: number } | null {
+  if (accounts.length <= 1) return { reason: "last" };
+  const transactions = txs.filter((t) => t.accountId === id || t.fromId === id || t.toId === id).length;
+  const schedules = subs.filter((s) => s.accountId === id || s.toAccountId === id).length;
+  return transactions || schedules ? { reason: "used", transactions, schedules } : null;
+}
