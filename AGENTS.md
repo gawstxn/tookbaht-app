@@ -8,6 +8,46 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+# Tookbaht
+
+Personal-finance PWA used on an iPhone as an installed app. Thai-first (English too). See README.md for features and setup.
+
+## Commands
+
+- `npm run dev` · `npm test` · `npm run lint` · `npm run build` (also type-checks)
+- Local database: `npx supabase start` (Docker Desktop must be running), `npx supabase migration up` after adding a migration.
+- Local sign-in: the one-tap "dev@tookbaht.local" button on /login (needs `NEXT_PUBLIC_DEV_LOGIN=true` and a local Supabase URL). The onboarding "sample data" button fills a demo account.
+
+## Conventions
+
+- **Text:** every user-facing string goes in both `lib/locales/th.ts` and `lib/locales/en.ts`; never hard-code copy in components. Push texts are built server-side in `lib/pushText.ts`.
+- **Colour:** use the tokens in `app/globals.css` (`bg-card`, `text-muted`, …), never hex values in components, so dark mode keeps working. `ink` flips to cream in dark mode; the dark signature cards use `hero` / `on-hero`, and text on lime uses `on-lime`. Check new screens in both themes.
+- **Native feel:** no skeletons or spinners on screens that read the in-memory store; bottom sheets for choices; a toast for every change (with undo for deletes); no zoom, no scrollbars, no focus rings on touch.
+- **Layout:** mobile first at 390–430px wide (the shell caps at 430px); verify at 414×896.
+- **Data flow:** the Zustand store updates the screen first, then writes to Supabase and rolls back on failure (`save()` in `lib/store.ts`). Money maths, dates, schedules and filters live in pure functions in `lib/` with unit tests.
+- **Database:** every table has `user_id` plus RLS; cross-row references use composite `(id, user_id)` foreign keys. Scheduled work (auto-log, reminders, alerts) belongs in SQL functions with DB tests in `tests/db`. A new migration must also be applied to production with `npx supabase db push` when its PR is merged.
+- **Navigation:** route changes animate with React `ViewTransition` (`PageTransition` in `components/AppShell.tsx`): deeper paths slide in, shallower ones slide back, tab roots switch instantly. For close / back buttons use `useGoBack(fallback)` from `lib/nav.ts`, not `router.back()`, which doesn't animate.
+- **Per-device settings** (theme, language before sign-in, app lock) live in localStorage; account-wide settings live in `profiles.settings`.
+
+## Performance
+
+- Keep transitions compositor-only: animate `transform` / `opacity`; no box-shadows, filters or blur on view-transition layers (they repaint a full-page layer every frame and stutter on phones).
+- Judge smoothness on a production build (`npm run build` then `npm run start`), not the dev server; throttle the CPU 4× in DevTools to approximate an iPhone.
+- Don't add dependencies for things a few lines can do; check the first-load JS when adding one. supabase-js is already the largest chunk.
+- Memoise derived lists on screens with many transactions (`useMemo` over store data); don't recompute per row.
+- Charts are hand-written SVG (see `app/insights/page.tsx`); no chart library.
+
+## Verifying changes
+
+- Always: `npm run lint`, `npm test`, `npx tsc --noEmit`, `npm run build`.
+- UI changes: run the app against local Supabase and check the affected screens at 414×896 in light and dark. Headless Playwright works when the browser pane can't render.
+- Animations: check them mid-flight, not only before and after: slow them 10× with CDP `Animation.setPlaybackRate` and screenshot. Pages ghosting through each other and back buttons with no slide both reached users because only end states were checked.
+
+## Pull requests
+
+- Branch from `main` (`feat/…`, `fix/…`), Conventional Commits, bump the version (below), open a PR with a test plan.
+- Merge only when the user asks, after CI is green; confirm the Vercel production deploy afterwards.
+
 # Versioning
 
 The app version in `package.json` is shown on the profile page, and every merge to `main` deploys to production. Bump it in the same PR as the change:
