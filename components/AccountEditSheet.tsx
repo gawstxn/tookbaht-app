@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Card, Monogram, PrimaryButton, Segmented, SecondaryButton, Sheet, cx } from "@/components/ui/primitives";
+import { AccountMark } from "@/components/app";
+import { Card, PrimaryButton, Segmented, SecondaryButton, Sheet, cx } from "@/components/ui/primitives";
 import { MONO_TONES } from "@/lib/constants";
 import type { Account, AccountKind } from "@/lib/types";
 
@@ -57,7 +58,7 @@ function AccountFields({ initial, onSave, onDelete }: { initial?: AccountDraft; 
   return (
     <>
       <div className="flex items-center gap-3.5">
-        <Monogram text={monoFor(name)} tone={tone} size={48} />
+        <AccountMark account={{ kind, tone }} size={48} />
         <div className="flex min-w-0 grow flex-col gap-0.5">
           <label htmlFor="accname" className="text-xs text-muted">
             ชื่อบัญชี

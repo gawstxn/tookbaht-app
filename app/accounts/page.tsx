@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { PushScreen } from "@/components/app";
+import { AccountMark, PushScreen } from "@/components/app";
 import { AccountEditSheet } from "@/components/AccountEditSheet";
 import { Icon } from "@/components/ui/Icon";
-import { IconButton, ListCard, Monogram, PushHeader } from "@/components/ui/primitives";
+import { IconButton, ListCard, PushHeader } from "@/components/ui/primitives";
 import { baht } from "@/lib/format";
 import { accountBalance } from "@/lib/selectors";
 import { useStore } from "@/lib/store";
@@ -24,7 +24,7 @@ export default function AccountsPage() {
       <ListCard>
         {accounts.map((a) => (
           <button key={a.id} type="button" onClick={() => setEditing(a.id)} className="flex min-h-[64px] w-full items-center gap-3 text-left">
-            <Monogram text={a.mono} tone={a.tone} size={38} />
+            <AccountMark account={a} size={38} />
             <span className="flex min-w-0 grow flex-col">
               <span className="truncate text-[15px] font-medium">{a.name}</span>
               <span className="text-xs text-muted">{KIND_LABEL[a.kind]}</span>

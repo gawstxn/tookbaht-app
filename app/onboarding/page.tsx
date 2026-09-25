@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import { balanceLabel, monoFor } from "@/components/AccountEditSheet";
-import { Card, ListCard, Monogram, PrimaryButton, SecondaryButton } from "@/components/ui/primitives";
+import { AccountMark } from "@/components/app";
+import { Card, ListCard, PrimaryButton, SecondaryButton } from "@/components/ui/primitives";
 import { dismissLegacyData, importData, importLegacyData, readLegacyData } from "@/lib/legacyImport";
 import { seedData } from "@/lib/seed";
 import { useStore } from "@/lib/store";
@@ -117,7 +118,7 @@ export default function OnboardingPage() {
               onChange={(e) => update(i, { on: e.target.checked })}
               className="h-5 w-5 shrink-0 accent-ink"
             />
-            <Monogram text={monoFor(s.name)} tone={s.tone} size={34} />
+            <AccountMark account={s} size={34} />
             <div className="flex min-w-0 grow flex-col">
               <input
                 aria-label="ชื่อบัญชี"
@@ -127,7 +128,7 @@ export default function OnboardingPage() {
                 className="w-full min-w-0 bg-transparent text-[15px] font-medium outline-none"
               />
               <label className="flex items-baseline gap-1 text-xs text-muted">
-                {balanceLabel(s.kind)} ฿
+                <span className="shrink-0 whitespace-nowrap">{balanceLabel(s.kind)} ฿</span>
                 <input
                   inputMode="decimal"
                   value={s.balance}
@@ -161,7 +162,7 @@ function Heading({ name }: { name?: string }) {
   return (
     <header className="flex flex-col gap-1">
       <span className="text-sm text-muted">ยินดีต้อนรับ{name ? ` ${name}` : ""}</span>
-      <h1 className="font-serif text-[28px] font-bold leading-tight">ตั้งค่าทุกบาท</h1>
+      <h1 className="font-serif text-[28px] font-bold leading-tight">ตั้งค่า Tookbaht</h1>
     </header>
   );
 }

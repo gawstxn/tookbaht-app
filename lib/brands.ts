@@ -42,7 +42,9 @@ const BRAND_CATEGORY: Record<string, string> = {
   spotify: "music", youtubemusic: "music", applemusic: "music", line: "music", tidal: "music", deezer: "music",
   soundcloud: "music", audible: "music",
   icloud: "cloud", googleone: "cloud", dropbox: "cloud", apple: "cloud", microsoft365: "cloud",
-  strava: "fit", headspace: "fit",
+  strava: "fit", headspace: "fit", fitnessfirst: "fit", jetts: "fit",
+  ais: "net", truemove: "net", dtac: "net", "3bb": "net", nt: "net",
+  joox: "music",
   duolingo: "learn", medium: "learn",
 };
 

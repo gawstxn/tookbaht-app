@@ -72,9 +72,9 @@ export default function LoginPage() {
 
         <div className="flex flex-col gap-2">
           <h1 className="font-serif text-[34px] font-bold leading-[1.25]">
-            ทุกบาท
+            Tookbaht
             <br />
-            <span className="text-lime">อยู่ในมือคุณ</span>
+            <span className="text-lime">ทุกบาทอยู่ในมือคุณ</span>
           </h1>
           <p className="text-sm text-on-ink-muted">รายรับ รายจ่าย การโอน subscriptions และเป้าหมาย ครบในที่เดียว</p>
         </div>
