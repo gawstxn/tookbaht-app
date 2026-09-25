@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   check:
-    name: Lint, typecheck & build
+    name: Lint, test, typecheck & build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -28,6 +28,9 @@ jobs:
       - run: npm ci
 
       - run: npm run lint
+
+      # Unit tests for lib/ and database tests (every migration on in-memory Postgres).
+      - run: npm test
 
       # `next build` also type-checks the project.
       - run: npm run build
