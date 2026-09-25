@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accountBalance, accountDue, chargesSoFar, daysLeftInMonth, filterTransactions, monthPace, nextCharge, reconcileEntry, spendByCategory, subscriptionTotals, summarize, upcomingSubscriptions } from "@/lib/selectors";
+import { accountBalance, accountDue, chargesSoFar, creditSummary, daysLeftInMonth, planInterest, planReserved, filterTransactions, monthPace, nextCharge, reconcileEntry, spendByCategory, subscriptionTotals, summarize, upcomingSubscriptions } from "@/lib/selectors";
 import type { Account, Subscription, Transaction } from "@/lib/types";
 
 let n = 0;
@@ -172,5 +172,40 @@ describe("pay-later due date", () => {
   it("only applies to cards with a due day", () => {
     expect(accountDue(account("a"), spent, "2026-09-03")).toBeNull();
     expect(accountDue({ ...paylater, dueDay: null }, spent, "2026-09-03")).toBeNull();
+  });
+});
+
+describe("pay-later purchases", () => {
+  // Limit 20,000; a phone at 7,000 over 6 monthly installments of 1,250 (500 interest), first one 5 Oct.
+  const paylater: Account = { ...account("p", 20000), kind: "credit", dueDay: 5 };
+  const phone = sub({ kind: "recurring", amount: 1250, cycle: "month", startDate: "2026-10-05", accountId: "p", installments: 6, principal: 7000 });
+
+  it("takes the full price off the limit at purchase", () => {
+    expect(creditSummary(paylater, [], [phone], "2026-09-25")).toEqual({ limit: 20000, available: 13000, used: 7000 });
+  });
+
+  it("gives an installment's share back once it is charged and paid", () => {
+    const charged = [tx({ type: "out", amount: 1250, accountId: "p", date: "2026-10-05" })];
+    const paid = [...charged, tx({ type: "move", amount: 1250, fromId: "a", toId: "p", date: "2026-10-05" })];
+    expect(creditSummary(paylater, charged, [phone], "2026-10-05").available).toBeCloseTo(20000 - 1250 - 7000 * (5 / 6), 2);
+    expect(creditSummary(paylater, paid, [phone], "2026-10-05").available).toBeCloseTo(20000 - 7000 * (5 / 6), 2);
+  });
+
+  it("puts installments due by the due date into the bill", () => {
+    const shopping = [tx({ type: "out", amount: 300, accountId: "p", date: "2026-09-20" })];
+    expect(accountDue(paylater, shopping, "2026-10-01", [phone])).toEqual({ due: "2026-10-05", days: 4, owed: 1550 });
+    // Without the plans (old callers) only logged spending counts.
+    expect(accountDue(paylater, shopping, "2026-10-01")?.owed).toBe(300);
+  });
+
+  it("reports interest and its flat monthly rate", () => {
+    expect(planInterest(phone)).toEqual({ total: 500, monthlyPct: 1.19 });
+    expect(planInterest({ amount: 1000, installments: 3, principal: 3000 })).toEqual({ total: 0, monthlyPct: 0 });
+    expect(planInterest({ amount: 1000, installments: 3, principal: null })).toBeNull();
+  });
+
+  it("holds the remaining installments for plans without a price", () => {
+    const old = sub({ kind: "recurring", amount: 1000, cycle: "month", startDate: "2026-09-01", accountId: "p", installments: 3 });
+    expect(planReserved(old, "2026-09-25")).toBe(2000);
   });
 });

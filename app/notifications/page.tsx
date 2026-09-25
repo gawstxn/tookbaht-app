@@ -9,6 +9,7 @@ import { Chip, Empty, ListCard, PushHeader } from "@/components/ui/primitives";
 import { shortDate, toISO, todayISO } from "@/lib/format";
 import { dayBucket, isUnread, type AppNotification } from "@/lib/notifications";
 import { useTranslation } from "react-i18next";
+import { useGoBack } from "@/lib/nav";
 import { useStore } from "@/lib/store";
 
 const GROUPS = [
@@ -19,6 +20,7 @@ const GROUPS = [
 
 export default function NotificationsPage() {
   const router = useRouter();
+  const goBack = useGoBack("/");
   const { items, unread, settings } = useNotifications();
   const markRead = useStore((s) => s.markNotificationRead);
   const markAll = useStore((s) => s.markAllNotificationsRead);
@@ -36,7 +38,7 @@ export default function NotificationsPage() {
     <PushScreen>
       <PushHeader
         title={tr("notif.title")}
-        onBack={() => router.back()}
+        onBack={() => goBack()}
         action={
           <button
             type="button"

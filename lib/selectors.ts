@@ -147,9 +147,10 @@ export function reconcileEntry(account: Account, txs: Transaction[], actual: num
 
 /**
  * Cards and pay-later with a due day: the next payment date (today or later,
- * clamped to short months) and what is owed — spending not yet paid back.
+ * clamped to short months) and what to pay by then — spending not yet paid
+ * back, plus installments on this account falling due up to that date.
  */
-export function accountDue(a: Account, txs: Transaction[], today: string): { due: string; days: number; owed: number } | null {
+export function accountDue(a: Account, txs: Transaction[], today: string, subs: Subscription[] = []): { due: string; days: number; owed: number } | null {
   if (a.kind !== "credit" || !a.dueDay) return null;
   const [y, m, d] = today.split("-").map(Number);
   const inMonth = (year: number, month0: number) => {
@@ -159,6 +160,35 @@ export function accountDue(a: Account, txs: Transaction[], today: string): { due
   };
   let due = inMonth(y, m - 1);
   if (Number(due.slice(8)) < d) due = inMonth(m === 12 ? y + 1 : y, m % 12);
-  const owed = Math.round((a.openingBalance - accountBalance(a, txs)) * 100) / 100;
+  const upcoming = subs
+    .filter((s) => s.accountId === a.id && s.installments && s.entryType === "out" && s.autoLog && !s.paused)
+    .reduce((sum, s) => sum + s.amount * (chargesSoFar(s, due) - chargesSoFar(s, today)), 0);
+  const owed = Math.round((a.openingBalance - accountBalance(a, txs) + upcoming) * 100) / 100;
   return { due, days: diffDays(due, today), owed };
+}
+
+/**
+ * What an installment plan still holds of the credit limit: its price (or,
+ * without one, all its installments) shared evenly, less the installments
+ * already charged. The limit drops by the price at purchase and comes back
+ * as each installment is logged and paid.
+ */
+export function planReserved(s: Subscription, today: string): number {
+  if (!s.installments || s.entryType !== "out") return 0;
+  const left = s.installments - chargesSoFar(s, today);
+  return ((s.principal ?? s.amount * s.installments) * left) / s.installments;
+}
+
+/** A card / pay-later account's limit, what's in use (spending + open plans) and what's left to spend. */
+export function creditSummary(a: Account, txs: Transaction[], subs: Subscription[], today: string) {
+  const reserved = subs.filter((s) => s.accountId === a.id && !s.paused).reduce((sum, s) => sum + planReserved(s, today), 0);
+  const available = Math.round((accountBalance(a, txs) - reserved) * 100) / 100;
+  return { limit: a.openingBalance, available, used: Math.round((a.openingBalance - available) * 100) / 100 };
+}
+
+/** Interest on a pay-later purchase and its flat monthly rate (% of the price per installment). */
+export function planInterest(s: Pick<Subscription, "amount" | "installments" | "principal">): { total: number; monthlyPct: number } | null {
+  if (!s.installments || !s.principal) return null;
+  const total = Math.round((s.amount * s.installments - s.principal) * 100) / 100;
+  return { total, monthlyPct: Math.round((total / s.principal / s.installments) * 10000) / 100 };
 }

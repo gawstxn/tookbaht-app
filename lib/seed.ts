@@ -16,7 +16,7 @@ export function seedData() {
     { id: "acc-saving", name: "บัญชีออม", kind: "saving", openingBalance: 102000, mono: "อ", tone: "#33558f", fxFeePct: 0 },
     { id: "acc-credit", name: "บัตรเครดิต", kind: "credit", openingBalance: 50000, mono: "ค", tone: "#8a2e22", fxFeePct: 2.5, dueDay: 5 },
     // Due two days from now, so the payment reminder shows up in the demo.
-    { id: "acc-paylater", name: "SPayLater", kind: "credit", openingBalance: 15000, mono: "S", tone: "#6e3a1c", fxFeePct: 0, dueDay: Number(addDays(today, 2).slice(8)) },
+    { id: "acc-paylater", name: "SPayLater", kind: "credit", openingBalance: 20000, mono: "S", tone: "#6e3a1c", fxFeePct: 0, dueDay: Number(addDays(today, 2).slice(8)) },
     { id: "acc-cash", name: "เงินสด", kind: "cash", openingBalance: 2000, mono: "ส", tone: "#5f6259", fxFeePct: 0 },
   ];
 
@@ -48,7 +48,7 @@ export function seedData() {
     sub({ name: "Google One", amount: 700, currency: "THB", cycle: "year", startDate: addDays(today, 110 - 365), accountId: "acc-credit", category: "cloud", remind: true, autoLog: false, paused: false, tone: "#5b4a7a" }),
     recurring({ entryType: "in", name: "เงินเดือน", amount: 45000, cycle: "month", startDate: monthStart, accountId: "acc-salary", category: "salary", remind: false, autoLog: true, paused: false }),
     recurring({ entryType: "move", name: "ออมทุกเดือน", amount: 5000, cycle: "month", startDate: inMonth(2), accountId: "acc-salary", toAccountId: "acc-saving", category: "other", remind: false, autoLog: true, paused: false }),
-    recurring({ entryType: "out", name: "หูฟังไร้สาย", amount: 1290, cycle: "month", startDate: addDays(today, 6 - 30), accountId: "acc-paylater", category: "shop", installments: 3, remind: true, autoLog: true, paused: false }),
+    recurring({ entryType: "out", name: "หูฟังไร้สาย", amount: 1290, cycle: "month", startDate: addDays(today, 6 - 30), accountId: "acc-paylater", category: "shop", installments: 3, principal: 3690, remind: true, autoLog: true, paused: false }),
   ];
 
   const goals: Goals = {

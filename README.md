@@ -1,122 +1,118 @@
-# Tookbaht — บันทึกรายรับรายจ่าย
+<p align="center">
+  <img src="docs/logo.png" alt="Tookbaht" width="112" height="112" />
+</p>
 
-Mobile-first web app สำหรับบันทึกรายรับ รายจ่าย การโอนระหว่างบัญชี จัดการ subscriptions รายเดือน และตั้งเป้าหมายการเงิน
+<h1 align="center">Tookbaht · ทุกบาท</h1>
 
-**Stack:** Next.js 16 (App Router) · TypeScript · Tailwind CSS v4 · Zustand · Supabase (Postgres + Auth)
+<p align="center">
+  แอปบันทึกรายรับรายจ่ายบนมือถือ ติดตั้งลงหน้าจอหลักแล้วใช้งานเหมือนแอปจริง<br />
+  รายรับ รายจ่าย การโอน รายการประจำ ค่าผ่อน subscriptions และงบประมาณ ครบในที่เดียว
+</p>
 
-## เริ่มใช้งาน
+<p align="center">
+  <a href="https://tookbaht.vercel.app">tookbaht.vercel.app</a>
+</p>
 
-ต้องมี Docker Desktop สำหรับ Supabase บนเครื่อง
+---
 
-```bash
-npm install
-npx supabase start      # Postgres + Auth บนเครื่อง (พอร์ต 553xx) และรัน migrations
-npx supabase status     # คัดลอก API_URL / PUBLISHABLE_KEY ไปใส่ .env.local ตาม .env.example
-npm run dev
-```
-
-รีเซ็ตฐานข้อมูลบนเครื่อง: `npx supabase db reset` (ลบข้อมูลทั้งหมดแล้วรัน migrations ใหม่)
-
-### ลองเล่นบนเครื่องโดยไม่ต้องตั้ง Google OAuth
-
-ใส่ `NEXT_PUBLIC_DEV_LOGIN=true` ใน `.env.local` แล้วหน้า login จะมีช่อง "โหมดทดสอบบนเครื่อง":
-
-1. ใส่อีเมลอะไรก็ได้ แล้วกด "ส่งลิงก์"
-2. เปิดกล่องจดหมายทดสอบที่ http://127.0.0.1:55324 แล้วกดลิงก์ในอีเมล "Your sign-in link" (เปิดในเบราว์เซอร์เดียวกับแอป)
-3. หน้า onboarding มีปุ่ม "ลองด้วยข้อมูลตัวอย่าง" ใส่บัญชี รายการ subscriptions และเป้าหมายตัวอย่างให้
-
-**ห้ามตั้ง `NEXT_PUBLIC_DEV_LOGIN` บน production** และปิด Email provider ใน Supabase Dashboard → Authentication → Sign In / Providers ให้เหลือแค่ Google
-
-เปิด http://localhost:3000 บนมือถือหรือ DevTools โหมดมือถือ (ออกแบบที่ความกว้าง 390px, จำกัดความกว้างสูงสุด 430px)
+**Stack:** Next.js 16 (App Router, React 19) · TypeScript · Tailwind CSS v4 · Zustand · i18next (ไทย / English) · Supabase (Postgres, Auth, pg_cron) · Web Push · Vercel · Vitest + PGlite
 
 ## ฟีเจอร์
 
-- **เข้าสู่ระบบด้วย Google อย่างเดียว** ผ่าน Supabase Auth
-- **เริ่มต้นใช้งาน**: เลือกบัญชีเริ่มต้น หรือนำเข้าข้อมูลจากเวอร์ชันเก่าที่เก็บใน `localStorage`
-- **ภาพรวมรายเดือน**: ยอดคงเหลือ, รายรับเทียบเป้า, รายจ่ายเทียบงบ, subscriptions ใกล้ตัดบัญชี, รายการล่าสุด, เลือกเดือนย้อนหลังได้ 12 เดือน
-- **เพิ่มรายการ**: รายรับ / รายจ่าย / โอน พร้อมแป้นตัวเลข, เลือกบัญชีและวันที่ผ่าน bottom sheet, สลับบัญชีต้นทาง–ปลายทาง
-- **รายการทั้งหมด**: กรองตามประเภท, ค้นหา, จัดกลุ่มตามวัน, แตะดูรายละเอียดและลบได้
-- **Subscriptions**: สรุปค่าใช้จ่ายต่อเดือน/ปี แยกหมวด, เรียงตามวันตัดบัญชีหรือราคา, เพิ่ม/แก้ไข/หยุดชั่วคราว/ยกเลิก, บันทึกเป็นรายจ่ายอัตโนมัติเมื่อถึงรอบ (ฐานข้อมูลทำเองทุกชั่วโมงด้วย pg_cron แม้ไม่ได้เปิดแอป), แจ้งเตือนผ่าน Web Push ล่วงหน้า 1 วัน
-- **เป้าหมาย**: เป้ารายรับ, งบรายจ่ายรวมและแยกหมวด, เส้นบอก "ควรใช้ถึงวันนี้" เทียบกับความเร็วการใช้จ่าย
-- **โปรไฟล์**: จัดการบัญชี (เพิ่ม/แก้ไข/ลบ), ส่งออกข้อมูลเป็น CSV, ออกจากระบบ, ลบบัญชีผู้ใช้และข้อมูลทั้งหมด (มียืนยัน)
+**บันทึกเงินประจำวัน**
+- รายรับ / รายจ่าย / โอนระหว่างบัญชี ด้วยแป้นตัวเลข แก้ไขและลบได้ พร้อมปุ่มเลิกทำ
+- หน้ารายการ: ค้นหา, กรองตามประเภท บัญชี หมวด และช่วงวันที่, จัดกลุ่มตามวัน
+- ปรับยอดบัญชีให้ตรงกับยอดจริงในแอปธนาคาร แอปบันทึกส่วนต่างให้
 
-ข้อมูลเก็บใน Postgres ของ Supabase แต่ละแถวผูกกับผู้ใช้ (`user_id`) และเปิด Row Level Security ทุกตาราง ผู้ใช้จึงเห็นและแก้ได้เฉพาะข้อมูลของตัวเอง
+**รายเดือน**
+- Subscriptions: โลโก้บริการยอดนิยม, ราคาเป็นบาทหรือ USD (แปลงตามอัตราวันนั้น + ค่าธรรมเนียมบัตร), toggle +VAT 7%
+- รายการประจำ: เงินเดือน ค่าเช่า เงินออมรายเดือน ฐานข้อมูลบันทึกให้เองทุกรอบ แม้ไม่ได้เปิดแอป
+- ผ่อนเป็นงวด: นับเข้างบในเดือนที่จ่ายแต่ละงวด และหยุดเองเมื่อผ่อนครบ
+
+**บัตรเครดิต / PayLater (เช่น SPayLater)**
+- วงเงินคงเหลือจริง: ลดเต็มราคาตั้งแต่วันซื้อ แล้วคืนทีละงวด
+- ซื้อแบบผ่อน: ใส่ราคา จำนวนเดือน และยอดต่องวดตามที่แอปที่ซื้อแสดง แอปคำนวณดอกเบี้ยให้
+- วันครบกำหนดชำระ, ยอดที่ต้องจ่ายรอบนี้, ปุ่ม "จ่ายบิลแล้ว"
+
+**ภาพรวมและเป้าหมาย**
+- ภาพรวมรายเดือน, เป้ารายรับ, งบรวมและงบแยกหมวด พร้อมเส้น "ควรใช้ถึงวันนี้"
+- สถิติ: กราฟรายรับ–รายจ่าย 6 เดือน และรายจ่ายตามหมวด
+- ศูนย์แจ้งเตือนในแอป และ Web Push: ก่อนตัดบัญชี ก่อนครบกำหนดชำระ และเมื่องบถึง 80% หรือเกิน
+
+**ความเป็นส่วนตัวและการตั้งค่า**
+- เข้าสู่ระบบด้วย Google, Row Level Security ทุกตาราง
+- ล็อกแอปด้วย PIN 6 หลัก / Face ID บนเครื่อง
+- สำรองและกู้คืนข้อมูลเป็น JSON, ส่งออก CSV
+- ธีมสว่าง / มืด / ตามระบบ, ภาษาไทย / English
+
+## เริ่มพัฒนาบนเครื่อง
+
+ต้องมี Node 22 และ Docker Desktop (สำหรับ Supabase บนเครื่อง)
+
+```bash
+npm install
+npx supabase start      # Postgres + Auth บนเครื่อง (พอร์ต 553xx) และรัน migrations ทั้งหมด
+npx supabase status     # คัดลอก API_URL / PUBLISHABLE_KEY / SECRET_KEY ไปใส่ .env.local ตาม .env.example
+npm run dev
+```
+
+เปิด http://localhost:3000 บนมือถือ หรือใช้โหมดมือถือใน DevTools (ออกแบบไว้ที่ 390–430px)
+
+**เข้าสู่ระบบบนเครื่องได้ในคลิกเดียว:** ใส่ `NEXT_PUBLIC_DEV_LOGIN=true` ใน `.env.local` หน้า login จะมีปุ่ม "เข้าสู่ระบบทันที" (ผู้ใช้ `dev@tookbaht.local`) ปุ่มนี้แสดงเฉพาะตอนต่อ Supabase บนเครื่อง จากนั้นหน้า onboarding มีปุ่ม "ลองด้วยข้อมูลตัวอย่าง"
+
+อัปเดตฐานข้อมูลบนเครื่องหลังดึง migration ใหม่: `npx supabase migration up` · รีเซ็ตทั้งหมด: `npx supabase db reset`
+
+### คำสั่ง
+
+| คำสั่ง | ทำอะไร |
+|---|---|
+| `npm run dev` | dev server |
+| `npm test` | Vitest: unit tests (`tests/unit`) และ database tests (`tests/db`) ที่รัน migrations ทั้งหมดบน Postgres ในหน่วยความจำ (PGlite) ไม่ต้องใช้ Docker |
+| `npm run lint` | ESLint |
+| `npm run build` | production build (type-check ด้วย) |
+| `npm run start` | รัน production build (ใช้ทดสอบ service worker, push และความลื่นของแอนิเมชัน) |
+
+CI (GitHub Actions) รัน lint, test และ build ทุก PR
 
 ## โครงสร้าง
 
 ```
-app/                    หน้าต่างๆ (App Router)
-  page.tsx              ภาพรวม
-  login/ add/ transactions/ goals/ goals/edit/ profile/ accounts/ onboarding/
-  auth/callback/        รับ code จาก Google OAuth แล้วสร้าง session
-  api/cron/reminders/   งานรายวัน (Vercel Cron) ส่งแจ้งเตือน subscription ที่จะตัดบัญชีพรุ่งนี้
-  subscriptions/        รายการ, new/, [id]/, [id]/edit/
+app/                       หน้าต่างๆ (App Router)
+  page.tsx                 ภาพรวม
+  add/ transactions/ insights/ goals/ notifications/ profile/ onboarding/ login/
+  accounts/ [id]/ [id]/buy/        บัญชี, หน้าบัตร/PayLater, ซื้อแบบผ่อน
+  subscriptions/ recurring/new/    subscriptions และรายการประจำ
+  api/cron/reminders/      Vercel Cron รายวัน: push แจ้งเตือน + อัปเดตอัตราแลกเปลี่ยน
 components/
-  ui/primitives.tsx     Card, HeroCard, Sheet (bottom sheet), Switch, Segmented, Chip, ปุ่ม ฯลฯ
-  ui/Icon.tsx           ไอคอน SVG
-  pickers.tsx           Calendar, DateSheet, AccountSheet, CategorySheet, MonthSwitcher
-  app.tsx               BottomNav, TabScreen, PushScreen, TxRow
-  SubscriptionForm.tsx  ฟอร์มเพิ่ม/แก้ไข subscription
-  AccountEditSheet.tsx  ฟอร์มเพิ่ม/แก้ไขบัญชี
-  PushToggle.tsx        เปิด/ปิดการแจ้งเตือนบนเครื่องนี้ (หน้าโปรไฟล์)
-  DevLogin.tsx          เข้าสู่ระบบด้วย magic link ในโหมดทดสอบบนเครื่อง
-  AppShell.tsx          ติดตาม session, โหลดข้อมูล, พาไป onboarding, toast เมื่อบันทึกไม่สำเร็จ
+  ui/primitives.tsx        Card, HeroCard, Sheet, Switch, Segmented, Chip, ปุ่ม
+  AppShell.tsx             session, โหลดข้อมูล, page transitions, toast, ล็อกแอป
+  app.tsx                  BottomNav, TabScreen, PushScreen, TxRow, TxIcon
+  pickers.tsx              ปฏิทิน, เลือกบัญชี/หมวด/เดือน
 lib/
-  store.ts              Zustand store + actions (อัปเดตหน้าจอทันที แล้วบันทึกลง Supabase ถ้าล้มเหลวจะย้อนกลับ)
-  db.ts                 แปลงแถวในฐานข้อมูล ↔ types ของแอป, โหลดข้อมูลทั้งหมด
-  legacyImport.ts       นำเข้าข้อมูลจาก localStorage ของเวอร์ชันเก่า
-  supabase/             client ฝั่งเบราว์เซอร์, ฝั่งเซิร์ฟเวอร์ และ admin (service role สำหรับ cron)
-  selectors.ts          คำนวณสรุปรายเดือน, ยอดบัญชี, subscriptions ใกล้ถึง, pace
-  format.ts             ฟอร์แมตเงิน/วันที่ภาษาไทย (พ.ศ.), คำนวณรอบตัดบัญชี
-  constants.ts          หมวดหมู่และสี
-  seed.ts               ข้อมูลตัวอย่าง (ปุ่มในโหมดทดสอบ)
-  brands.ts, brands.data.ts  โลโก้และสีของบริการ subscription ยอดนิยม (จับคู่จากชื่อ)
-proxy.ts                ต่ออายุ session และพาผู้ที่ยังไม่เข้าสู่ระบบไป /login
-supabase/
-  config.toml           ตั้งค่า Supabase บนเครื่อง
-  migrations/           schema, RLS, trigger สร้างโปรไฟล์, ฟังก์ชันลบบัญชี, auto-log + pg_cron, push subscriptions
-vercel.json             ตาราง Vercel Cron
+  store.ts                 Zustand store: อัปเดตหน้าจอทันที แล้วบันทึกลง Supabase (ย้อนกลับถ้าล้มเหลว)
+  db.ts                    แปลงแถวในฐานข้อมูล ↔ types, โหลดข้อมูลทั้งหมด
+  selectors.ts             ยอดรวม ยอดบัญชี วงเงิน วันครบกำหนด งวดผ่อน ตัวกรอง (pure functions, มี tests)
+  format.ts money.ts fx.ts วันที่ พ.ศ., รอบตัดบัญชี, เงินบาท/USD
+  locales/th.ts en.ts      ข้อความทุกภาษา
+  theme.ts appLock.ts nav.ts  ธีม, ล็อกแอป, การย้อนกลับพร้อมแอนิเมชัน
+supabase/migrations/       schema, RLS, auto-log (pg_cron), push, รายการประจำ, PayLater
+tests/                     unit และ database tests
 ```
 
-Design tokens (สี ฟอนต์ เงา) อยู่ใน `app/globals.css` ใต้ `@theme`
+## Deploy (production)
 
-## PWA
-
-- `app/manifest.ts` — web app manifest (ติดตั้งลงหน้าจอหลักได้)
-- `public/icons/` — ไอคอน 192/512, maskable และ apple-touch-icon
-- `public/sw.js` — service worker: cache ไฟล์ build (`/_next/static`), แสดง `public/offline.html` เมื่อโหลดหน้าไม่ได้ (ไม่ cache ข้อมูลผู้ใช้) และแสดงแจ้งเตือน push แตะแล้วเปิดหน้า subscription นั้น
-- `components/ServiceWorkerRegister.tsx` — ลงทะเบียน SW เฉพาะ production build
-
-ทดสอบ: `npm run build && npm run start` แล้วเปิด DevTools → Application → Service workers / Manifest จากนั้นติ๊ก Offline แล้วรีโหลดจะเห็นหน้าออฟไลน์ ถ้าแก้ `sw.js` ในส่วนที่เกี่ยวกับ cache ให้เปลี่ยน `VERSION` เพื่อล้าง cache เก่า
-
-## ตั้งค่า Supabase + Google login (production)
-
-1. สร้างโปรเจกต์ที่ [supabase.com](https://supabase.com) (แนะนำ region Singapore)
-2. รัน migrations ขึ้นโปรเจกต์: `npx supabase login` → `npx supabase link --project-ref <ref>` → `npx supabase db push`
-3. Google Cloud Console → APIs & Services → Credentials → สร้าง OAuth client ID (Web application)
-   - Authorized redirect URI: `https://<ref>.supabase.co/auth/v1/callback`
-4. Supabase Dashboard → Authentication → Sign In / Providers → Google: ใส่ Client ID และ Client Secret
-5. Supabase Dashboard → Authentication → URL Configuration
-   - Site URL: โดเมนของแอป เช่น `https://tookbaht.vercel.app`
-   - Redirect URLs: `https://<โดเมน>/auth/callback` และ `http://localhost:3000/auth/callback`
-6. ใส่ environment variables ทั้งหมดใน `.env.example` ที่ Vercel → Project → Settings → Environment Variables
-   - `SUPABASE_SECRET_KEY`: Supabase → Project Settings → API Keys → Secret key (ห้ามใส่ใน `NEXT_PUBLIC_*`)
-   - VAPID: รัน `npx web-push generate-vapid-keys` ครั้งเดียว แล้วใส่ public/private key, `VAPID_SUBJECT=mailto:<อีเมลคุณ>`
-   - `CRON_SECRET`: สตริงสุ่มยาวๆ — Vercel แนบเป็น `Authorization: Bearer` ให้ cron อัตโนมัติ
+- Vercel deploy `main` อัตโนมัติ
+- migration ใหม่: รัน `npx supabase db push` พร้อมกับตอน merge (โปรเจกต์ link ไว้แล้ว)
+- ตั้งค่าครั้งแรก: สร้างโปรเจกต์ Supabase (Singapore), เปิด Google provider (redirect URI `https://<ref>.supabase.co/auth/v1/callback`), ตั้ง Site URL / Redirect URLs เป็นโดเมนของแอป และใส่ environment variables ตาม `.env.example` ใน Vercel
+- **ห้ามตั้ง `NEXT_PUBLIC_DEV_LOGIN` บน production** และปิด Email provider ให้เหลือแค่ Google
 
 ## งานอัตโนมัติ
 
-- **Auto-log**: `log_due_subscriptions()` รันทุกชั่วโมงที่นาที 5 ด้วย pg_cron (สร้างใน migration) ใช้วันที่ตามเขตเวลาของผู้ใช้ (`profiles.timezone`, ค่าเริ่มต้น `Asia/Bangkok`) แอปเรียก `run_my_auto_log()` ตอนโหลดด้วย บันทึกซ้ำไม่ได้เพราะมี unique `(subscription_id, date)`
-- **แจ้งเตือน**: Vercel Cron เรียก `/api/cron/reminders` ทุกวัน 02:00 UTC (09:00 น. เวลาไทย) ส่งถึงทุกเครื่องที่เปิดแจ้งเตือนไว้ บันทึกใน `reminders_sent` กันส่งซ้ำ และลบ endpoint ที่เบราว์เซอร์ยกเลิกแล้ว (404/410)
-- ทดสอบ cron บนเครื่อง: `curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/reminders`
-- แจ้งเตือนใช้ได้เฉพาะ production build (`npm run build && npm run start`) เพราะ service worker ไม่ลงทะเบียนตอน dev และบน iPhone ต้องติดตั้งแอปลงหน้าจอหลักก่อน (iOS 16.4+)
+- **Auto-log** (pg_cron ทุกชั่วโมง): บันทึก subscriptions รายการประจำ และงวดผ่อนที่ถึงกำหนดตามเขตเวลาของผู้ใช้ ไม่บันทึกย้อนหลัง และไม่บันทึกซ้ำ
+- **Push** (Vercel Cron 09:00 น.): ตัดบัญชีพรุ่งนี้, ครบกำหนดชำระพรุ่งนี้, งบถึง 80% / เกินงบ แต่ละเรื่องส่งครั้งเดียว
+- Push ใช้ได้เฉพาะ production build และบน iPhone ต้องติดตั้งแอปลงหน้าจอหลักก่อน (iOS 16.4+)
 
-ใช้ Google login บนเครื่อง: ใส่ `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` / `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET` ใน `supabase/.env`, เปลี่ยน `[auth.external.google] enabled = true` ใน `supabase/config.toml`, เพิ่ม redirect URI `http://127.0.0.1:55321/auth/v1/callback` ใน Google Console แล้ว `npx supabase stop && npx supabase start`
+## เครดิต
 
-
-## โลโก้
-
-- โลโก้บริการ subscription มาจาก [Simple Icons](https://simpleicons.org) v16.32.0 (CC0) เก็บเป็น path ใน `lib/brands.data.ts` ชื่อและโลโก้เป็นเครื่องหมายการค้าของเจ้าของ ใช้เพื่อบอกว่าเป็นบริการไหนเท่านั้น
-- บริการที่ Simple Icons ไม่มี (เช่น Disney+, ChatGPT, Prime Video, Canva, Microsoft 365, Adobe, Viu, WeTV, iQIYI) แสดงเป็นตัวอักษรบนสีประจำแบรนด์
-- เพิ่มบริการ: เพิ่มแถวใน `lib/brands.data.ts` (aliases เป็นชื่อตัวพิมพ์เล็กไม่มีช่องว่าง/เครื่องหมาย ดู `normalizeName` ใน `lib/brands.ts`)
-- ปุ่ม "เข้าสู่ระบบด้วย Google" ใช้โลโก้ G สี่สีตาม branding guidelines ของ Google
+- โลโก้บริการ subscription จาก [Simple Icons](https://simpleicons.org) (CC0) ชื่อและโลโก้เป็นเครื่องหมายการค้าของเจ้าของ ใช้เพื่อบอกว่าเป็นบริการไหนเท่านั้น
+- ฟอนต์ IBM Plex Sans Thai, IBM Plex Mono, Noto Serif Thai

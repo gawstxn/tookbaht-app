@@ -8,6 +8,7 @@ import { ListCard, PrimaryButton, PushHeader, SwitchRow } from "@/components/ui/
 import { EXPENSE_CATEGORIES } from "@/lib/constants";
 import { baht } from "@/lib/format";
 import { useTranslation } from "react-i18next";
+import { useGoBack } from "@/lib/nav";
 import { useStore } from "@/lib/store";
 
 const toNum = (s: string) => parseInt(s.replace(/[^0-9]/g, ""), 10) || 0;
@@ -15,6 +16,7 @@ const fmt = (n: number) => (n ? n.toLocaleString("en-US") : "");
 
 export default function GoalEditPage() {
   const router = useRouter();
+  const goBack = useGoBack("/goals");
   const goals = useStore((s) => s.goals);
   const setGoals = useStore((s) => s.setGoals);
   const { t: tr } = useTranslation();
@@ -30,7 +32,7 @@ export default function GoalEditPage() {
 
   return (
     <PushScreen>
-      <PushHeader title={tr("goals.set")} onBack={() => router.back()} />
+      <PushHeader title={tr("goals.set")} onBack={() => goBack()} />
 
       <div className="grid grid-cols-2 gap-2.5">
         <MoneyField label={tr("goals.incomePerMonth")} icon="in" color="var(--color-income)" value={income} onChange={setIncome} />

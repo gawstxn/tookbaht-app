@@ -7,7 +7,7 @@ import { PushScreen, SubMono, TxIcon, TxRow } from "@/components/app";
 import { Empty, ListCard, PrimaryButton, PushHeader, SecondaryButton, Sheet, SwitchRow } from "@/components/ui/primitives";
 import { SUB_CATEGORIES, TYPE_META, categoryLabel } from "@/lib/constants";
 import { baht2, cycleLabel, cyclePer, diffDays, dueDatesUntil, fromISO, relativeDue, shortDate, todayISO } from "@/lib/format";
-import { chargesSoFar, nextCharge } from "@/lib/selectors";
+import { chargesSoFar, nextCharge, planInterest } from "@/lib/selectors";
 import { useTranslation } from "react-i18next";
 import { formatMoney, subTHB } from "@/lib/fx";
 import { useStore } from "@/lib/store";
@@ -41,6 +41,7 @@ export default function SubscriptionDetailPage() {
   const logged = transactions.filter((t) => t.subscriptionId === sub.id).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
   const paid = chargesSoFar(sub, today);
   const meta = TYPE_META[sub.entryType];
+  const interest = planInterest(sub);
   const accName = (id?: string | null) => accounts.find((a) => a.id === id)?.name ?? "—";
   const start = fromISO(sub.startDate);
   const estimate = subTHB(sub, accounts, usdRate);
@@ -91,6 +92,8 @@ export default function SubscriptionDetailPage() {
       </section>
 
       <ListCard>
+        {sub.principal ? <Row label={tr("rec.price")} value={baht2(sub.principal)} /> : null}
+        {interest ? <Row label={tr("rec.interest")} value={interest.total > 0 ? `${baht2(interest.total)} · ${interest.monthlyPct}%/${tr("cycle.month")}` : tr("pay.noInterest")} /> : null}
         <Row label={tr("subs.cycle")} value={cycleLabel(sub.cycle)} />
         <Row label={tr("subs.billingDay")} value={dayRule} />
         {sub.entryType === "move" ? (

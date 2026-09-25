@@ -97,10 +97,11 @@ describe.sequential("payment due day", () => {
   it("reminds the day before, with what is owed, once", async () => {
     const tomorrow = addDays(today, 1);
     await t.db.exec(`update public.accounts set due_day = ${Number(tomorrow.slice(8))} where id = '${PAYLATER}'`);
-    // Owed so far: 3 installments (3,000) + Netflix (419), less a 1,000 payment.
+    // Owed so far: 3 installments (3,000) + Netflix (419), less a 1,000 payment,
+    // plus the phone installment (1,500) that falls due tomorrow.
     await t.db.exec(`insert into public.transactions (user_id, type, amount, date, from_id, to_id) values ('${U}', 'move', 1000, '${today}', '${BANK}', '${PAYLATER}')`);
     const rows = await t.rows<{ name: string; owed: string; due_date: string }>(`select name, owed, due_date::text due_date from public.pending_due_reminders()`);
-    expect(rows.map((r) => [r.name, Number(r.owed), r.due_date])).toEqual([["SPayLater", 2419, tomorrow]]);
+    expect(rows.map((r) => [r.name, Number(r.owed), r.due_date])).toEqual([["SPayLater", 3919, tomorrow]]);
     await t.db.exec(`insert into public.due_reminders_sent (account_id, due_date) values ('${PAYLATER}', '${tomorrow}')`);
     expect(await t.rows(`select * from public.pending_due_reminders()`)).toEqual([]);
   });
@@ -130,5 +131,29 @@ describe.sequential("budget alerts", () => {
     await t.db.exec(`delete from public.transactions; delete from public.budget_alerts_sent;
       insert into public.transactions (user_id, type, amount, date, category, account_id) values ('${U}', 'out', 20000, '${addMonths(today, -1)}', 'shop', '${BANK}');`);
     expect(await t.rows(`select * from public.pending_budget_alerts()`)).toEqual([]);
+  });
+});
+
+describe.sequential("pay-later purchases", () => {
+  it("keeps a price only on installment plans", async () => {
+    const insert = (cols: string, values: string) => t.as(U, `insert into public.subscriptions (kind, entry_type, name, amount, cycle, start_date, account_id, category, ${cols}) values ('recurring', 'out', 'x', 1250, 'month', '${today}', '${PAYLATER}', 'shop', ${values})`);
+    await expect(insert("principal", "7000")).rejects.toThrow(/subscriptions_principal_plan/);
+    await insert("principal, installments", "7000, 6");
+  });
+
+  it("remembers which account pays the bill, never itself", async () => {
+    await t.db.exec(`update public.accounts set bill_from_id = '${BANK}' where id = '${PAYLATER}'`);
+    await expect(t.db.exec(`update public.accounts set bill_from_id = '${PAYLATER}' where id = '${PAYLATER}'`)).rejects.toThrow(/accounts_bill_from_self/);
+  });
+
+  it("includes installments falling due by tomorrow in the payment reminder", async () => {
+    const tomorrow = addDays(today, 1);
+    await t.db.exec(`delete from public.transactions; delete from public.due_reminders_sent; delete from public.subscriptions;
+      update public.accounts set due_day = ${Number(tomorrow.slice(8))} where id = '${PAYLATER}';
+      insert into public.transactions (user_id, type, amount, date, category, account_id) values ('${U}', 'out', 300, '${today}', 'food', '${PAYLATER}');`);
+    // An installment due tomorrow (not logged yet) and one next month (not counted).
+    await schedule("53000000-0000-0000-0000-000000000001", { kind: "recurring", entry_type: "out", name: "มือถือ", amount: 1250, cycle: "month", start_date: tomorrow, account_id: PAYLATER, category: "shop", installments: 6, principal: 7000 });
+    const rows = await t.rows<{ owed: string }>(`select owed from public.pending_due_reminders()`);
+    expect(rows.map((r) => Number(r.owed))).toEqual([1550]);
   });
 });

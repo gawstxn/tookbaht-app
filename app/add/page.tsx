@@ -11,6 +11,7 @@ import { addDays, shortDate, todayISO } from "@/lib/format";
 import { accountBalance } from "@/lib/selectors";
 import { useTranslation } from "react-i18next";
 import { formatMoney } from "@/lib/fx";
+import { useGoBack } from "@/lib/nav";
 import { useStore } from "@/lib/store";
 import { isDefaultTitle } from "@/lib/txTitle";
 import type { TxType } from "@/lib/types";
@@ -26,6 +27,7 @@ export default function AddPage() {
 
 function AddForm() {
   const router = useRouter();
+  const goBack = useGoBack("/");
   const params = useSearchParams();
   const accounts = useStore((s) => s.accounts);
   const txs = useStore((s) => s.transactions);
@@ -93,7 +95,7 @@ function AddForm() {
         : { type, amount: value, date, title, note: note.trim() || undefined, category: cat, accountId: acc, fromId: undefined, toId: undefined };
     if (editing) {
       updateTransaction(editing.id, fields);
-      router.back();
+      goBack();
     } else {
       addTransaction(fields);
       router.push("/");
@@ -109,7 +111,7 @@ function AddForm() {
 
   return (
     <PushScreen className="gap-3">
-      <PushHeader title={editing ? t("tx.editTitle") : t("add.title")} backIcon="close" onBack={() => router.back()} />
+      <PushHeader title={editing ? t("tx.editTitle") : t("add.title")} backIcon="close" onBack={() => goBack()} />
 
       <Segmented
         label={t("add.typeLabel")}

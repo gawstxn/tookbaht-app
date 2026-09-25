@@ -5,6 +5,7 @@ import { Fragment, ViewTransition, useEffect, useLayoutEffect, useRef, useState 
 import { useTranslation } from "react-i18next";
 import { applyLang, preferredLang } from "@/lib/i18n";
 import { applyTheme, followSystemTheme, themePref } from "@/lib/theme";
+import { isManualBack, notifyPathCommitted } from "@/lib/nav";
 import { TERMS_VERSION } from "@/lib/legal";
 import { TermsGate } from "./TermsConsent";
 import { LockGate } from "./AppLock";
@@ -108,7 +109,9 @@ function PageTransition({ path, children }: { path: string; children: React.Reac
     prev.current = path;
     if (from === path) return;
     const [a, b] = [depth(from), depth(path)];
-    document.documentElement.dataset.nav = b > a ? "forward" : b < a ? "back" : "tab";
+    // A history pop (goBack) runs its own whole-page transition, styled as "pop".
+    document.documentElement.dataset.nav = isManualBack() ? "pop" : b > a ? "forward" : b < a ? "back" : "tab";
+    notifyPathCommitted();
   }, [path]);
   return (
     <ViewTransition key={path} enter="page" exit="page" default="none">
