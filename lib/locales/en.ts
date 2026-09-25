@@ -342,7 +342,14 @@ const en: Messages = {
     subDeleted: "Deleted {{name}}",
     goalsSaved: "Goals saved",
   },
-  legal: { updated: "Last updated {{date}}" },
+  legal: {
+    updated: "Last updated {{date}}",
+    agree: "I have read and agree to the <terms>Terms of Use</terms> and <privacy>Privacy Policy</privacy>",
+    gateTitle: "Accept the Terms of Use",
+    gateUpdatedTitle: "Our terms have been updated",
+    gateLead: "Before you continue, please read and accept the Terms of Use and Privacy Policy.",
+    accept: "Accept and continue",
+  },
 };
 
 export default en;

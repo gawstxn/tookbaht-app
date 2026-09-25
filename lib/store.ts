@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { TYPE_META } from "./constants";
 import { fetchAll, fromRow, toRow, type TransactionRow } from "./db";
 import { applyLang, currentLang, t, type Lang } from "./i18n";
+import { TERMS_VERSION } from "./legal";
 import { baht, todayISO } from "./format";
 import { getSupabase } from "./supabase/client";
 import type { Account, Goals, Settings, Subscription, Transaction, User } from "./types";
@@ -65,6 +66,8 @@ interface Actions {
   setSettings: (s: Partial<Settings>) => void;
   /** Switch the UI language and remember it on the profile. */
   setLanguage: (lang: Lang) => void;
+  /** Record that the user accepted the current terms and privacy policy. */
+  acceptTerms: () => void;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
 }
@@ -286,6 +289,7 @@ export const useStore = create<State & Actions>()((set, get) => {
       applyLang(lang);
       if (get().userId) get().setSettings({ lang });
     },
+    acceptTerms: () => get().setSettings({ termsAcceptedVersion: TERMS_VERSION, termsAcceptedAt: new Date().toISOString() }),
     markNotificationRead: (id) => {
       const ids = get().settings.notifReadIds ?? [];
       if (ids.includes(id)) return;

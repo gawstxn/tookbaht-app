@@ -65,6 +65,9 @@ export interface Settings {
   /** Notification read state: everything up to readBefore (ms) plus these ids. */
   notifReadBefore?: number;
   notifReadIds?: string[];
+  /** Terms/privacy version the user accepted (lib/legal.ts) and when. */
+  termsAcceptedVersion?: string;
+  termsAcceptedAt?: string;
   /** UI language; also used for push reminders sent by the server. */
   lang?: "th" | "en";
 }

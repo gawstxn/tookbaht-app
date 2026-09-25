@@ -4,6 +4,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { applyLang, preferredLang } from "@/lib/i18n";
+import { TERMS_VERSION } from "@/lib/legal";
+import { TermsGate } from "./TermsConsent";
 import { getSupabase } from "@/lib/supabase/client";
 import { useStore, type Toast } from "@/lib/store";
 import { Icon } from "./ui/Icon";
@@ -20,6 +22,8 @@ const NO_DATA_PATHS = ["/login", "/auth/", "/terms", "/privacy"];
 export function AppShell({ children }: { children: React.ReactNode }) {
   const status = useStore((s) => s.status);
   const needsOnboarding = useStore((s) => s.status === "ready" && s.accounts.length === 0);
+  // Onboarded users who haven't accepted the current terms (onboarding asks new users itself).
+  const needsTerms = useStore((s) => s.status === "ready" && s.accounts.length > 0 && s.settings.termsAcceptedVersion !== TERMS_VERSION);
   const pathname = usePathname();
   const router = useRouter();
   const noData = NO_DATA_PATHS.some((p) => pathname.startsWith(p));
@@ -60,6 +64,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   let content: React.ReactNode;
   if (noData) content = children;
   else if (status === "error") content = <LoadError />;
+  else if (needsTerms) content = <TermsGate />;
   // Plain background while loading: iOS already showed its launch image.
   else if (status !== "ready" || (needsOnboarding && !onOnboarding)) content = <div aria-busy="true" className="min-h-dvh" />;
   else content = children;

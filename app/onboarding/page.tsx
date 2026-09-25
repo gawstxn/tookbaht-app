@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import { balanceLabel, monoFor } from "@/components/AccountEditSheet";
 import { AccountMark } from "@/components/app";
+import { TermsCheckbox } from "@/components/TermsConsent";
 import { Card, ListCard, PrimaryButton, SecondaryButton } from "@/components/ui/primitives";
 import { dismissLegacyData, importData, importLegacyData, readLegacyData } from "@/lib/legacyImport";
 import { seedData } from "@/lib/seed";
@@ -35,7 +36,8 @@ const getLegacy = () => (legacyCache === undefined ? (legacyCache = readLegacyDa
 /** First run: pick starter accounts, or bring over data from the device-only version. */
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user, userId, addAccount, load } = useStore();
+  const { user, userId, addAccount, load, acceptTerms } = useStore();
+  const [agreed, setAgreed] = useState(false);
   const { t: tr } = useTranslation();
   const legacy = useSyncExternalStore(noop, getLegacy, () => null);
   const [skipLegacy, setSkipLegacy] = useState(false);
@@ -47,6 +49,7 @@ export default function OnboardingPage() {
   const update = (i: number, p: Partial<Starter>) => setStarters((xs) => xs.map((x, j) => (j === i ? { ...x, ...p } : x)));
 
   const start = () => {
+    acceptTerms();
     for (const s of chosen) {
       addAccount({ name: s.name.trim(), kind: s.kind, openingBalance: parseFloat(s.balance) || 0, mono: monoFor(s.name), tone: s.tone });
     }
@@ -57,6 +60,7 @@ export default function OnboardingPage() {
 
   const runImport = async (sample = false) => {
     if (!userId || (!sample && !legacy)) return;
+    acceptTerms();
     setBusy(true);
     setError(false);
     try {
@@ -88,7 +92,8 @@ export default function OnboardingPage() {
           </p>
         ) : null}
         <div className="mt-auto flex flex-col gap-2.5">
-          <PrimaryButton disabled={busy} onClick={() => runImport()}>
+          <TermsCheckbox checked={agreed} onChange={setAgreed} />
+          <PrimaryButton disabled={busy || !agreed} onClick={() => runImport()}>
             {busy ? tr("onboarding.importing") : tr("onboarding.import")}
           </PrimaryButton>
           <SecondaryButton
@@ -150,11 +155,12 @@ export default function OnboardingPage() {
         </p>
       ) : null}
       <div className="mt-auto flex flex-col gap-2.5">
-        <PrimaryButton once disabled={chosen.length === 0 || busy} onClick={start}>
+        <TermsCheckbox checked={agreed} onChange={setAgreed} />
+        <PrimaryButton once disabled={chosen.length === 0 || busy || !agreed} onClick={start}>
           {tr("onboarding.start")}
         </PrimaryButton>
         {process.env.NEXT_PUBLIC_DEV_LOGIN === "true" ? (
-          <SecondaryButton onClick={() => void runImport(true)}>{busy ? tr("onboarding.sampling") : tr("onboarding.sample")}</SecondaryButton>
+          <SecondaryButton onClick={() => agreed && void runImport(true)}>{busy ? tr("onboarding.sampling") : tr("onboarding.sample")}</SecondaryButton>
         ) : null}
       </div>
     </main>
