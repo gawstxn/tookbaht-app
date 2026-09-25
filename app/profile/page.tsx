@@ -84,7 +84,7 @@ export default function ProfilePage() {
       </Group>
 
       <p className="text-center font-mono text-[11px] text-faint">
-        ทุกบาท v{process.env.NEXT_PUBLIC_APP_VERSION} · {process.env.NEXT_PUBLIC_APP_COMMIT}
+        Tookbaht v{process.env.NEXT_PUBLIC_APP_VERSION} · {process.env.NEXT_PUBLIC_APP_COMMIT}
       </p>
 
       <Sheet open={sheet === "logout"} onClose={() => setSheet("")} title="ออกจากระบบ?">

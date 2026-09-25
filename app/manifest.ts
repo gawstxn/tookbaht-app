@@ -3,8 +3,8 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "ทุกบาท — บันทึกรายรับรายจ่าย",
-    short_name: "ทุกบาท",
+    name: "Tookbaht — บันทึกรายรับรายจ่าย",
+    short_name: "Tookbaht",
     description: "บันทึกรายรับ รายจ่าย การโอน จัดการ subscriptions และตั้งเป้าหมายการเงิน",
     lang: "th",
     start_url: "/",

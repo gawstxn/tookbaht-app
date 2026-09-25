@@ -162,7 +162,7 @@ function Heading({ name }: { name?: string }) {
   return (
     <header className="flex flex-col gap-1">
       <span className="text-sm text-muted">ยินดีต้อนรับ{name ? ` ${name}` : ""}</span>
-      <h1 className="font-serif text-[28px] font-bold leading-tight">ตั้งค่าทุกบาท</h1>
+      <h1 className="font-serif text-[28px] font-bold leading-tight">ตั้งค่า Tookbaht</h1>
     </header>
   );
 }

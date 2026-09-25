@@ -21,7 +21,7 @@ export default function OverviewPage() {
   const sum = useMemo(() => summarize(month), [month]);
   const upcoming = useMemo(() => upcomingSubscriptions(subscriptions, today).slice(0, 3), [subscriptions, today]);
   const recent = useMemo(
-    () => [...month].sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt).slice(0, 3),
+    () => [...month].sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt).slice(0, 5),
     [month],
   );
   const banner = useMemo(() => budgetBanner(goals, month, viewMonth, today), [goals, month, viewMonth, today]);
