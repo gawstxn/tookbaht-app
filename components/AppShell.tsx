@@ -52,7 +52,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   let content: React.ReactNode;
   if (noData) content = children;
   else if (status === "error") content = <LoadError />;
-  else if (status !== "ready" || (needsOnboarding && !onOnboarding)) content = <Splash />;
+  // Plain background while loading: iOS already showed its launch image.
+  else if (status !== "ready" || (needsOnboarding && !onOnboarding)) content = <div aria-busy="true" className="min-h-dvh" />;
   else content = children;
 
   return (
@@ -73,17 +74,6 @@ function LoadError() {
       <h1 className="font-serif text-xl font-bold">โหลดข้อมูลไม่สำเร็จ</h1>
       <p className="text-sm text-muted">ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต แล้วลองอีกครั้ง</p>
       <PrimaryButton onClick={retry}>ลองอีกครั้ง</PrimaryButton>
-    </main>
-  );
-}
-
-/** First-load screen: the app mark while the user's data loads. */
-function Splash() {
-  return (
-    <main aria-busy="true" aria-label="กำลังโหลด" className="flex min-h-dvh flex-col items-center justify-center gap-4">
-      {/* eslint-disable-next-line @next/next/no-img-element -- tiny static icon, no optimisation needed */}
-      <img src="/icons/icon-192.png" alt="" width={84} height={84} className="animate-splash rounded-[24px] shadow-fab" />
-      <span className="font-serif text-xl font-bold">ทุกบาท</span>
     </main>
   );
 }

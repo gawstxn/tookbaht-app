@@ -214,11 +214,34 @@ export function Chip({ on, onClick, children, size = "md" }: { on: boolean; onCl
   );
 }
 
-export function PrimaryButton({ children, onClick, disabled, type = "button", tone = "ink" }: { children: ReactNode; onClick?: () => void; disabled?: boolean; type?: "button" | "submit"; tone?: "ink" | "danger" }) {
+export function PrimaryButton({
+  children,
+  onClick,
+  disabled,
+  type = "button",
+  tone = "ink",
+  once,
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  type?: "button" | "submit";
+  tone?: "ink" | "danger";
+  /** Ignore taps after the first (for save buttons that leave the screen). */
+  once?: boolean;
+}) {
+  const [used, setUsed] = useState(false);
+  disabled = disabled || (once && used);
   return (
     <button
       type={type}
-      onClick={onClick}
+      onClick={() => {
+        if (once) {
+          if (used) return;
+          setUsed(true);
+        }
+        onClick?.();
+      }}
       disabled={disabled}
       className={cx(
         "min-h-[54px] w-full rounded-2xl text-base font-semibold",

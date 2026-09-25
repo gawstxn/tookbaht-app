@@ -18,7 +18,6 @@ export default function EditSubscriptionPage() {
       title="แก้ไข subscription"
       saveLabel="บันทึกการแก้ไข"
       initial={initial}
-      lockStart
       onBack={() => router.back()}
       onSave={(s) => {
         update(sub.id, s);

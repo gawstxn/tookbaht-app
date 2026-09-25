@@ -107,6 +107,7 @@ function AccountFields({ initial, onSave, onDelete }: { initial?: AccountDraft; 
       </div>
 
       <PrimaryButton
+        once
         disabled={!canSave}
         onClick={() => onSave({ name: name.trim(), kind, openingBalance: parseFloat(balanceText) || 0, mono: monoFor(name), tone })}
       >

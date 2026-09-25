@@ -146,7 +146,7 @@ export default function OnboardingPage() {
         </p>
       ) : null}
       <div className="mt-auto flex flex-col gap-2.5">
-        <PrimaryButton disabled={chosen.length === 0 || busy} onClick={start}>
+        <PrimaryButton once disabled={chosen.length === 0 || busy} onClick={start}>
           เริ่มใช้งาน
         </PrimaryButton>
         {process.env.NEXT_PUBLIC_DEV_LOGIN === "true" ? (
