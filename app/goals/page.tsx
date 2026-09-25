@@ -1,9 +1,9 @@
 "use client";
 
-import { TabScreen } from "@/components/app";
+import { PushScreen } from "@/components/app";
 import { MonthSwitcher } from "@/components/pickers";
 import { Icon } from "@/components/ui/Icon";
-import { Bar, Empty, HeroCard, IconButton, ListCard, TabHeader } from "@/components/ui/primitives";
+import { Bar, Empty, HeroCard, IconButton, ListCard, PushHeader } from "@/components/ui/primitives";
 import { categoryLabel } from "@/lib/constants";
 import { baht, todayISO } from "@/lib/format";
 import { daysLeftInMonth, monthPace, monthTransactions, spendByCategory, summarize } from "@/lib/selectors";
@@ -39,17 +39,12 @@ export default function GoalsPage() {
   const hasGoals = goals.incomeTarget > 0 || goals.expenseBudget > 0;
 
   return (
-    <TabScreen>
-      <TabHeader
-        title="เป้าหมาย"
-        subtitle={
-          <span className="flex items-center gap-1">
-            <MonthSwitcher />
-            {left > 0 ? <span>· เหลืออีก {left} วัน</span> : null}
-          </span>
-        }
-        actions={<IconButton href="/goals/edit" icon="pencil" label="ตั้งเป้าหมาย" variant="dark" />}
-      />
+    <PushScreen>
+      <PushHeader title="เป้าหมาย" backHref="/" action={<IconButton href="/goals/edit" icon="pencil" label="ตั้งเป้าหมาย" variant="dark" />} />
+      <div className="-mt-2 flex items-center justify-center gap-1 text-[13px] text-muted">
+        <MonthSwitcher />
+        {left > 0 ? <span>· เหลืออีก {left} วัน</span> : null}
+      </div>
 
       {hasGoals ? (
         <HeroCard label="สรุปเป้าหมายเดือนนี้" className="gap-[18px]">
@@ -116,7 +111,7 @@ export default function GoalsPage() {
           </ListCard>
         </section>
       ) : null}
-    </TabScreen>
+    </PushScreen>
   );
 }
 

@@ -62,6 +62,8 @@ interface Actions {
 
   setGoals: (g: Goals) => void;
   setSettings: (s: Partial<Settings>) => void;
+  markNotificationRead: (id: string) => void;
+  markAllNotificationsRead: () => void;
 }
 
 const initial: State = {
@@ -274,5 +276,12 @@ export const useStore = create<State & Actions>()((set, get) => {
       set({ settings });
       void save(sb().from("profiles").update({ settings }).eq("id", get().userId), () => set({ settings: prev }));
     },
+    markNotificationRead: (id) => {
+      const ids = get().settings.notifReadIds ?? [];
+      if (ids.includes(id)) return;
+      // Keep the list short; anything older is covered by notifReadBefore eventually.
+      get().setSettings({ notifReadIds: [...ids, id].slice(-200) });
+    },
+    markAllNotificationsRead: () => get().setSettings({ notifReadBefore: Date.now(), notifReadIds: [] }),
   };
 });

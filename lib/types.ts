@@ -62,4 +62,7 @@ export interface Goals {
 
 export interface Settings {
   faceLock: boolean;
+  /** Notification read state: everything up to readBefore (ms) plus these ids. */
+  notifReadBefore?: number;
+  notifReadIds?: string[];
 }

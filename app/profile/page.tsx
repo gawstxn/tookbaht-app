@@ -2,10 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { PushScreen } from "@/components/app";
+import { TabScreen } from "@/components/app";
 import { Icon } from "@/components/ui/Icon";
 import { PushToggle } from "@/components/PushToggle";
-import { ListCard, PrimaryButton, PushHeader, SecondaryButton, Sheet, cx } from "@/components/ui/primitives";
+import { ListCard, PrimaryButton, SecondaryButton, Sheet, TabHeader, cx } from "@/components/ui/primitives";
 import { TYPE_META, categoryLabel } from "@/lib/constants";
 import { useStore } from "@/lib/store";
 
@@ -36,8 +36,8 @@ export default function ProfilePage() {
   };
 
   return (
-    <PushScreen>
-      <PushHeader title="โปรไฟล์" backHref="/" />
+    <TabScreen>
+      <TabHeader title="โปรไฟล์" />
 
       <section className="flex flex-col gap-4 rounded-[28px] bg-ink p-[22px] text-on-ink shadow-hero">
         <div className="flex items-center gap-4">
@@ -121,7 +121,7 @@ export default function ProfilePage() {
         </PrimaryButton>
         <SecondaryButton onClick={() => setSheet("")}>ยกเลิก</SecondaryButton>
       </Sheet>
-    </PushScreen>
+    </TabScreen>
   );
 }
 

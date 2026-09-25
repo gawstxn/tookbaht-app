@@ -24,6 +24,10 @@ const PATHS = {
   check: <path d="M20 6L9 17l-5-5" />,
   download: <><path d="M12 3v12" /><path d="M7 10l5 5 5-5" /><path d="M5 21h14" /></>,
   pause: <><path d="M9 5v14M15 5v14" /></>,
+  user: <><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>,
+  alert: <><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4M12 17h.01" /></>,
+  gauge: <><path d="M4.5 18a9 9 0 1 1 15 0" /><path d="M12 14l4-4" /><circle cx="12" cy="14" r="1" /></>,
+  chart: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
   play: <path d="M7 4l13 8-13 8z" />,
 };
 
