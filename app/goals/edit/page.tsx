@@ -78,6 +78,7 @@ export default function GoalEditPage() {
 
       <div className="mt-auto">
         <PrimaryButton
+          once
           onClick={() => {
             setGoals({ incomeTarget: income, expenseBudget: expense, categoryBudgets: budgets, alertAt80: alert });
             router.replace("/goals");

@@ -36,7 +36,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="เมนูหลัก"
-      className="fixed inset-x-0 bottom-0 z-40 mx-auto grid max-w-[430px] grid-cols-5 items-center border-t border-line bg-card px-2 pb-[calc(12px+env(safe-area-inset-bottom))] pt-1.5"
+      className="fixed inset-x-0 bottom-0 z-40 mx-auto grid max-w-[430px] grid-cols-5 items-center border-t border-line bg-card px-2 pb-[max(6px,calc(env(safe-area-inset-bottom)-8px))] pt-1"
     >
       {tab(TABS[0])}
       {tab(TABS[1])}
@@ -57,7 +57,7 @@ export function BottomNav() {
 export function TabScreen({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <main className="flex flex-col gap-4 px-6 pb-[calc(110px+env(safe-area-inset-bottom))] pt-[calc(20px+env(safe-area-inset-top)+var(--standalone-top,0px))]">{children}</main>
+      <main className="flex flex-col gap-4 px-6 pb-[calc(100px+env(safe-area-inset-bottom))] pt-[calc(20px+env(safe-area-inset-top)+var(--standalone-top,0px))]">{children}</main>
       <BottomNav />
     </>
   );

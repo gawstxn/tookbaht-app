@@ -83,6 +83,10 @@ export default function ProfilePage() {
         </button>
       </Group>
 
+      <p className="text-center font-mono text-[11px] text-faint">
+        ทุกบาท v{process.env.NEXT_PUBLIC_APP_VERSION} · {process.env.NEXT_PUBLIC_APP_COMMIT}
+      </p>
+
       <Sheet open={sheet === "logout"} onClose={() => setSheet("")} title="ออกจากระบบ?">
         <p className="text-sm text-muted">ข้อมูลเก็บไว้ในบัญชีของคุณ เข้าสู่ระบบด้วย Google อีกครั้งเมื่อไหร่ก็ได้ ทุกเครื่อง</p>
         <PrimaryButton

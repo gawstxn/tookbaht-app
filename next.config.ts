@@ -1,11 +1,42 @@
 import type { NextConfig } from "next";
+import pkg from "./package.json";
+
+const dev = process.env.NODE_ENV === "development";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+
+/**
+ * Static CSP (no nonces) so pages can be prerendered and navigations stay
+ * instant. Next.js needs inline scripts for its bootstrap data, hence
+ * 'unsafe-inline'; everything else stays locked to this origin + Supabase.
+ */
+const csp = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ""}`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self'",
+  `connect-src 'self' ${supabaseUrl}`,
+  "worker-src 'self'",
+  "manifest-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  ...(!dev && supabaseUrl.startsWith("https://") ? ["upgrade-insecure-requests"] : []),
+].join("; ");
 
 const nextConfig: NextConfig = {
+  env: {
+    // Shown under "ลบบัญชี" on the profile screen.
+    NEXT_PUBLIC_APP_VERSION: pkg.version,
+    NEXT_PUBLIC_APP_COMMIT: (process.env.VERCEL_GIT_COMMIT_SHA ?? "local").slice(0, 7),
+  },
   async headers() {
     return [
       {
         source: "/(.*)",
         headers: [
+          { key: "Content-Security-Policy", value: csp },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

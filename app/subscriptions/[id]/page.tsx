@@ -95,6 +95,7 @@ export default function SubscriptionDetailPage() {
       <Sheet open={confirm} onClose={() => setConfirm(false)} title={`ยกเลิก ${sub.name}?`}>
         <p className="text-sm text-muted">ลบ subscription นี้ออกจากรายการ รายจ่ายที่บันทึกไปแล้วยังอยู่ในประวัติ</p>
         <PrimaryButton
+          once
           tone="danger"
           onClick={() => {
             remove(sub.id);

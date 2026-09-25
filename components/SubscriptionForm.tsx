@@ -27,15 +27,12 @@ export function SubscriptionForm({
   onSave,
   onBack,
   saveLabel,
-  lockStart,
 }: {
   title: string;
   initial?: SubDraft;
   onSave: (s: SubDraft) => void;
   onBack: () => void;
   saveLabel: string;
-  /** When editing, allow past start dates. */
-  lockStart?: boolean;
 }) {
   const accounts = useStore((s) => s.accounts);
   const today = todayISO();
@@ -139,7 +136,7 @@ export function SubscriptionForm({
       </Card>
 
       <ListCard>
-        <PickerRow label={lockStart ? "เริ่มตัดบัญชี" : "ตัดบัญชีครั้งแรก"} value={shortDate(d.startDate)} onClick={() => setSheet("date")} />
+        <PickerRow label="เริ่มตัดบัญชี" value={shortDate(d.startDate)} onClick={() => setSheet("date")} />
         <PickerRow label="ชำระจาก" value={accounts.find((a) => a.id === d.accountId)?.name ?? "เลือกบัญชี"} onClick={() => setSheet("account")} />
         <PickerRow label="หมวดหมู่" value={SUB_CATEGORIES.find((c) => c.key === d.category)?.label ?? ""} onClick={() => setSheet("category")} />
       </ListCard>
@@ -155,6 +152,7 @@ export function SubscriptionForm({
           <span className="font-mono font-semibold text-ink">{baht(monthly * 12)}</span> / ปี
         </p>
         <PrimaryButton
+          once
           disabled={!canSave}
           onClick={() => {
             const name = d.name.trim();
@@ -170,11 +168,10 @@ export function SubscriptionForm({
       <DateSheet
         open={sheet === "date"}
         onClose={() => setSheet("")}
-        title={lockStart ? "เริ่มตัดบัญชี" : "ตัดบัญชีครั้งแรก"}
+        title="เริ่มตัดบัญชี"
         value={d.startDate}
         onChange={(startDate) => set({ startDate })}
-        min={lockStart ? undefined : today}
-        hint={hint}
+        hint={d.startDate < today ? `${hint} · รอบก่อนวันนี้จะไม่ถูกบันทึกย้อนหลัง` : hint}
       />
       <AccountSheet open={sheet === "account"} onClose={() => setSheet("")} title="ชำระจาก" value={d.accountId} onPick={(accountId) => set({ accountId })} />
       <CategorySheet open={sheet === "category"} onClose={() => setSheet("")} title="หมวดหมู่" options={SUB_CATEGORIES} value={d.category} onPick={(category) => set({ category })} />

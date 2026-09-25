@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { connection } from "next/server";
 import "@fontsource/ibm-plex-sans-thai/400.css";
 import "@fontsource/ibm-plex-sans-thai/500.css";
 import "@fontsource/ibm-plex-sans-thai/600.css";
@@ -11,12 +10,14 @@ import "@fontsource/noto-serif-thai/700.css";
 import "./globals.css";
 import { AppShell } from "@/components/AppShell";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import splashScreens from "@/lib/splash.json";
 
 export const metadata: Metadata = {
   title: "ทุกบาท — บันทึกรายรับรายจ่าย",
   description: "บันทึกรายรับ รายจ่าย การโอน จัดการ subscriptions และตั้งเป้าหมายการเงิน",
   applicationName: "ทุกบาท",
-  appleWebApp: { capable: true, title: "ทุกบาท", statusBarStyle: "default" },
+  // startupImage: iOS launch screens (cream + logo) instead of a black screen while the app starts.
+  appleWebApp: { capable: true, title: "ทุกบาท", statusBarStyle: "default", startupImage: splashScreens },
   icons: { apple: "/icons/apple-touch-icon.png" },
 };
 
@@ -30,9 +31,7 @@ export const viewport: Viewport = {
   themeColor: "#f3f0e8",
 };
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
-  // Render per request so Next.js can attach the CSP nonce from proxy.ts.
-  await connection();
+export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="th" className="h-full antialiased">
       <body className="min-h-full">

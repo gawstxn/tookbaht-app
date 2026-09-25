@@ -172,7 +172,7 @@ function AddForm() {
         ))}
       </div>
 
-      <PrimaryButton onClick={save} disabled={!canSave}>
+      <PrimaryButton once onClick={save} disabled={!canSave}>
         {copy.save}
       </PrimaryButton>
 
