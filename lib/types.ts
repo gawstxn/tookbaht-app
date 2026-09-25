@@ -22,6 +22,8 @@ export interface Account {
   tone: string;
   /** Foreign-transaction fee in percent, added to converted charges. */
   fxFeePct: number;
+  /** Cards and pay-later: day of the month the bill must be paid by. */
+  dueDay?: number | null;
 }
 
 export interface Transaction {
@@ -47,15 +49,26 @@ export interface Transaction {
   createdAt: number;
 }
 
+/** "subscription": a service billed to an account. "recurring": salary, rent, a transfer or an installment plan. */
+export type ScheduleKind = "subscription" | "recurring";
+
 export interface Subscription {
   id: string;
+  kind: ScheduleKind;
+  /** What each charge logs; subscriptions are always "out". */
+  entryType: TxType;
   name: string;
   /** Price in `currency` (for USD: what is actually charged, VAT included). */
   amount: number;
   currency: Currency;
   cycle: Cycle;
   startDate: ISODate;
+  /** Paying account; the source of a recurring transfer. */
   accountId: string;
+  /** Destination of a recurring transfer. */
+  toAccountId?: string | null;
+  /** Installment plans: total number of charges (ผ่อน 3 งวด); open-ended when unset. */
+  installments?: number | null;
   category: string;
   remind: boolean;
   autoLog: boolean;

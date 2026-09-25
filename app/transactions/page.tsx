@@ -73,6 +73,7 @@ export default function TransactionsPage() {
               <IconButton icon="sliders" label={tr("tx.filters")} onClick={() => setFilterSheet(true)} />
               {active.length || ranged ? <span aria-hidden="true" className="absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full border-2 border-paper bg-expense" /> : null}
             </span>
+            <IconButton icon="chart" label={tr("insights.open")} href="/insights" />
             <IconButton icon={searching ? "close" : "search"} label={tr(searching ? "tx.closeSearch" : "tx.search")} onClick={() => { setSearching(!searching); setQuery(""); }} />
           </>
         }

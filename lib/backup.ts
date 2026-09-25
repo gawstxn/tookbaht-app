@@ -74,7 +74,8 @@ export function parseBackup(text: string): BackupData {
   return {
     accounts: accounts.map((a) => ({ ...a, fxFeePct: a.fxFeePct ?? 0 })),
     transactions,
-    subscriptions: subscriptions.map((s) => ({ ...s, currency: s.currency ?? "THB" })),
+    // Older backups predate recurring entries: everything was a subscription.
+    subscriptions: subscriptions.map((s) => ({ ...s, currency: s.currency ?? "THB", kind: s.kind ?? "subscription", entryType: s.entryType ?? "out" })),
     goals: raw.goals,
     settings: raw.settings,
   };

@@ -7,6 +7,7 @@ import { applyLang, preferredLang } from "@/lib/i18n";
 import { applyTheme, followSystemTheme, themePref } from "@/lib/theme";
 import { TERMS_VERSION } from "@/lib/legal";
 import { TermsGate } from "./TermsConsent";
+import { LockGate } from "./AppLock";
 import { getSupabase } from "@/lib/supabase/client";
 import { useStore, type Toast } from "@/lib/store";
 import { Icon } from "./ui/Icon";
@@ -82,10 +83,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="relative mx-auto min-h-dvh w-full max-w-[430px] bg-paper">
-      <PageTransition path={pathname}>
-        {/* Remount on language change so memoised labels recompute. */}
-        <Fragment key={i18n.language}>{content}</Fragment>
-      </PageTransition>
+      <div className="app-content">
+        <PageTransition path={pathname}>
+          {/* Remount on language change so memoised labels recompute. */}
+          <Fragment key={i18n.language}>{content}</Fragment>
+        </PageTransition>
+      </div>
+      <LockGate active={!noData} />
       <ToastHost />
     </div>
   );

@@ -1,8 +1,8 @@
 import { budgetLines } from "./budget";
-import { baht, addDays, fromISO, monthKey, nextDueDate, toISO } from "./format";
+import { baht, addDays, fromISO, monthKey, relativeDue, toISO } from "./format";
 import { formatMoney } from "./fx";
 import { t } from "./i18n";
-import { daysLeftInMonth, monthTransactions, summarize } from "./selectors";
+import { accountDue, daysLeftInMonth, monthTransactions, nextCharge, summarize } from "./selectors";
 import type { Account, Goals, Settings, Subscription, Transaction } from "./types";
 
 export type NotifKind = "due" | "over" | "near" | "autolog" | "income" | "weekly";
@@ -53,9 +53,11 @@ export function buildNotifications(input: {
 
   // Charges due today or tomorrow (announced 09:00 the day before).
   for (const s of subscriptions) {
-    if (s.paused) continue;
-    const due = nextDueDate(s.startDate, s.cycle, today);
-    if (due > addDays(today, 1)) continue;
+    // Money coming in isn't a charge to prepare for.
+    if (s.paused || s.entryType === "in") continue;
+    const next = nextCharge(s, today);
+    if (!next || next.due > addDays(today, 1)) continue;
+    const due = next.due;
     out.push({
       id: `due:${s.id}:${due}`,
       kind: "due",
@@ -63,6 +65,20 @@ export function buildNotifications(input: {
       title: t(due === today ? "notif.dueToday" : "notif.dueTomorrow", { name: s.name }),
       body: t("notif.fromAccount", { amount: formatMoney(s.amount, s.currency), account: accName(s.accountId) }),
       href: `/subscriptions/${s.id}`,
+    });
+  }
+
+  // Card / pay-later payments due within 3 days (announced 09:00, three days before).
+  for (const a of accounts) {
+    const d = accountDue(a, transactions, today);
+    if (!d || d.owed <= 0 || d.days > 3) continue;
+    out.push({
+      id: `pay:${a.id}:${d.due}`,
+      kind: "due",
+      at: Math.min(now, at(addDays(d.due, -3), 9)),
+      title: t("notif.payDue", { name: a.name, rel: relativeDue(d.days) }),
+      body: t("notif.payDueBody", { amount: baht(d.owed) }),
+      href: "/accounts",
     });
   }
 

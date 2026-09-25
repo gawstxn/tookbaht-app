@@ -1,18 +1,9 @@
 import webpush from "web-push";
 import { NextResponse, type NextRequest } from "next/server";
-import { formatMoney } from "@/lib/fx";
+import { budgetText, chargeText, dueText, type Lang, type PendingBudget, type PendingDue, type PendingReminder } from "@/lib/pushText";
 import { refreshUsdRate } from "@/lib/rates";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 
-interface PendingReminder {
-  subscription_id: string;
-  user_id: string;
-  name: string;
-  amount: number | string;
-  currency: "THB" | "USD";
-  due_date: string;
-  account_name: string;
-}
 /** Browser push services (mirrors public.is_push_endpoint in the database). */
 const PUSH_ENDPOINT = /^https:\/\/(fcm\.googleapis\.com|updates\.push\.services\.mozilla\.com|web\.push\.apple\.com|[a-z0-9-]+\.notify\.windows\.com)\//;
 
@@ -25,8 +16,10 @@ interface PushTarget {
 }
 
 /**
- * Daily job (vercel.json): push a reminder for every subscription that bills
- * tomorrow. Called by Vercel Cron with `Authorization: Bearer $CRON_SECRET`.
+ * Daily job (vercel.json, 09:00 Bangkok): push reminders for charges due
+ * tomorrow, card / pay-later payments due tomorrow, and budgets that reached
+ * 80% or went over. Called by Vercel Cron with `Authorization: Bearer $CRON_SECRET`.
+ * Each kind is recorded once delivered, so a retried run doesn't repeat it.
  */
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -43,15 +36,18 @@ export async function GET(request: NextRequest) {
   const db = createSupabaseAdmin();
   // Daily job: also keep the USD rate fresh for auto-logging foreign subscriptions.
   await refreshUsdRate(db).catch((e) => console.error("rate refresh failed", e));
-  const { data, error } = await db.rpc("pending_reminders");
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  const pending = (data ?? []) as PendingReminder[];
-  if (!pending.length) return NextResponse.json({ reminders: 0, sent: 0 });
+  const [charges, dues, budgets] = await Promise.all([db.rpc("pending_reminders"), db.rpc("pending_due_reminders"), db.rpc("pending_budget_alerts")]);
+  for (const r of [charges, dues, budgets]) if (r.error) return NextResponse.json({ error: r.error.message }, { status: 500 });
+  const pending = (charges.data ?? []) as PendingReminder[];
+  const pendingDue = (dues.data ?? []) as PendingDue[];
+  const pendingBudget = (budgets.data ?? []) as PendingBudget[];
 
-  const userIds = [...new Set(pending.map((r) => r.user_id))];
+  const userIds = [...new Set([...pending, ...pendingDue, ...pendingBudget].map((r) => r.user_id))];
+  if (!userIds.length) return NextResponse.json({ reminders: 0, sent: 0 });
+
   // Each user's chosen language (profiles.settings.lang); Thai when unset.
   const { data: profiles } = await db.from("profiles").select("id, settings").in("id", userIds);
-  const langOf = new Map((profiles ?? []).map((p: { id: string; settings: { lang?: string } | null }) => [p.id, p.settings?.lang === "en" ? "en" : "th"]));
+  const langOf = new Map<string, Lang>((profiles ?? []).map((p: { id: string; settings: { lang?: string } | null }) => [p.id, p.settings?.lang === "en" ? "en" : "th"]));
   const { data: targets, error: targetsError } = await db
     .from("push_subscriptions")
     .select("id, user_id, endpoint, p256dh, auth")
@@ -61,16 +57,11 @@ export async function GET(request: NextRequest) {
 
   let sent = 0;
   const gone = new Set<string>();
-  const delivered: { subscription_id: string; due_date: string }[] = [];
-
-  for (const r of pending) {
-    const payload = JSON.stringify({
-      ...reminderText(langOf.get(r.user_id) ?? "th", r),
-      url: `/subscriptions/${r.subscription_id}`,
-      tag: `due-${r.subscription_id}-${r.due_date}`,
-    });
+  /** Push to every device of the user; true when at least one accepted it. */
+  const push = async (userId: string, message: { title: string; body: string; url: string; tag: string }) => {
+    const payload = JSON.stringify(message);
     let ok = false;
-    for (const t of targets.filter((x) => x.user_id === r.user_id && !gone.has(x.id) && PUSH_ENDPOINT.test(x.endpoint))) {
+    for (const t of targets.filter((x) => x.user_id === userId && !gone.has(x.id) && PUSH_ENDPOINT.test(x.endpoint))) {
       try {
         await webpush.sendNotification({ endpoint: t.endpoint, keys: { p256dh: t.p256dh, auth: t.auth } }, payload, { TTL: 60 * 60 * 12 });
         ok = true;
@@ -82,21 +73,33 @@ export async function GET(request: NextRequest) {
         else console.error("push failed", status, e);
       }
     }
-    if (ok) delivered.push({ subscription_id: r.subscription_id, due_date: r.due_date });
+    return ok;
+  };
+  const lang = (userId: string) => langOf.get(userId) ?? "th";
+
+  const deliveredCharges: { subscription_id: string; due_date: string }[] = [];
+  for (const r of pending) {
+    const ok = await push(r.user_id, { ...chargeText(lang(r.user_id), r), url: `/subscriptions/${r.subscription_id}`, tag: `due-${r.subscription_id}-${r.due_date}` });
+    if (ok) deliveredCharges.push({ subscription_id: r.subscription_id, due_date: r.due_date });
+  }
+  const deliveredDue: { account_id: string; due_date: string }[] = [];
+  for (const r of pendingDue) {
+    const ok = await push(r.user_id, { ...dueText(lang(r.user_id), r), url: "/accounts", tag: `pay-${r.account_id}-${r.due_date}` });
+    if (ok) deliveredDue.push({ account_id: r.account_id, due_date: r.due_date });
+  }
+  const deliveredBudget: { user_id: string; month: string; budget_key: string; level: number }[] = [];
+  for (const r of pendingBudget) {
+    const ok = await push(r.user_id, { ...budgetText(lang(r.user_id), r), url: "/goals", tag: `budget-${r.budget_key}-${r.month}-${r.level}` });
+    // Going over also covers the 80% warning, so it isn't sent afterwards.
+    if (ok) for (const level of r.level === 100 ? [80, 100] : [80]) deliveredBudget.push({ user_id: r.user_id, month: r.month, budget_key: r.budget_key, level });
   }
 
   if (gone.size) await db.from("push_subscriptions").delete().in("id", [...gone]);
-  if (delivered.length) {
-    const { error: logError } = await db.from("reminders_sent").upsert(delivered, { ignoreDuplicates: true });
-    if (logError) console.error(logError);
-  }
-  return NextResponse.json({ reminders: pending.length, sent, removed: gone.size });
-}
-
-/** Push text in the user's language (the server has no i18n instance). */
-function reminderText(lang: string, r: PendingReminder) {
-  const amount = formatMoney(Number(r.amount), r.currency ?? "THB");
-  return lang === "en"
-    ? { title: `${r.name} bills tomorrow`, body: `${amount} from ${r.account_name}` }
-    : { title: `${r.name} ตัดบัญชีพรุ่งนี้`, body: `${amount} จาก${r.account_name}` };
+  const logs = await Promise.all([
+    deliveredCharges.length ? db.from("reminders_sent").upsert(deliveredCharges, { ignoreDuplicates: true }) : null,
+    deliveredDue.length ? db.from("due_reminders_sent").upsert(deliveredDue, { ignoreDuplicates: true }) : null,
+    deliveredBudget.length ? db.from("budget_alerts_sent").upsert(deliveredBudget, { ignoreDuplicates: true }) : null,
+  ]);
+  for (const l of logs) if (l?.error) console.error(l.error);
+  return NextResponse.json({ reminders: pending.length, due: pendingDue.length, budgets: pendingBudget.length, sent, removed: gone.size });
 }

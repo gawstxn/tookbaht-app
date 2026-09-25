@@ -8,7 +8,7 @@ const data: BackupData = {
     { id: "t2", type: "move", amount: 500, date: "2026-09-03", title: "", fromId: "a1", toId: "a1b", createdAt: 2 },
   ],
   subscriptions: [
-    { id: "s1", name: "Netflix", amount: 419, currency: "THB", cycle: "month", startDate: "2026-08-06", accountId: "a1", category: "fun", remind: true, autoLog: true, paused: false, tone: "#000" },
+    { id: "s1", kind: "subscription", entryType: "out", name: "Netflix", amount: 419, currency: "THB", cycle: "month", startDate: "2026-08-06", accountId: "a1", category: "fun", remind: true, autoLog: true, paused: false, tone: "#000" },
   ],
   goals: { incomeTarget: 50000, expenseBudget: 30000, categoryBudgets: { food: 8000 }, alertAt80: true },
   settings: { faceLock: false },
@@ -36,9 +36,11 @@ describe("backup files", () => {
     const old = JSON.parse(file());
     delete old.accounts[0].fxFeePct;
     delete old.subscriptions[0].currency;
+    delete old.subscriptions[0].kind;
+    delete old.subscriptions[0].entryType;
     const parsed = parseBackup(JSON.stringify(old));
     expect(parsed.accounts[0].fxFeePct).toBe(0);
-    expect(parsed.subscriptions[0].currency).toBe("THB");
+    expect(parsed.subscriptions[0]).toMatchObject({ currency: "THB", kind: "subscription", entryType: "out" });
   });
 
   it("rejects files that aren't Tookbaht backups", () => {
