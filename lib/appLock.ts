@@ -1,18 +1,21 @@
 /**
- * App lock for this device: a 4-digit PIN (stored only as a salted SHA-256
+ * App lock for this device: a 6-digit PIN (stored only as a salted SHA-256
  * hash) and optionally Face ID / Touch ID through WebAuthn. It keeps people
  * who pick up the phone out of the app; it is not encryption — the data
  * itself is protected by the Google sign-in and row-level security.
  */
 
 export const LOCK_STORAGE_KEY = "tookbaht-lock";
-export const PIN_LENGTH = 4;
+/** Digits in a new PIN. Locks set earlier keep their own length (LockConfig.length). */
+export const PIN_LENGTH = 6;
 /** Lock again after the app has been in the background this long. */
 export const RELOCK_AFTER_MS = 60_000;
 
 export interface LockConfig {
   salt: string;
   pinHash: string;
+  /** PIN digits; missing on locks from v1.7.0, which were 4 digits. */
+  length?: number;
   /** WebAuthn credential id (base64url) when Face ID / Touch ID is on. */
   credentialId?: string;
 }
@@ -28,7 +31,7 @@ export async function hashPin(pin: string, salt: string): Promise<string> {
 
 export async function makeLock(pin: string): Promise<LockConfig> {
   const salt = hex(randomBytes(16).buffer);
-  return { salt, pinHash: await hashPin(pin, salt) };
+  return { salt, pinHash: await hashPin(pin, salt), length: pin.length };
 }
 
 export async function checkPin(config: LockConfig, pin: string): Promise<boolean> {

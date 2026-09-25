@@ -77,6 +77,7 @@ export function LockSettings({ open, onClose, onChange }: { open: boolean; onClo
       {step === "current" && config ? (
         <PinPad
           key="current"
+          length={config.length ?? 4}
           label={t("lock.currentPin")}
           error={error}
           onChange={() => setError(undefined)}

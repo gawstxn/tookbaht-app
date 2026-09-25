@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkPin, hashPin, makeLock } from "@/lib/appLock";
+import { PIN_LENGTH, checkPin, hashPin, makeLock } from "@/lib/appLock";
 
 describe("app lock PIN", () => {
   it("accepts the PIN it was set with and nothing else", async () => {
@@ -20,5 +20,21 @@ describe("app lock PIN", () => {
   it("hashes deterministically for a given salt", async () => {
     expect(await hashPin("1234", "s")).toBe(await hashPin("1234", "s"));
     expect(await hashPin("1234", "s")).toMatch(/^[0-9a-f]{64}$/);
+  });
+});
+
+describe("PIN length", () => {
+  it("new locks use 6 digits and remember it", async () => {
+    const lock = await makeLock("135790");
+    expect(PIN_LENGTH).toBe(6);
+    expect(lock.length).toBe(6);
+    expect(await checkPin(lock, "135790")).toBe(true);
+  });
+
+  it("locks set before the length was stored still check their 4-digit PIN", async () => {
+    const { length, ...old } = await makeLock("2468");
+    expect(length).toBe(4);
+    expect(old.length).toBeUndefined();
+    expect(await checkPin(old, "2468")).toBe(true);
   });
 });

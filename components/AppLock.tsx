@@ -57,6 +57,7 @@ function LockScreen({ config, onUnlock }: { config: LockConfig; onUnlock: () => 
       </span>
       <h1 className="mt-4 font-serif text-2xl font-bold">{t("lock.title")}</h1>
       <PinPad
+        length={config.length ?? 4}
         label={t("lock.enterPin")}
         error={error ? t("lock.wrongPin") : undefined}
         onComplete={async (pin) => {
@@ -66,7 +67,7 @@ function LockScreen({ config, onUnlock }: { config: LockConfig; onUnlock: () => 
         onChange={() => setError(false)}
         extraKey={
           config.credentialId ? (
-            <button type="button" onClick={tryBiometric} aria-label={t("lock.useBiometric")} className="flex h-16 items-center justify-center text-ink">
+            <button type="button" onClick={tryBiometric} aria-label={t("lock.useBiometric")} className="flex h-[72px] w-[72px] items-center justify-center text-ink">
               <Icon name="faceId" size={28} strokeWidth={1.8} />
             </button>
           ) : undefined
@@ -109,12 +110,14 @@ function AutoBiometric({ run }: { run: () => void }) {
 
 /** Four dots and a phone-style keypad. Calls onComplete once PIN_LENGTH digits are in. */
 export function PinPad({
+  length = PIN_LENGTH,
   label,
   error,
   onComplete,
   onChange,
   extraKey,
 }: {
+  length?: number;
   label: string;
   error?: string;
   onComplete: (pin: string) => void;
@@ -130,25 +133,25 @@ export function PinPad({
     if (error) setPin("");
   }
   const press = (d: string) => {
-    if (pin.length >= PIN_LENGTH) return;
+    if (pin.length >= length) return;
     const next = pin + d;
     setPin(next);
     onChange?.();
-    if (next.length === PIN_LENGTH) onComplete(next);
+    if (next.length === length) onComplete(next);
   };
 
   return (
-    <div className="mt-6 flex w-full flex-col items-center gap-6">
-      <div className="flex flex-col items-center gap-3">
-        <span className="text-sm text-muted">{label}</span>
-        <div className={cx("flex gap-4", error && "animate-[shake_300ms_ease-in-out]")} aria-live="polite" aria-label={t("lock.digits", { count: pin.length, total: PIN_LENGTH })}>
-          {Array.from({ length: PIN_LENGTH }, (_, i) => (
+    <div className="mt-6 flex w-full shrink-0 flex-col items-center gap-7 pb-2">
+      <div className="flex flex-col items-center gap-3.5">
+        <span className="text-[15px] text-muted">{label}</span>
+        <div className={cx("flex gap-3.5", error && "animate-[shake_300ms_ease-in-out]")} aria-live="polite" aria-label={t("lock.digits", { count: pin.length, total: length })}>
+          {Array.from({ length }, (_, i) => (
             <span key={i} className={cx("h-3.5 w-3.5 rounded-full border-2", i < pin.length ? "border-ink bg-ink" : "border-line-strong")} />
           ))}
         </div>
         <span className="min-h-5 text-[13px] font-medium text-danger">{error}</span>
       </div>
-      <div className="grid w-full max-w-[280px] grid-cols-3 gap-3">
+      <div className="grid grid-cols-[repeat(3,72px)] justify-center gap-x-7 gap-y-4">
         {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((d) => (
           <Key key={d} onClick={() => press(d)}>
             {d}
@@ -156,7 +159,7 @@ export function PinPad({
         ))}
         {extraKey ?? <span />}
         <Key onClick={() => press("0")}>0</Key>
-        <button type="button" onClick={() => setPin((p) => p.slice(0, -1))} aria-label={t("lock.delete")} className="flex h-16 items-center justify-center text-muted">
+        <button type="button" onClick={() => setPin((p) => p.slice(0, -1))} aria-label={t("lock.delete")} className="flex h-[72px] w-[72px] items-center justify-center text-muted">
           <Icon name="del" size={24} strokeWidth={1.8} />
         </button>
       </div>
@@ -166,7 +169,7 @@ export function PinPad({
 
 function Key({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="flex h-16 items-center justify-center rounded-full bg-card font-mono text-2xl font-semibold shadow-[0_1px_2px_rgba(0,0,0,0.06)] active:bg-chip">
+    <button type="button" onClick={onClick} className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full bg-card font-mono text-[28px] font-medium shadow-[0_1px_2px_rgba(0,0,0,0.06)] active:bg-chip">
       {children}
     </button>
   );

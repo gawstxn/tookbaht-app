@@ -266,7 +266,7 @@ const en: Messages = {
     enterPin: "Enter PIN",
     wrongPin: "Wrong PIN",
     setPin: "Set a PIN",
-    setPinLead: "Choose a 4-digit PIN for this device",
+    setPinLead: "Choose a 6-digit PIN for this device",
     confirmPin: "Confirm PIN",
     confirmPinLead: "Enter the PIN again",
     mismatch: "PINs don't match — try again",
