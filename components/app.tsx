@@ -39,7 +39,6 @@ export function BottomNav() {
   return (
     <nav
       aria-label={tr("nav.menu")}
-      style={{ viewTransitionName: "bottom-nav" }}
       className="fixed inset-x-0 bottom-0 z-40 mx-auto grid max-w-[430px] grid-cols-5 items-center border-t border-line bg-card px-2 pb-[max(6px,calc(env(safe-area-inset-bottom)-8px))] pt-1"
     >
       {tab(TABS[0])}
