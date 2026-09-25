@@ -40,18 +40,45 @@ export function LockGate({ active }: { active: boolean }) {
   return <LockScreen config={config!} onUnlock={() => setUnlocked(true)} />;
 }
 
+/** Pause on the filled green dots before the lock screen lifts away. */
+const SUCCESS_MS = 220;
+const REVEAL_MS = 420;
+
 function LockScreen({ config, onUnlock }: { config: LockConfig; onUnlock: () => void }) {
   const { t } = useTranslation();
   const signOut = useStore((s) => s.signOut);
   const [error, setError] = useState(false);
   const [forgot, setForgot] = useState(false);
+  // idle → success (green dots) → leaving (lock lifts away, app zooms in) → unlocked
+  const [phase, setPhase] = useState<"idle" | "success" | "leaving">("idle");
+
+  const succeed = () => {
+    setPhase("success");
+    setTimeout(() => {
+      // Show the app underneath while the lock screen animates away.
+      setLockedAttr(false);
+      document.documentElement.dataset.unlocking = "";
+      setPhase("leaving");
+      setTimeout(() => delete document.documentElement.dataset.unlocking, REVEAL_MS);
+      // In case animationend never fires (app backgrounded mid-way); unlocking twice is harmless.
+      setTimeout(onUnlock, REVEAL_MS + 100);
+    }, SUCCESS_MS);
+  };
 
   const tryBiometric = async () => {
-    if (config.credentialId && (await unlockWithBiometric(config.credentialId))) onUnlock();
+    if (phase === "idle" && config.credentialId && (await unlockWithBiometric(config.credentialId))) succeed();
   };
 
   return (
-    <div className="fixed inset-0 z-[80] mx-auto flex max-w-[430px] flex-col items-center bg-paper px-6 pb-[calc(28px+env(safe-area-inset-bottom))] pt-[calc(64px+env(safe-area-inset-top))]">
+    <div
+      onAnimationEnd={(e) => {
+        if (phase === "leaving" && e.target === e.currentTarget) onUnlock();
+      }}
+      className={cx(
+        "fixed inset-0 z-[80] mx-auto flex max-w-[430px] flex-col items-center bg-paper px-6 pb-[calc(28px+env(safe-area-inset-bottom))] pt-[calc(64px+env(safe-area-inset-top))]",
+        phase === "leaving" && "animate-lock-out pointer-events-none",
+      )}
+    >
       <span aria-hidden="true" className="flex h-14 w-14 items-center justify-center rounded-2xl bg-hero font-mono text-[26px] font-semibold text-lime">
         ฿
       </span>
@@ -60,8 +87,9 @@ function LockScreen({ config, onUnlock }: { config: LockConfig; onUnlock: () => 
         length={config.length ?? 4}
         label={t("lock.enterPin")}
         error={error ? t("lock.wrongPin") : undefined}
+        success={phase !== "idle"}
         onComplete={async (pin) => {
-          if (await checkPin(config, pin)) onUnlock();
+          if (await checkPin(config, pin)) succeed();
           else setError(true);
         }}
         onChange={() => setError(false)}
@@ -113,6 +141,7 @@ export function PinPad({
   length = PIN_LENGTH,
   label,
   error,
+  success,
   onComplete,
   onChange,
   extraKey,
@@ -120,6 +149,8 @@ export function PinPad({
   length?: number;
   label: string;
   error?: string;
+  /** Right PIN: dots turn green and keys stop responding. */
+  success?: boolean;
   onComplete: (pin: string) => void;
   onChange?: () => void;
   extraKey?: React.ReactNode;
@@ -133,7 +164,7 @@ export function PinPad({
     if (error) setPin("");
   }
   const press = (d: string) => {
-    if (pin.length >= length) return;
+    if (pin.length >= length || success) return;
     const next = pin + d;
     setPin(next);
     onChange?.();
@@ -146,7 +177,13 @@ export function PinPad({
         <span className="text-[15px] text-muted">{label}</span>
         <div className={cx("flex gap-3.5", error && "animate-[shake_300ms_ease-in-out]")} aria-live="polite" aria-label={t("lock.digits", { count: pin.length, total: length })}>
           {Array.from({ length }, (_, i) => (
-            <span key={i} className={cx("h-3.5 w-3.5 rounded-full border-2", i < pin.length ? "border-ink bg-ink" : "border-line-strong")} />
+            <span
+              key={i}
+              className={cx(
+                "h-3.5 w-3.5 rounded-full border-2 transition-colors duration-150",
+                success ? "border-income bg-income" : i < pin.length ? "border-ink bg-ink" : "border-line-strong",
+              )}
+            />
           ))}
         </div>
         <span className="min-h-5 text-[13px] font-medium text-danger">{error}</span>
