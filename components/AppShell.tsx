@@ -93,7 +93,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
 /**
  * Animates route changes (styles in globals.css): deeper screens slide in from
- * the right, going up slides back, tab switches crossfade. Navigations are
+ * the right, going up slides back, tab switches are instant. Navigations are
  * transitions, so keying by path makes React run a view transition.
  */
 function PageTransition({ path, children }: { path: string; children: React.ReactNode }) {
@@ -108,7 +108,8 @@ function PageTransition({ path, children }: { path: string; children: React.Reac
   }, [path]);
   return (
     <ViewTransition key={path} enter="page" exit="page" default="none">
-      <div>{children}</div>
+      {/* Opaque and full-height, so the outgoing page never shows through the incoming one. */}
+      <div className="min-h-dvh bg-paper">{children}</div>
     </ViewTransition>
   );
 }
