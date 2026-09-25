@@ -33,7 +33,8 @@ Personal-finance PWA used on an iPhone as an installed app. Thai-first (English 
 
 - Keep transitions compositor-only: animate `transform` / `opacity`; no box-shadows, filters or blur on view-transition layers (they repaint a full-page layer every frame and stutter on phones).
 - Judge smoothness on a production build (`npm run build` then `npm run start`), not the dev server; throttle the CPU 4× in DevTools to approximate an iPhone.
-- Don't add dependencies for things a few lines can do; check the first-load JS when adding one. supabase-js is already the largest chunk.
+- Don't add dependencies for things a few lines can do; check the first-load JS when adding one. supabase-js is the largest chunk; its Realtime and Storage clients are swapped for stubs in the browser (`turbopack.resolveAlias` → `lib/stubs/`), so using Realtime or Storage from client code means removing that alias first.
+- Only import font weights that are used (see `app/layout.tsx`).
 - Memoise derived lists on screens with many transactions (`useMemo` over store data); don't recompute per row.
 - Charts are hand-written SVG (see `app/insights/page.tsx`); no chart library.
 

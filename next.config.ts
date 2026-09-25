@@ -26,6 +26,15 @@ const csp = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    // The app uses Supabase Auth and the database only. In the browser, swap the
+    // Realtime and Storage clients (built eagerly by supabase-js) for tiny stubs;
+    // server code (cron, admin) keeps the real packages.
+    resolveAlias: {
+      "@supabase/realtime-js": { browser: "./lib/stubs/realtime-js.ts" },
+      "@supabase/storage-js": { browser: "./lib/stubs/storage-js.ts" },
+    },
+  },
   env: {
     // Shown under "ลบบัญชี" on the profile screen.
     NEXT_PUBLIC_APP_VERSION: pkg.version,
