@@ -14,14 +14,15 @@ import { currentLang, type Lang } from "@/lib/i18n";
 import { setThemePref, themePref, type ThemePref } from "@/lib/theme";
 import { BackupError, backupFileName, makeBackup, parseBackup, type BackupData } from "@/lib/backup";
 import { TYPE_META, categoryLabel } from "@/lib/constants";
+import { shortDate } from "@/lib/format";
 import { replaceAllData } from "@/lib/legacyImport";
 import { useStore } from "@/lib/store";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, userId, accounts, transactions, subscriptions, goals, settings, signOut, setLanguage, load, notify } = useStore();
+  const { user, userId, accounts, transactions, subscriptions, goals, settings, usdRate, signOut, setLanguage, load, notify } = useStore();
   const { t: tr } = useTranslation();
-  const [sheet, setSheet] = useState<"" | "logout" | "delete" | "restore" | "lang" | "theme" | "lock">("");
+  const [sheet, setSheet] = useState<"" | "logout" | "delete" | "restore" | "lang" | "theme" | "lock" | "currency">("");
   // Per-device setting, read after mount (profile only renders once data has loaded).
   const [lock, setLock] = useState(readLock);
   const [restoring, setRestoring] = useState<BackupData | null>(null);
@@ -108,13 +109,13 @@ export default function ProfilePage() {
         </div>
         <div className="flex items-center gap-2 border-t border-ink-line pt-3 text-xs text-on-ink-muted">
           <Icon name="check" size={14} strokeWidth={2.2} className="text-lime" />
-          {tr("profile.googleNote")}
+          {user?.provider === "google" ? tr("profile.googleNote") : tr("profile.emailNote")}
         </div>
       </section>
 
       <Group title={tr("profile.finance")}>
         <NavRow label={tr("profile.myAccounts")} value={tr("common.accounts", { count: accounts.length })} onClick={() => router.push("/accounts")} />
-        <NavRow label={tr("profile.currency")} value={tr("profile.currencyValue")} />
+        <NavRow label={tr("profile.currency")} value={tr("profile.currencyValue")} onClick={() => setSheet("currency")} />
         <NavRow label={tr("profile.export")} value="CSV" icon="download" onClick={exportCsv} />
         <NavRow label={tr("profile.backup")} value="JSON" icon="download" onClick={exportBackup} />
         <NavRow label={tr("profile.restore")} onClick={() => fileInput.current?.click()} />
@@ -212,6 +213,24 @@ export default function ProfilePage() {
           setThemePref(v);
         }}
       />
+
+      <Sheet open={sheet === "currency"} onClose={() => setSheet("")} title={tr("profile.currency")}>
+        <p className="text-sm text-muted">{tr("profile.currencyLead")}</p>
+        <ListCard>
+          <div className="flex min-h-[52px] items-center justify-between gap-3">
+            <span className="text-[15px]">{tr("profile.currencyMain")}</span>
+            <span className="text-[13px] font-semibold">{tr("profile.currencyValue")}</span>
+          </div>
+          <div className="flex min-h-[52px] items-center justify-between gap-3">
+            <span className="flex flex-col">
+              <span className="text-[15px]">{tr("profile.usdRate")}</span>
+              {usdRate ? <span className="text-xs text-muted">{tr("profile.usdRateAsOf", { date: shortDate(usdRate.date) })}</span> : null}
+            </span>
+            <span className="font-mono text-[13px] font-semibold">{usdRate ? `฿${usdRate.rate.toFixed(2)}` : "—"}</span>
+          </div>
+        </ListCard>
+        <PrimaryButton onClick={() => setSheet("")}>{tr("common.gotIt")}</PrimaryButton>
+      </Sheet>
 
       <LockSettings open={sheet === "lock"} onClose={() => setSheet("")} onChange={setLock} />
 

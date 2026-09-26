@@ -10,6 +10,8 @@ export type ISODate = string;
 export interface User {
   name: string;
   email: string;
+  /** How the user signs in ("google", or "email" for the local dev login). */
+  provider?: string;
 }
 
 export interface Account {

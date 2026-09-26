@@ -1,3 +1,4 @@
+import { enCat, enTransferTo } from "./en.titles";
 import type { Messages } from "./th";
 
 /** English UI strings. Same keys as th.ts. */
@@ -44,12 +45,7 @@ const en: Messages = {
   theme: { title: "Theme", light: "Light", dark: "Dark", system: "System" },
   nav: { home: "Home", transactions: "Activity", monthly: "Monthly", profile: "Profile", menu: "Main menu", add: "Add transaction" },
   type: { in: "Income", out: "Expense", move: "Transfer", moveLong: "transfer" },
-  cat: {
-    food: "Food", travel: "Transport", shop: "Shopping", bill: "Utilities", health: "Health", fun: "Entertainment", sub: "Subscriptions", other: "Other",
-    salary: "Salary", freelance: "Freelance", sell: "Sales", interest: "Interest", gift: "Gifts", "other-in": "Other",
-    music: "Music", net: "Internet/Mobile", cloud: "Cloud", fit: "Fitness", learn: "Learning", tools: "Tools",
-    total: "Total budget",
-  },
+  cat: enCat,
   kind: { bank: "Bank", saving: "Savings", credit: "Credit card", cash: "Cash", savingLong: "Savings account" },
   cycle: { week: "Weekly", month: "Monthly", year: "Yearly", perWeek: "/ wk", perMonth: "/ mo", perYear: "/ yr" },
   catalog: {
@@ -157,7 +153,7 @@ const en: Messages = {
     note_out: "Note, e.g. team lunch",
     note_in: "Note, e.g. this month's fee",
     note_move: "Note, e.g. holiday savings",
-    transferTo: "Transfer to {{name}}",
+    transferTo: enTransferTo,
     todayDate: "Today, {{date}}",
     yesterdayDate: "Yesterday, {{date}}",
     swap: "Swap from and to accounts",
@@ -165,6 +161,13 @@ const en: Messages = {
     fromTitle: "Transfer from",
     toTitle: "Transfer to",
     pickDate: "Choose date",
+    plus: "Plus",
+    minus: "Minus",
+    times: "Times",
+  },
+  quick: {
+    title: "Quick add",
+    save: "Log {{title}} {{amount}} today",
   },
   tx: {
     title: "Activity",
@@ -465,21 +468,29 @@ const en: Messages = {
     starterCash: "Cash",
     starterSaving: "Savings account",
     starterCredit: "Credit card",
-    step: "Step {{n}} of 2",
+    step: "Step {{n}} of 3",
     goalsTitle: "Set monthly goals",
     goalsLead: "The app warns you as spending nears your budget. Skip for now and set them later on the Goals screen.",
     skipGoals: "Skip for now",
     suggest: "{{pct}}% of income",
     finish: "Done",
+    next: "Next",
+    notifyTitle: "Install the app and turn on reminders",
+    notifyLead: "Add Tookbaht to your home screen to open it in one tap, then turn on notifications to hear before charges, payment due dates and when a budget runs low.",
   },
   profile: {
     title: "Profile",
-    googleNote: "Signed in with Google · name and photo come from Google",
+    googleNote: "Signed in with Google · your name comes from Google",
+    emailNote: "Signed in with email",
     finance: "Money",
     myAccounts: "My accounts",
     display: "Display",
     currency: "Currency",
     currencyValue: "Thai baht (THB)",
+    currencyLead: "All accounts and entries are in baht. Services priced in dollars are converted at the rate on the billing date, plus your card's fee.",
+    currencyMain: "Main currency",
+    usdRate: "1 US dollar (USD)",
+    usdRateAsOf: "Rate as of {{date}}",
     export: "Export data",
     notifications: "Notifications",
     about: "About",

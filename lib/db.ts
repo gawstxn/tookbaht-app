@@ -193,17 +193,19 @@ const PAGE = 1000;
 
 /** Everything the app shows for the signed-in user. */
 export async function fetchAll(sb: SupabaseClient, userId: string) {
-  const [profile, accounts, subscriptions, goals, transactions, rate] = await Promise.all([
+  const [profile, accounts, subscriptions, goals, transactions, rate, session] = await Promise.all([
     sb.from("profiles").select("name, email, settings, deletion_requested_at").eq("id", userId).single<ProfileRow>(),
     sb.from("accounts").select("*").order("sort_order").order("created_at").returns<AccountRow[]>(),
     sb.from("subscriptions").select("*").order("created_at").returns<SubscriptionRow[]>(),
     sb.from("goals").select("*").eq("user_id", userId).maybeSingle<GoalsRow>(),
     fetchTransactions(sb),
     sb.from("exchange_rates").select("rate, date").eq("currency", "USD").order("date", { ascending: false }).limit(1).maybeSingle<{ rate: Num; date: string }>(),
+    // Read from local storage; no request.
+    sb.auth.getSession(),
   ]);
   for (const r of [profile, accounts, subscriptions, goals]) if (r.error) throw r.error;
 
-  const user: User = { name: profile.data!.name, email: profile.data!.email };
+  const user: User = { name: profile.data!.name, email: profile.data!.email, provider: session.data.session?.user.app_metadata.provider };
   return {
     user,
     settings: { faceLock: false, ...profile.data!.settings },

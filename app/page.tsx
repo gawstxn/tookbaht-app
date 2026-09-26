@@ -7,6 +7,7 @@ import { MonthSwitcher } from "@/components/pickers";
 import { Icon } from "@/components/ui/Icon";
 import { BudgetBannerCard } from "@/components/BudgetBanner";
 import { NotificationBell } from "@/components/notifications";
+import { QuickEntries } from "@/components/QuickEntries";
 import { Bar, Empty, HeroCard, ListCard, SectionHeader, TabHeader } from "@/components/ui/primitives";
 import { budgetBanner } from "@/lib/budget";
 import { formatMoney } from "@/lib/fx";
@@ -63,6 +64,8 @@ export default function OverviewPage() {
       </HeroCard>
 
       <BudgetBannerCard banner={banner} />
+
+      <QuickEntries heading />
 
       <section className="flex flex-col gap-2.5">
         <SectionHeader title={tr("overview.upcoming")} href="/subscriptions" />

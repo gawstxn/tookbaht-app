@@ -1,13 +1,16 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { PushScreen } from "@/components/app";
+import { QuickEntries } from "@/components/QuickEntries";
 import { AccountSheet, DateSheet } from "@/components/pickers";
 import { Icon } from "@/components/ui/Icon";
 import { Chip, PrimaryButton, PushHeader, Segmented, cx } from "@/components/ui/primitives";
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, TYPE_META } from "@/lib/constants";
+import { evaluate, formatExpr, hasOperator, pressKey, type CalcKey } from "@/lib/calc";
 import { addDays, shortDate, todayISO } from "@/lib/format";
+import { entryDefaults } from "@/lib/quick";
 import { accountBalance } from "@/lib/selectors";
 import { useTranslation } from "react-i18next";
 import { formatMoney } from "@/lib/fx";
@@ -38,13 +41,26 @@ function AddForm() {
   const initialType = editing?.type ?? ((["in", "out", "move"].includes(params.get("type") ?? "") ? params.get("type") : "out") as TxType);
   const today = todayISO();
   const { t } = useTranslation();
+  // A new entry starts from the category and account used most for its type.
+  const accountIds = useMemo(() => accounts.map((a) => a.id), [accounts]);
+  const defaultsFor = (type: TxType) => {
+    const d = entryDefaults(txs, type, accountIds);
+    const fromId = d.fromId ?? accounts[0]?.id ?? "";
+    return {
+      category: d.category ?? (type === "in" ? INCOME_CATEGORIES[0].key : EXPENSE_CATEGORIES[0].key),
+      accountId: d.accountId ?? accounts[0]?.id ?? "",
+      fromId,
+      toId: d.toId ?? accounts.find((a) => a.id !== fromId)?.id ?? "",
+    };
+  };
+  const [initial] = useState(() => (editing ? null : defaultsFor(initialType)));
 
   const [type, setType] = useState<TxType>(initialType);
   const [amount, setAmount] = useState(editing ? String(editing.amount) : "");
-  const [cat, setCat] = useState(editing?.category ?? (initialType === "in" ? INCOME_CATEGORIES[0].key : EXPENSE_CATEGORIES[0].key));
-  const [acc, setAcc] = useState(editing?.accountId ?? accounts[0]?.id ?? "");
-  const [from, setFrom] = useState(editing?.fromId ?? accounts[0]?.id ?? "");
-  const [to, setTo] = useState(editing?.toId ?? accounts[1]?.id ?? "");
+  const [cat, setCat] = useState(editing?.category ?? initial?.category ?? EXPENSE_CATEGORIES[0].key);
+  const [acc, setAcc] = useState(editing?.accountId ?? initial?.accountId ?? "");
+  const [from, setFrom] = useState(editing?.fromId ?? initial?.fromId ?? "");
+  const [to, setTo] = useState(editing?.toId ?? initial?.toId ?? "");
   const [date, setDate] = useState(editing?.date ?? today);
   const [note, setNote] = useState(editing?.note ?? "");
   const [sheet, setSheet] = useState<"" | "acc" | "from" | "to" | "date">("");
@@ -58,29 +74,32 @@ function AddForm() {
     acc: type === "move" ? "" : t(`add.acc_${type}`),
     note: t(`add.note_${type}`),
   };
-  const value = parseFloat(amount) || 0;
+  const value = evaluate(amount);
+  const summing = hasOperator(amount);
   const accountOf = (id: string) => accounts.find((a) => a.id === id);
   const canSave = value > 0 && (type !== "move" || (from && to && from !== to));
 
-  const changeType = (t: TxType) => {
-    setType(t);
-    if (t === "in") setCat(INCOME_CATEGORIES[0].key);
-    if (t === "out") setCat(EXPENSE_CATEGORIES[0].key);
+  const changeType = (next: TxType) => {
+    setType(next);
+    if (editing) {
+      if (next === "in") setCat(INCOME_CATEGORIES[0].key);
+      if (next === "out") setCat(EXPENSE_CATEGORIES[0].key);
+      return;
+    }
+    const d = defaultsFor(next);
+    if (next === "move") {
+      setFrom(d.fromId);
+      setTo(d.toId);
+    } else {
+      setCat(d.category);
+      setAcc(d.accountId);
+    }
   };
 
-  const press = (k: string) => {
-    setAmount((a) => {
-      if (k === "del") return a.slice(0, -1);
-      if (k === ".") return a.includes(".") ? a : (a || "0") + ".";
-      const dot = a.indexOf(".");
-      if (dot !== -1 && a.length - dot > 2) return a;
-      if (a.replace(".", "").length >= 9) return a;
-      return a === "0" ? k : a + k;
-    });
-  };
+  const press = (k: CalcKey) => setAmount((a) => pressKey(a, k));
 
-  const [intPart, decPart] = (amount || "0").split(".");
-  const amountText = Number(intPart).toLocaleString("en-US") + (decPart !== undefined ? "." + decPart : "");
+  // While summing ("120 + 85"), the big number is the total and the sum sits above it.
+  const amountText = summing ? value.toLocaleString("en-US", { maximumFractionDigits: 2 }) : formatExpr(amount || "0");
 
   const save = () => {
     if (!canSave) return;
@@ -125,10 +144,12 @@ function AddForm() {
         colorFor={(v) => TYPE_META[v].color}
       />
 
+      {!editing && !amount ? <QuickEntries type={type} onSaved={() => router.push("/")} /> : null}
+
       <output aria-live="polite" className="flex flex-col items-center gap-0.5 py-2">
-        <span className="text-[13px] text-muted">{copy.amountLabel}</span>
+        <span className="max-w-full truncate text-[13px] text-muted">{summing ? <span className="font-mono">{formatExpr(amount)} =</span> : copy.amountLabel}</span>
         <span className="font-mono text-[44px] font-semibold leading-tight tracking-tight" style={{ color: meta.color }}>
-          {meta.sign}฿{amountText}
+          {value < 0 ? "−" : meta.sign}฿{amountText.replace("-", "")}
         </span>
       </output>
       {editing?.origAmount && editing.fxRate ? (
@@ -193,16 +214,16 @@ function AddForm() {
         />
       </div>
 
-      <div className="mt-auto grid grid-cols-3 gap-1.5">
-        {["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "del"].map((k) => (
+      <div className="mt-auto grid grid-cols-4 gap-1.5">
+        {KEYS.map((k) => (
           <button
             key={k}
             type="button"
-            aria-label={k === "del" ? t("add.del") : k}
+            aria-label={k === "del" ? t("add.del") : k === "+" ? t("add.plus") : k === "-" ? t("add.minus") : k === "*" ? t("add.times") : k}
             onClick={() => press(k)}
-            className={cx("flex min-h-[50px] items-center justify-center rounded-xl font-mono text-[22px] font-medium", k === "del" || k === "." ? "bg-chip" : "bg-card")}
+            className={cx("flex min-h-[50px] items-center justify-center rounded-xl font-mono text-[22px] font-medium", /[0-9]/.test(k) ? "bg-card" : "bg-chip", k === "del" && "col-span-2")}
           >
-            {k === "del" ? <Icon name="del" size={24} /> : k}
+            {k === "del" ? <Icon name="del" size={24} /> : (OP_LABEL[k] ?? k)}
           </button>
         ))}
       </div>
@@ -229,6 +250,10 @@ function AddForm() {
     </PushScreen>
   );
 }
+
+/** Number pad with + − × down the right; the entry saves the total. */
+const KEYS: CalcKey[] = ["1", "2", "3", "+", "4", "5", "6", "-", "7", "8", "9", "*", ".", "0", "del"];
+const OP_LABEL: Partial<Record<CalcKey, string>> = { "+": "+", "-": "−", "*": "×" };
 
 function FieldButton({ label, value, onClick }: { label: string; value: string; onClick: () => void }) {
   return (

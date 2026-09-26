@@ -60,7 +60,8 @@ interface Actions {
   /** Resolves false when the account is still used by transactions or subscriptions. */
   removeAccount: (id: string) => Promise<boolean>;
 
-  addTransaction: (t: Omit<Transaction, "id" | "createdAt">) => void;
+  /** Save a new entry; `undoable` puts an undo button on the toast (one-tap quick entries). */
+  addTransaction: (t: Omit<Transaction, "id" | "createdAt">, opts?: { undoable?: boolean }) => string;
   /** Edit a saved transaction. Correcting a USD charge also learns the card's real FX fee. */
   updateTransaction: (id: string, patch: Partial<Omit<Transaction, "id" | "createdAt">>) => void;
   /** Make sure a recent USD rate is loaded (fetches one when stored rates are old). */
@@ -219,10 +220,20 @@ export const useStore = create<State & Actions>()((set, get) => {
       return done;
     },
 
-    addTransaction: (input) => {
+    addTransaction: (input, opts) => {
       const tx: Transaction = { ...input, id: crypto.randomUUID(), createdAt: Date.now() };
-      void insertTransaction(tx);
-      ok(t("toast.txSaved", { type: tx.type === "move" ? t("type.moveLong") : TYPE_META[tx.type].label, amount: baht(tx.amount) }));
+      const saved = insertTransaction(tx);
+      const undo = () =>
+        void saved.then((done) => {
+          if (!done) return;
+          set((s) => ({ transactions: s.transactions.filter((x) => x.id !== tx.id) }));
+          void save(sb().from("transactions").delete().eq("id", tx.id), () => set((s) => ({ transactions: [...s.transactions, tx] })));
+        });
+      ok(
+        t("toast.txSaved", { type: tx.type === "move" ? t("type.moveLong") : TYPE_META[tx.type].label, amount: baht(tx.amount) }),
+        opts?.undoable ? { label: UNDO(), run: undo } : undefined,
+      );
+      return tx.id;
     },
     updateTransaction: (id, patch) => {
       const prev = get().transactions.find((x) => x.id === id);

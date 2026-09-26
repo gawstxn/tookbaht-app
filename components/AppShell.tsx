@@ -8,6 +8,7 @@ import { applyTheme, followSystemTheme, themePref } from "@/lib/theme";
 import { isManualBack, notifyPathCommitted } from "@/lib/nav";
 import { hasPendingReauth, takeReauth } from "@/lib/reauth";
 import { setUnlocked, writeLock } from "@/lib/appLock";
+import { preloadBrandLogos } from "@/lib/brandLogos";
 import { shortDate, toISO } from "@/lib/format";
 import { TERMS_VERSION } from "@/lib/legal";
 import { TermsGate } from "./TermsConsent";
@@ -43,6 +44,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // Pages prerender in Thai; switch to the saved/device language once in the browser.
   useEffect(() => {
     applyLang(preferredLang());
+  }, []);
+
+  // Logos are a separate chunk; fetch it while the user's data loads.
+  useEffect(() => {
+    void preloadBrandLogos();
   }, []);
 
   // The boot script already set the theme; keep "system" in step with the OS.
