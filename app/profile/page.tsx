@@ -25,7 +25,7 @@ export default function ProfilePage() {
   const { user, userId, accounts, transactions, subscriptions, ious, savingsGoals, goals, settings, usdRate, signOut, setLanguage, setSettings, load, notify } = useStore();
   const owedCount = useMemo(() => debtsByPerson(ious).length, [ious]);
   const { t: tr } = useTranslation();
-  const [sheet, setSheet] = useState<"" | "logout" | "delete" | "restore" | "lang" | "theme" | "lock" | "currency" | "feedback">("");
+  const [sheet, setSheet] = useState<"" | "logout" | "delete" | "restore" | "lang" | "theme" | "lock" | "currency" | "feedback" | "data" | "account">("");
   // Per-device setting, read after mount (profile only renders once data has loaded).
   const [lock, setLock] = useState(readLock);
   const [restoring, setRestoring] = useState<BackupData | null>(null);
@@ -126,10 +126,7 @@ export default function ProfilePage() {
         <NavRow label={tr("profile.myAccounts")} value={tr("common.accounts", { count: accounts.length })} onClick={() => router.push("/accounts")} />
         <NavRow label={tr("ious.title")} value={owedCount ? tr("ious.people", { count: owedCount }) : undefined} onClick={() => router.push("/ious")} />
         <NavRow label={tr("savings.title")} value={savingsGoals.length ? String(savingsGoals.length) : undefined} onClick={() => router.push("/goals")} />
-        <NavRow label={tr("profile.currency")} value={tr("profile.currencyValue")} onClick={() => setSheet("currency")} />
-        <NavRow label={tr("profile.export")} value="CSV" icon="download" onClick={exportCsv} />
-        <NavRow label={tr("profile.backup")} value="JSON" icon="download" onClick={exportBackup} />
-        <NavRow label={tr("profile.restore")} onClick={() => fileInput.current?.click()} />
+        <NavRow label={tr("profile.myData")} value={tr("profile.myDataValue")} onClick={() => setSheet("data")} />
       </Group>
       <input
         ref={fileInput}
@@ -145,6 +142,7 @@ export default function ProfilePage() {
       <Group title={tr("profile.display")}>
         <NavRow label={tr("lang.title")} value={langOptions.find((o) => o.value === currentLang())?.label} onClick={() => setSheet("lang")} />
         <NavRow label={tr("theme.title")} value={themeOptions.find((o) => o.value === theme)?.label} onClick={() => setSheet("theme")} />
+        <NavRow label={tr("profile.currency")} value={tr("profile.currencyValue")} onClick={() => setSheet("currency")} />
       </Group>
 
       <Group title={tr("lock.group")}>
@@ -175,20 +173,10 @@ export default function ProfilePage() {
       </Group>
 
       <Group title={tr("profile.account")}>
+        <NavRow label={tr("profile.manageAccount")} onClick={() => setSheet("account")} />
         <button type="button" onClick={() => setSheet("logout")} className="flex min-h-[52px] w-full items-center gap-3 text-left text-[15px]">
           <Icon name="logout" size={18} />
           {tr("profile.logout")}
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setConfirmed(false);
-            setSheet("delete");
-          }}
-          className="flex min-h-[52px] w-full items-center gap-3 text-left text-[15px] text-danger"
-        >
-          <Icon name="trash" size={18} />
-          {tr("profile.delete")}
         </button>
       </Group>
 
@@ -251,6 +239,45 @@ export default function ProfilePage() {
           </div>
         </ListCard>
         <PrimaryButton onClick={() => setSheet("")}>{tr("common.gotIt")}</PrimaryButton>
+      </Sheet>
+
+      <Sheet open={sheet === "data"} onClose={() => setSheet("")} title={tr("profile.myData")}>
+        <ListCard>
+          <SheetRow icon="download" label={tr("profile.export")} hint={tr("profile.exportHint")} onClick={exportCsv} />
+          <SheetRow icon="download" label={tr("profile.backup")} hint={tr("profile.backupHint")} onClick={exportBackup} />
+          <SheetRow
+            icon="upload"
+            label={tr("profile.restore")}
+            hint={tr("profile.restoreHint")}
+            onClick={() => {
+              setSheet("");
+              fileInput.current?.click();
+            }}
+          />
+        </ListCard>
+      </Sheet>
+
+      <Sheet open={sheet === "account"} onClose={() => setSheet("")} title={tr("profile.manageAccount")}>
+        <ListCard>
+          <div className="flex min-h-[52px] items-center justify-between gap-3">
+            <span className="text-[15px]">{tr("profile.signedInAs")}</span>
+            <span className="truncate text-[13px] text-muted">{user?.email}</span>
+          </div>
+          <div className="flex min-h-[52px] items-center justify-between gap-3">
+            <span className="text-[15px]">{tr("profile.signInWith")}</span>
+            <span className="text-[13px] text-muted">{user?.provider === "google" ? "Google" : tr("profile.emailProvider")}</span>
+          </div>
+        </ListCard>
+        <p className="text-xs leading-relaxed text-muted">{tr("profile.deleteIntro")}</p>
+        <SecondaryButton
+          tone="danger"
+          onClick={() => {
+            setConfirmed(false);
+            setSheet("delete");
+          }}
+        >
+          {tr("profile.delete")}
+        </SecondaryButton>
       </Sheet>
 
       <FeedbackSheet open={sheet === "feedback"} onClose={() => setSheet("")} />
@@ -335,6 +362,20 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
       <h2 className="text-base font-semibold">{title}</h2>
       <ListCard>{children}</ListCard>
     </section>
+  );
+}
+
+function SheetRow({ icon, label, hint, onClick }: { icon: "download" | "upload"; label: string; hint: string; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="flex min-h-[60px] w-full items-center gap-3 py-2 text-left">
+      <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-chip">
+        <Icon name={icon} size={18} strokeWidth={2} />
+      </span>
+      <span className="flex min-w-0 grow flex-col">
+        <span className="text-[15px] font-medium">{label}</span>
+        <span className="text-xs text-muted">{hint}</span>
+      </span>
+    </button>
   );
 }
 
