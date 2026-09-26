@@ -24,7 +24,9 @@
 - [Project structure](#project-structure)
 - [Deploying](#deploying)
 - [Scheduled jobs](#scheduled-jobs)
+- [Security](#security)
 - [Credits](#credits)
+- [License](#license)
 
 ## Features
 
@@ -146,8 +148,18 @@ public/sw.js public/ocr/     Service worker; slip reader data
 - **Evening push** (Vercel Cron, 20:00 Bangkok): a nudge to log, only for users who turned it on and logged nothing that day.
 - Push works on production builds only; on iPhone the app must be installed to the home screen (iOS 16.4+).
 
+## Security
+
+Found a vulnerability? Please report it privately: see [SECURITY.md](SECURITY.md).
+
 ## Credits
 
 - Service logos from [Simple Icons](https://simpleicons.org) (CC0). Names and logos are trademarks of their owners, shown only to identify each service.
 - Slip reading by [tesseract.js](https://github.com/naptha/tesseract.js) (Apache-2.0) with the Thai model from [tessdata_fast](https://github.com/tesseract-ocr/tessdata_fast) (Apache-2.0).
 - Fonts: IBM Plex Sans Thai, IBM Plex Mono, Noto Serif Thai.
+
+## License
+
+© 2026 gawstxn. All rights reserved.
+
+The source is published so people can read and learn from it. No license is granted to copy, modify, redistribute, or use it in another product or service. Third-party parts keep their own licenses (see Credits).
