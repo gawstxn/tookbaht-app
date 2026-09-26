@@ -1,5 +1,5 @@
 import { categoryLabel } from "./constants";
-import { baht } from "./format";
+import { baht, monthKey } from "./format";
 import { t } from "./i18n";
 import { daysLeftInMonth, spendByCategory, summarize } from "./selectors";
 import type { Goals, Transaction } from "./types";
@@ -23,6 +23,23 @@ export function budgetLines(goals: Goals, monthTxs: Transaction[]) {
     ? { key: "total", label: t("cat.total"), budget: goals.expenseBudget, spent: expense, pct: expense / goals.expenseBudget }
     : null;
   return { cats, total };
+}
+
+export interface DailyAllowance {
+  /** The budget left at the start of today, spread over the days left (today included). */
+  perDay: number;
+  spentToday: number;
+  /** What can still be spent today; negative once today went over. */
+  left: number;
+}
+
+/** Today's share of the monthly budget, for the current month only (null without an overall budget). */
+export function dailyAllowance(goals: Goals, monthTxs: Transaction[], month: string, today: string): DailyAllowance | null {
+  if (goals.expenseBudget <= 0 || monthKey(today) !== month) return null;
+  const before = summarize(monthTxs.filter((t) => t.date < today)).expense;
+  const spentToday = summarize(monthTxs.filter((t) => t.date === today)).expense;
+  const perDay = Math.max(0, goals.expenseBudget - before) / (daysLeftInMonth(month, today) + 1);
+  return { perDay, spentToday, left: perDay - spentToday };
 }
 
 export type BannerTone = "critical" | "danger" | "warn" | "ok" | "setup";

@@ -9,8 +9,8 @@ import { BudgetBannerCard } from "@/components/BudgetBanner";
 import { NotificationBell } from "@/components/notifications";
 import { QuickEntries } from "@/components/QuickEntries";
 import { TxDetailSheet } from "@/components/TxDetailSheet";
-import { Bar, Empty, HeroCard, ListCard, SectionHeader, TabHeader } from "@/components/ui/primitives";
-import { budgetBanner } from "@/lib/budget";
+import { Bar, Card, Empty, HeroCard, ListCard, SectionHeader, TabHeader, cx } from "@/components/ui/primitives";
+import { budgetBanner, dailyAllowance } from "@/lib/budget";
 import { formatMoney } from "@/lib/fx";
 import { baht, splitDecimals, todayISO } from "@/lib/format";
 import { debtsByPerson } from "@/lib/ious";
@@ -34,6 +34,7 @@ export default function OverviewPage() {
     [month],
   );
   const banner = budgetBanner(goals, month, viewMonth, today);
+  const allowance = useMemo(() => dailyAllowance(goals, month, viewMonth, today), [goals, month, viewMonth, today]);
   const [whole, dec] = splitDecimals(sum.net);
   const incomePct = goals.incomeTarget ? sum.income / goals.incomeTarget : 0;
   const expensePct = goals.expenseBudget ? sum.expense / goals.expenseBudget : 0;
@@ -67,6 +68,26 @@ export default function OverviewPage() {
           </span>
         </Link>
       </HeroCard>
+
+      {allowance ? (
+        <Card className="flex flex-col gap-2 px-4 py-3.5">
+          <div className="flex items-end justify-between gap-3">
+            <span className="flex flex-col">
+              <span className="text-[13px] text-muted">{allowance.left >= 0 ? tr("allowance.left") : tr("allowance.over")}</span>
+              <span className={cx("font-mono text-[24px] font-semibold leading-tight", allowance.left < 0 && "text-expense")}>{baht(Math.abs(allowance.left))}</span>
+            </span>
+            <span className="text-right text-xs text-muted">
+              {tr("allowance.spent", { spent: baht(allowance.spentToday), perDay: baht(allowance.perDay) })}
+            </span>
+          </div>
+          <Bar
+            value={allowance.perDay > 0 ? allowance.spentToday / allowance.perDay : allowance.spentToday > 0 ? 1 : 0}
+            height={6}
+            track="var(--color-divider)"
+            color={allowance.left < 0 ? "var(--color-expense)" : "var(--color-income)"}
+          />
+        </Card>
+      ) : null}
 
       <BudgetBannerCard banner={banner} />
 

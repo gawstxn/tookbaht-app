@@ -14,6 +14,7 @@ export function ConfirmSheet({
   lead,
   confirmLabel,
   onConfirm,
+  tone = "danger",
 }: {
   open: boolean;
   onClose: () => void;
@@ -21,12 +22,14 @@ export function ConfirmSheet({
   lead: string;
   confirmLabel: string;
   onConfirm: () => void;
+  /** "ink" for a plain "are you sure?" that isn't a delete. */
+  tone?: "danger" | "ink";
 }) {
   const { t } = useTranslation();
   return (
-    <Sheet open={open} onClose={onClose} title={title} titleClassName="text-danger">
+    <Sheet open={open} onClose={onClose} title={title} titleClassName={tone === "danger" ? "text-danger" : undefined}>
       <p className="text-sm text-muted">{lead}</p>
-      <PrimaryButton once tone="danger" onClick={onConfirm}>
+      <PrimaryButton once tone={tone} onClick={onConfirm}>
         {confirmLabel}
       </PrimaryButton>
       <SecondaryButton onClick={onClose}>{t("common.cancel")}</SecondaryButton>

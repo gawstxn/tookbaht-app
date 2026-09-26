@@ -57,6 +57,28 @@ function mostCommon<T>(values: T[]): T | undefined {
   return best;
 }
 
+/**
+ * An entry just like this one logged moments ago (same type, amount, day,
+ * category and account or transfer route), e.g. the save button tapped twice.
+ */
+export function recentDuplicate(
+  txs: Transaction[],
+  entry: Pick<Transaction, "type" | "amount" | "date" | "category" | "accountId" | "fromId" | "toId">,
+  now: number,
+  withinMs = 10 * 60_000,
+): Transaction | undefined {
+  return manual(txs)
+    .filter(
+      (t) =>
+        t.type === entry.type &&
+        t.amount === entry.amount &&
+        t.date === entry.date &&
+        now - t.createdAt <= withinMs &&
+        (t.type === "move" ? t.fromId === entry.fromId && t.toId === entry.toId : t.category === entry.category && t.accountId === entry.accountId),
+    )
+    .sort(newestFirst)[0];
+}
+
 export interface EntryDefaults {
   category?: string;
   accountId?: string;

@@ -1,23 +1,24 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useMemo, useRef, useState } from "react";
 import { PushScreen } from "@/components/app";
+import { ConfirmSheet } from "@/components/ConfirmSheet";
 import { QuickEntries } from "@/components/QuickEntries";
 import { AccountSheet, DateSheet } from "@/components/pickers";
 import { Icon } from "@/components/ui/Icon";
 import { Chip, PrimaryButton, PushHeader, Segmented, cx } from "@/components/ui/primitives";
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, TYPE_META } from "@/lib/constants";
 import { evaluate, formatExpr, hasOperator, pressKey, type CalcKey } from "@/lib/calc";
-import { addDays, shortDate, todayISO } from "@/lib/format";
-import { entryDefaults } from "@/lib/quick";
+import { addDays, baht2, shortDate, todayISO } from "@/lib/format";
+import { entryDefaults, recentDuplicate } from "@/lib/quick";
 import { accountBalance } from "@/lib/selectors";
 import { useTranslation } from "react-i18next";
 import { formatMoney } from "@/lib/fx";
 import { useGoBack } from "@/lib/nav";
 import { useStore } from "@/lib/store";
-import { isDefaultTitle } from "@/lib/txTitle";
-import type { TxType } from "@/lib/types";
+import { isDefaultTitle, txTitle } from "@/lib/txTitle";
+import type { Transaction, TxType } from "@/lib/types";
 
 
 export default function AddPage() {
@@ -104,8 +105,11 @@ function AddForm() {
   // While summing ("120 + 85"), the big number is the total and the sum sits above it.
   const amountText = summing ? value.toLocaleString("en-US", { maximumFractionDigits: 2 }) : formatExpr(amount || "0");
 
-  const save = () => {
-    if (!canSave) return;
+  const saving = useRef(false);
+  const [duplicate, setDuplicate] = useState<{ tx: Transaction; minutes: number } | null>(null);
+
+  const save = (confirmedDuplicate = false) => {
+    if (!canSave || saving.current) return;
     const catLabel = cats.find((c) => c.key === cat)?.label ?? "";
     const fallback = type === "move" ? t("add.transferTo", { name: accountOf(to)?.name ?? "" }) : catLabel;
     // Keep a title the user or a subscription set (e.g. "Claude Pro") unless a note replaces it.
@@ -115,6 +119,12 @@ function AddForm() {
       type === "move"
         ? { type, amount: value, date, title, note: undefined, category: undefined, accountId: undefined, fromId: from, toId: to }
         : { type, amount: value, date, title, note: note.trim() || undefined, category: cat, accountId: acc, fromId: undefined, toId: undefined };
+    if (!editing && !confirmedDuplicate) {
+      const now = clock();
+      const dup = recentDuplicate(txs, fields, now);
+      if (dup) return setDuplicate({ tx: dup, minutes: Math.max(1, Math.round((now - dup.createdAt) / 60_000)) });
+    }
+    saving.current = true;
     if (editing) {
       updateTransaction(editing.id, fields);
       goBack();
@@ -254,7 +264,7 @@ function AddForm() {
         ))}
       </div>
 
-      <PrimaryButton once onClick={save} disabled={!canSave}>
+      <PrimaryButton onClick={() => save()} disabled={!canSave}>
         {copy.save}
       </PrimaryButton>
 
@@ -273,9 +283,24 @@ function AddForm() {
           { label: t("common.yesterday"), value: addDays(today, -1) },
         ]}
       />
+      <ConfirmSheet
+        tone="ink"
+        open={!!duplicate}
+        onClose={() => setDuplicate(null)}
+        title={t("dup.title")}
+        lead={duplicate ? t("dup.lead", { amount: baht2(duplicate.tx.amount), title: txTitle(duplicate.tx, accounts), minutes: duplicate.minutes }) : ""}
+        confirmLabel={t("dup.save")}
+        onConfirm={() => {
+          setDuplicate(null);
+          save(true);
+        }}
+      />
     </PushScreen>
   );
 }
+
+/** Current time; read when saving (an event), not while rendering. */
+const clock = () => Date.now();
 
 /** Number pad with + − × down the right (unless turned off in Profile); the entry saves the total. */
 const MATH_KEYS: CalcKey[] = ["1", "2", "3", "+", "4", "5", "6", "-", "7", "8", "9", "*", ".", "0", "del"];

@@ -1,24 +1,14 @@
-import webpush from "web-push";
 import { NextResponse, type NextRequest } from "next/server";
-import { budgetText, chargeText, dueText, summaryText, type Lang, type PendingBudget, type PendingDue, type PendingReminder, type PendingSummary } from "@/lib/pushText";
+import { pusherFor, setUpVapid } from "@/lib/push";
+import { budgetText, chargeText, dueText, summaryText, type PendingBudget, type PendingDue, type PendingReminder, type PendingSummary } from "@/lib/pushText";
 import { refreshUsdRate } from "@/lib/rates";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
-
-/** Browser push services (mirrors public.is_push_endpoint in the database). */
-const PUSH_ENDPOINT = /^https:\/\/(fcm\.googleapis\.com|updates\.push\.services\.mozilla\.com|web\.push\.apple\.com|[a-z0-9-]+\.notify\.windows\.com)\//;
-
-interface PushTarget {
-  id: string;
-  user_id: string;
-  endpoint: string;
-  p256dh: string;
-  auth: string;
-}
 
 /**
  * Daily job (vercel.json, 09:00 Bangkok): push reminders for charges due
  * tomorrow, card / pay-later payments due tomorrow, and budgets that reached
- * 80% or went over, and last month's summary early in a new month. Called by Vercel Cron with `Authorization: Bearer $CRON_SECRET`.
+ * 80% or went over, and last month's summary early in a new month. Called
+ * by Vercel Cron with `Authorization: Bearer $CRON_SECRET`.
  * Each kind is recorded once delivered, so a retried run doesn't repeat it.
  */
 export async function GET(request: NextRequest) {
@@ -26,12 +16,8 @@ export async function GET(request: NextRequest) {
   if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-
-  const { NEXT_PUBLIC_VAPID_PUBLIC_KEY: publicKey, VAPID_PRIVATE_KEY: privateKey, VAPID_SUBJECT: subject } = process.env;
-  if (!publicKey || !privateKey || !subject) {
-    return NextResponse.json({ error: "VAPID keys are not configured" }, { status: 500 });
-  }
-  webpush.setVapidDetails(subject, publicKey, privateKey);
+  const vapidError = setUpVapid();
+  if (vapidError) return NextResponse.json({ error: vapidError }, { status: 500 });
 
   const db = createSupabaseAdmin();
   // Daily job: also keep the USD rate fresh for auto-logging foreign subscriptions.
@@ -51,37 +37,13 @@ export async function GET(request: NextRequest) {
   const userIds = [...new Set([...pending, ...pendingDue, ...pendingBudget, ...pendingSummary].map((r) => r.user_id))];
   if (!userIds.length) return NextResponse.json({ reminders: 0, sent: 0 });
 
-  // Each user's chosen language (profiles.settings.lang); Thai when unset.
-  const { data: profiles } = await db.from("profiles").select("id, settings").in("id", userIds);
-  const langOf = new Map<string, Lang>((profiles ?? []).map((p: { id: string; settings: { lang?: string } | null }) => [p.id, p.settings?.lang === "en" ? "en" : "th"]));
-  const { data: targets, error: targetsError } = await db
-    .from("push_subscriptions")
-    .select("id, user_id, endpoint, p256dh, auth")
-    .in("user_id", userIds)
-    .returns<PushTarget[]>();
-  if (targetsError) return NextResponse.json({ error: targetsError.message }, { status: 500 });
-
-  let sent = 0;
-  const gone = new Set<string>();
-  /** Push to every device of the user; true when at least one accepted it. */
-  const push = async (userId: string, message: { title: string; body: string; url: string; tag: string }) => {
-    const payload = JSON.stringify(message);
-    let ok = false;
-    for (const t of targets.filter((x) => x.user_id === userId && !gone.has(x.id) && PUSH_ENDPOINT.test(x.endpoint))) {
-      try {
-        await webpush.sendNotification({ endpoint: t.endpoint, keys: { p256dh: t.p256dh, auth: t.auth } }, payload, { TTL: 60 * 60 * 12 });
-        ok = true;
-        sent++;
-      } catch (e) {
-        const status = (e as { statusCode?: number }).statusCode;
-        // The browser dropped this subscription; stop sending to it.
-        if (status === 404 || status === 410) gone.add(t.id);
-        else console.error("push failed", status, e);
-      }
-    }
-    return ok;
-  };
-  const lang = (userId: string) => langOf.get(userId) ?? "th";
+  let pusher: Awaited<ReturnType<typeof pusherFor>>;
+  try {
+    pusher = await pusherFor(db, userIds);
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+  }
+  const { push, lang } = pusher;
 
   const deliveredCharges: { subscription_id: string; due_date: string }[] = [];
   for (const r of pending) {
@@ -99,14 +61,13 @@ export async function GET(request: NextRequest) {
     // Going over also covers the 80% warning, so it isn't sent afterwards.
     if (ok) for (const level of r.level === 100 ? [80, 100] : [80]) deliveredBudget.push({ user_id: r.user_id, month: r.month, budget_key: r.budget_key, level });
   }
-
   const deliveredSummary: { user_id: string; month: string }[] = [];
   for (const r of pendingSummary) {
     const ok = await push(r.user_id, { ...summaryText(lang(r.user_id), r), url: "/insights", tag: `summary-${r.month}` });
     if (ok) deliveredSummary.push({ user_id: r.user_id, month: r.month });
   }
 
-  if (gone.size) await db.from("push_subscriptions").delete().in("id", [...gone]);
+  const { sent, removed } = await pusher.finish();
   const logs = await Promise.all([
     deliveredCharges.length ? db.from("reminders_sent").upsert(deliveredCharges, { ignoreDuplicates: true }) : null,
     deliveredDue.length ? db.from("due_reminders_sent").upsert(deliveredDue, { ignoreDuplicates: true }) : null,
@@ -114,5 +75,5 @@ export async function GET(request: NextRequest) {
     deliveredSummary.length ? db.from("month_summaries_sent").upsert(deliveredSummary, { ignoreDuplicates: true }) : null,
   ]);
   for (const l of logs) if (l?.error) console.error(l.error);
-  return NextResponse.json({ reminders: pending.length, due: pendingDue.length, budgets: pendingBudget.length, summaries: pendingSummary.length, sent, removed: gone.size });
+  return NextResponse.json({ reminders: pending.length, due: pendingDue.length, budgets: pendingBudget.length, summaries: pendingSummary.length, sent, removed });
 }

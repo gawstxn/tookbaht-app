@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { budgetBanner } from "@/lib/budget";
+import { budgetBanner, dailyAllowance } from "@/lib/budget";
 import type { Goals, Transaction } from "@/lib/types";
 
 let n = 0;
@@ -46,5 +46,27 @@ describe("budget banner, most urgent first", () => {
   it("puts the overall budget first once it is exceeded", () => {
     const b = banner(goals(30000, { shop: 5000, food: 8000, fun: 1000 }), [spend("shop", 7000), spend("food", 9000), spend("fun", 1500), spend("bill", 14350)]);
     expect(b).toMatchObject({ tone: "critical", amount: "฿1,850", count: 3 });
+  });
+});
+
+describe("today's allowance", () => {
+  const goals = { incomeTarget: 0, expenseBudget: 3000, categoryBudgets: {}, alertAt80: true };
+  const out = (amount: number, date: string) => ({ id: date + amount, type: "out" as const, amount, date, title: "", category: "food", accountId: "a", createdAt: 1 });
+
+  it("spreads what's left over the days left, today included", () => {
+    // 30-day month, 1,500 spent before the 16th: 1,500 over 15 days.
+    const a = dailyAllowance(goals, [out(1500, "2026-09-10"), out(40, "2026-09-16")], "2026-09", "2026-09-16")!;
+    expect(a.perDay).toBe(100);
+    expect(a.spentToday).toBe(40);
+    expect(a.left).toBe(60);
+  });
+
+  it("goes negative once today is over its share", () => {
+    expect(dailyAllowance(goals, [out(3000, "2026-09-10"), out(50, "2026-09-16")], "2026-09", "2026-09-16")!.left).toBe(-50);
+  });
+
+  it("is only for the current month with an overall budget", () => {
+    expect(dailyAllowance(goals, [], "2026-08", "2026-09-16")).toBeNull();
+    expect(dailyAllowance({ ...goals, expenseBudget: 0 }, [], "2026-09", "2026-09-16")).toBeNull();
   });
 });

@@ -35,6 +35,7 @@ export const NOTIF_STYLE: Record<NotifKind, { icon: IconName; bg: string; fg: st
   income: { icon: "target", bg: "var(--color-income-tint)", fg: "var(--color-income)" },
   weekly: { icon: "chart", bg: "var(--color-chip)", fg: "var(--color-ink)" },
   summary: { icon: "chart", bg: "var(--color-lime-tint)", fg: "var(--color-lime-ink)" },
+  price: { icon: "tag", bg: "var(--color-warn-tint)", fg: "var(--color-warn-ink)" },
 };
 
 /** Header bell with an unread badge. */

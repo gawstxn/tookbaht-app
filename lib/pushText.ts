@@ -81,6 +81,13 @@ export function summaryText(lang: Lang, r: PendingSummary) {
   return { title: `สรุปเดือน${month}`, body: over.length ? `${body}\nเกินงบ: ${over.join(", ")}` : body };
 }
 
+/** Evening nudge when nothing was logged today. */
+export function logReminderText(lang: Lang) {
+  return lang === "en"
+    ? { title: "Anything to log today?", body: "Tap to add today's spending before you forget" }
+    : { title: "วันนี้จดรายการหรือยัง?", body: "แตะเพื่อจดรายจ่ายของวันนี้ก่อนลืม" };
+}
+
 export function budgetText(lang: Lang, r: PendingBudget) {
   const cats = (lang === "en" ? en.cat : th.cat) as Record<string, string>;
   const label = r.budget_key === "total" ? (lang === "en" ? "Overall budget" : "งบรวม") : (cats[r.budget_key] ?? r.budget_key);

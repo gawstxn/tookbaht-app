@@ -132,4 +132,6 @@ export interface Settings {
   monthlySummary?: boolean;
   /** + − × keys on the add screen's keypad (on unless false). */
   keypadMath?: boolean;
+  /** Evening push (20:00) when nothing was logged that day (off unless true). */
+  dailyReminder?: boolean;
 }
