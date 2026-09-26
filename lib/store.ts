@@ -661,7 +661,13 @@ export const useStore = create<State & Actions>()((set, get) => {
       applyLang(lang);
       if (get().userId) get().setSettings({ lang });
     },
-    acceptTerms: () => get().setSettings({ termsAcceptedVersion: TERMS_VERSION, termsAcceptedAt: new Date().toISOString() }),
+    acceptTerms: () =>
+      get().setSettings({
+        termsAcceptedVersion: TERMS_VERSION,
+        termsAcceptedAt: new Date().toISOString(),
+        // First-time users (onboarding accepts the terms) have nothing "new" to catch up on.
+        ...(get().accounts.length === 0 ? { lastSeenVersion: process.env.NEXT_PUBLIC_APP_VERSION } : {}),
+      }),
     markNotificationRead: (id) => {
       const ids = get().settings.notifReadIds ?? [];
       if (ids.includes(id)) return;

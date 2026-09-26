@@ -101,7 +101,7 @@ export function findAmount(text: string): number | undefined {
 
 const NAME = /^(นาย|นาง|น\.ส\.|นางสาว|ด\.?[ชญ]\.?|บจก|บริษัท|บมจ|หจก|ร้าน|mr\.?|mrs\.?|ms\.?|miss)\s*/i;
 
-/** Receiver: the second name on the slip (the first is the sender), or the line after "ไปยัง" / "To". */
+/** Receiver: the line after "ไปยัง" / "ผู้รับ" / "To", else the second name on the slip (the first is the sender). */
 export function findReceiver(text: string): string | undefined {
   const lines = text.split(/\n/).map((l) => l.trim()).filter(Boolean);
   // \b doesn't work after Thai letters, so look for a colon, a space or the end instead.
@@ -111,9 +111,9 @@ export function findReceiver(text: string): string | undefined {
     if (rest) return clean(rest);
     if (lines[to + 1]) return clean(lines[to + 1]);
   }
+  // With only one name it's usually the payer (e.g. paying a shop by QR), so don't guess.
   const names = lines.filter((l) => NAME.test(l));
-  const pick = names.length >= 2 ? names[1] : names[0];
-  return pick ? clean(pick) : undefined;
+  return names.length >= 2 ? clean(names[1]) : undefined;
 }
 
 /** The memo ("บันทึกช่วยจำ: ค่าข้าว"). */
