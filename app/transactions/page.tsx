@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { TabScreen, TxRow } from "@/components/app";
 import { TxDetailSheet } from "@/components/TxDetailSheet";
 import { DateSheet, MonthSwitcher } from "@/components/pickers";
@@ -14,6 +14,9 @@ import { txTitle } from "@/lib/txTitle";
 import { useStore } from "@/lib/store";
 import { knownTags } from "@/lib/tags";
 import type { Transaction, TxType } from "@/lib/types";
+
+/** Days drawn per step while scrolling the list. */
+const PAGE_DAYS = 10;
 
 type Filter = "all" | TxType;
 
@@ -52,6 +55,25 @@ export default function TransactionsPage() {
     for (const t of rows) map.set(t.date, [...(map.get(t.date) ?? []), t]);
     return [...map.entries()].map(([date, items]) => ({ date, items, net: summarize(items).net }));
   }, [month, filter, query, accounts]);
+
+  // Draw the first days now and the rest as the list scrolls (a tag or date
+  // range can span thousands of entries).
+  const [shown, setShown] = useState(PAGE_DAYS);
+  const [shownFor, setShownFor] = useState(groups);
+  if (shownFor !== groups) {
+    setShownFor(groups);
+    setShown(PAGE_DAYS);
+  }
+  const more = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = more.current;
+    if (!el) return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) setShown((n) => n + PAGE_DAYS);
+    }, { rootMargin: "600px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [shown, groups]);
 
   return (
     <TabScreen>
@@ -118,8 +140,8 @@ export default function TransactionsPage() {
       </div>
 
       {groups.length ? (
-        groups.map((g) => (
-          <section key={g.date} className="flex flex-col gap-1.5">
+        groups.slice(0, shown).map((g) => (
+          <section key={g.date} className="flex flex-col gap-1.5 [contain-intrinsic-size:auto_220px] [content-visibility:auto]">
             <div className="flex items-baseline justify-between px-0.5">
               <h2 className="text-[13px] font-semibold text-muted">{dayHeading(g.date, today)}</h2>
               {g.net !== 0 ? (
@@ -139,6 +161,7 @@ export default function TransactionsPage() {
       ) : (
         <Empty>{query || active.length || ranged ? tr("tx.notFound") : tr("tx.none")}</Empty>
       )}
+      {shown < groups.length ? <div ref={more} aria-hidden="true" className="h-px" /> : null}
 
       <FilterSheet open={filterSheet} value={scope} onClose={() => setFilterSheet(false)} onApply={setScope} />
 

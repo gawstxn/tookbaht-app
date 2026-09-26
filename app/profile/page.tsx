@@ -4,15 +4,11 @@ import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import { TabScreen } from "@/components/app";
 import { Icon } from "@/components/ui/Icon";
-import { PushToggle } from "@/components/PushToggle";
-import { LockSettings } from "@/components/LockSettings";
-import { readLock } from "@/lib/appLock";
 import { startReauth } from "@/lib/reauth";
 import { useTranslation } from "react-i18next";
-import { ListCard, PrimaryButton, SecondaryButton, Sheet, SwitchRow, TabHeader, cx } from "@/components/ui/primitives";
+import { ListCard, PrimaryButton, SecondaryButton, Sheet, TabHeader } from "@/components/ui/primitives";
 import { FeedbackSheet } from "@/components/FeedbackSheet";
-import { currentLang, type Lang } from "@/lib/i18n";
-import { setThemePref, themePref, type ThemePref } from "@/lib/theme";
+import { Group, NavRow } from "@/components/settingsUi";
 import { BackupError, backupFileName, makeBackup, parseBackup, type BackupData } from "@/lib/backup";
 import { TYPE_META, categoryLabel } from "@/lib/constants";
 import { shortDate } from "@/lib/format";
@@ -22,34 +18,22 @@ import { useStore } from "@/lib/store";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, userId, accounts, transactions, subscriptions, ious, savingsGoals, goals, settings, usdRate, pending, signOut, setLanguage, setSettings, load, notify } = useStore();
+  const { user, userId, accounts, transactions, subscriptions, ious, savingsGoals, goals, settings, usdRate, pending, signOut, load, notify } = useStore();
   const owedCount = useMemo(() => debtsByPerson(ious).length, [ious]);
   const { t: tr } = useTranslation();
-  const [sheet, setSheet] = useState<"" | "logout" | "delete" | "restore" | "lang" | "theme" | "lock" | "currency" | "feedback" | "data" | "account">("");
-  // Per-device setting, read after mount (profile only renders once data has loaded).
-  const [lock, setLock] = useState(readLock);
+  const [sheet, setSheet] = useState<"" | "logout" | "delete" | "restore" | "currency" | "feedback" | "data" | "account">("");
   const [restoring, setRestoring] = useState<BackupData | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
-  const [theme, setTheme] = useState<ThemePref>(themePref);
-  const langOptions: { value: Lang; label: string }[] = [
-    { value: "th", label: tr("lang.th") },
-    { value: "en", label: tr("lang.en") },
-  ];
-  const themeOptions: { value: ThemePref; label: string }[] = [
-    { value: "light", label: tr("theme.light") },
-    { value: "dark", label: tr("theme.dark") },
-    { value: "system", label: tr("theme.system") },
-  ];
 
   const exportCsv = () => {
     const name = (id?: string) => accounts.find((a) => a.id === id)?.name ?? "";
     const rows = [
-      ["date", "type", "title", "amount", "category", "account", "from", "to", "note", "original_amount", "original_currency", "fx_rate"],
+      ["date", "type", "title", "amount", "category", "account", "from", "to", "note", "tag", "original_amount", "original_currency", "fx_rate"],
       ...[...transactions]
         .sort((a, b) => a.date.localeCompare(b.date))
-        .map((t) => [t.date, TYPE_META[t.type].label, t.title, String(t.amount), categoryLabel(t.category), name(t.accountId), name(t.fromId), name(t.toId), t.note ?? "", t.origAmount ? String(t.origAmount) : "", t.origCurrency ?? "", t.fxRate ? String(t.fxRate) : ""]),
+        .map((t) => [t.date, TYPE_META[t.type].label, t.title, String(t.amount), categoryLabel(t.category), name(t.accountId), name(t.fromId), name(t.toId), t.note ?? "", t.tag ?? "", t.origAmount ? String(t.origAmount) : "", t.origCurrency ?? "", t.fxRate ? String(t.fxRate) : ""]),
     ];
     // Prefix cells that spreadsheets would run as formulas (CSV injection).
     const cell = (c: string) => `"${(/^[=+\-@\t\r]/.test(c) ? "'" + c : c).replace(/"/g, '""')}"`;
@@ -140,49 +124,9 @@ export default function ProfilePage() {
         }}
       />
 
-      <Group title={tr("profile.display")}>
-        <NavRow label={tr("lang.title")} value={langOptions.find((o) => o.value === currentLang())?.label} onClick={() => setSheet("lang")} />
-        <NavRow label={tr("theme.title")} value={themeOptions.find((o) => o.value === theme)?.label} onClick={() => setSheet("theme")} />
-        <SwitchRow
-          label={tr("profile.keypadMath")}
-          hint={tr("profile.keypadMathHint")}
-          checked={settings.keypadMath !== false}
-          onChange={(on) => {
-            setSettings({ keypadMath: on });
-            notify(on ? tr("profile.keypadMathOn") : tr("profile.keypadMathOff"));
-          }}
-        />
-      </Group>
-
-      <Group title={tr("lock.group")}>
-        <NavRow
-          label={tr("lock.row")}
-          value={!lock ? tr("lock.off") : lock.credentialId ? tr("lock.onBiometric") : tr("lock.onPin")}
-          onClick={() => setSheet("lock")}
-        />
-      </Group>
-
-      <Group title={tr("profile.notifications")}>
-        <PushToggle />
-        <SwitchRow
-          label={tr("summary.label")}
-          hint={tr("summary.hint")}
-          checked={settings.monthlySummary !== false}
-          onChange={(on) => {
-            setSettings({ monthlySummary: on });
-            notify(on ? tr("summary.on") : tr("summary.off"));
-          }}
-        />
-        <SwitchRow
-          label={tr("reminder.label")}
-          hint={tr("reminder.hint")}
-          checked={settings.dailyReminder === true}
-          onChange={(on) => {
-            setSettings({ dailyReminder: on });
-            notify(on ? tr("reminder.on") : tr("reminder.off"));
-          }}
-        />
-      </Group>
+      <ListCard>
+        <NavRow label={tr("settings.title")} value={tr("settings.summary")} onClick={() => router.push("/settings")} />
+      </ListCard>
 
       <Group title={tr("profile.about")}>
         <NavRow label={tr("login.terms")} onClick={() => router.push("/terms")} />
@@ -218,29 +162,6 @@ export default function ProfilePage() {
         <SecondaryButton onClick={() => setSheet("")}>{tr("common.cancel")}</SecondaryButton>
       </Sheet>
 
-      <ChoiceSheet
-        open={sheet === "lang"}
-        onClose={() => setSheet("")}
-        title={tr("lang.title")}
-        options={langOptions}
-        value={currentLang()}
-        onPick={(v) => {
-          setSheet("");
-          setLanguage(v);
-        }}
-      />
-      <ChoiceSheet
-        open={sheet === "theme"}
-        onClose={() => setSheet("")}
-        title={tr("theme.title")}
-        options={themeOptions}
-        value={theme}
-        onPick={(v) => {
-          setSheet("");
-          setTheme(v);
-          setThemePref(v);
-        }}
-      />
 
       <Sheet open={sheet === "currency"} onClose={() => setSheet("")} title={tr("profile.currency")}>
         <p className="text-sm text-muted">{tr("profile.currencyLead")}</p>
@@ -301,7 +222,6 @@ export default function ProfilePage() {
 
       <FeedbackSheet open={sheet === "feedback"} onClose={() => setSheet("")} />
 
-      <LockSettings open={sheet === "lock"} onClose={() => setSheet("")} onChange={setLock} />
 
       <Sheet open={sheet === "restore"} onClose={() => !busy && setSheet("")} title={tr("profile.restoreTitle")}>
         {restoring ? (
@@ -347,23 +267,6 @@ export default function ProfilePage() {
   );
 }
 
-/** Bottom drawer with one choice per row; picking closes it. */
-function ChoiceSheet<T extends string>({ open, onClose, title, options, value, onPick }: { open: boolean; onClose: () => void; title: string; options: { value: T; label: string }[]; value: T; onPick: (v: T) => void }) {
-  return (
-    <Sheet open={open} onClose={onClose} title={title}>
-      <ListCard>
-        <div role="radiogroup" aria-label={title} className="flex flex-col [&>*:not(:last-child)]:border-b [&>*:not(:last-child)]:border-divider">
-          {options.map((o) => (
-            <button key={o.value} type="button" role="radio" aria-checked={o.value === value} onClick={() => onPick(o.value)} className="flex min-h-[52px] w-full items-center gap-3 text-left">
-              <span className="grow text-[15px]">{o.label}</span>
-              {o.value === value ? <Icon name="check" size={18} strokeWidth={2.4} className="text-income" /> : null}
-            </button>
-          ))}
-        </div>
-      </ListCard>
-    </Sheet>
-  );
-}
 
 /** Save a file from the browser (the share sheet on iOS). */
 function download(blob: Blob, name: string) {
@@ -375,14 +278,6 @@ function download(blob: Blob, name: string) {
   URL.revokeObjectURL(url);
 }
 
-function Group({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="flex flex-col gap-2">
-      <h2 className="text-base font-semibold">{title}</h2>
-      <ListCard>{children}</ListCard>
-    </section>
-  );
-}
 
 function SheetRow({ icon, label, hint, onClick }: { icon: "download" | "upload"; label: string; hint: string; onClick: () => void }) {
   return (
@@ -395,16 +290,5 @@ function SheetRow({ icon, label, hint, onClick }: { icon: "download" | "upload";
         <span className="text-xs text-muted">{hint}</span>
       </span>
     </button>
-  );
-}
-
-function NavRow({ label, value, onClick, icon }: { label: string; value?: string; onClick?: () => void; icon?: "download" }) {
-  const Tag = onClick ? "button" : "div";
-  return (
-    <Tag type={onClick ? "button" : undefined} onClick={onClick} className={cx("flex min-h-[52px] w-full items-center gap-3 text-left")}>
-      <span className="grow text-[15px]">{label}</span>
-      {value ? <span className="text-[13px] text-muted">{value}</span> : null}
-      {onClick ? <Icon name={icon ?? "chevronRight"} size={16} strokeWidth={2} className="text-faint" /> : null}
-    </Tag>
   );
 }

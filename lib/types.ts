@@ -143,4 +143,6 @@ export interface Settings {
   keypadMath?: boolean;
   /** Evening push (20:00) when nothing was logged that day (off unless true). */
   dailyReminder?: boolean;
+  /** Last app version whose "what's new" this account has seen. */
+  lastSeenVersion?: string;
 }

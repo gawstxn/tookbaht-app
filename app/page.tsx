@@ -9,6 +9,7 @@ import { BudgetBannerCard } from "@/components/BudgetBanner";
 import { NotificationBell } from "@/components/notifications";
 import { QuickEntries } from "@/components/QuickEntries";
 import { TxDetailSheet } from "@/components/TxDetailSheet";
+import { WhatsNew } from "@/components/WhatsNew";
 import { Bar, Card, Empty, HeroCard, ListCard, SectionHeader, TabHeader, cx } from "@/components/ui/primitives";
 import { budgetBanner, dailyAllowance, rolloverCarry, withCarry } from "@/lib/budget";
 import { formatMoney } from "@/lib/fx";
@@ -159,6 +160,7 @@ export default function OverviewPage() {
       </section>
 
       <TxDetailSheet tx={selected} onClose={() => setSelected(null)} />
+      <WhatsNew />
     </TabScreen>
   );
 }

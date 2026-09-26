@@ -145,8 +145,8 @@ export function Switch({ checked, onChange, label }: { checked: boolean; onChang
 
 export function SwitchRow({ label, hint, checked, onChange }: { label: string; hint?: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <div className="flex min-h-14 items-center justify-between gap-3">
-      <div className="flex flex-col">
+    <div className="flex min-h-14 items-center justify-between gap-3 py-2.5">
+      <div className="flex flex-col gap-0.5">
         <span className="text-[15px]">{label}</span>
         {hint ? <span className="text-xs text-muted">{hint}</span> : null}
       </div>
