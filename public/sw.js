@@ -1,8 +1,11 @@
-// Service worker: caches hashed build assets and shows /offline.html when a
-// page can't be loaded. App data is never cached here.
+// Service worker: caches hashed build assets and the app's screens, so the app
+// opens without a connection (the data itself is kept by the app, see
+// lib/offline.ts). Pages it doesn't have fall back to /offline.html.
 
-const VERSION = "v1";
+const VERSION = "v2";
 const STATIC_CACHE = `tookbaht-static-${VERSION}`;
+// Screen HTML is the same for every user (data loads in the browser).
+const PAGE_CACHE = `tookbaht-pages-${VERSION}`;
 const OFFLINE_URL = "/offline.html";
 const PRECACHE = [OFFLINE_URL, "/icons/icon-192.png"];
 
@@ -19,7 +22,7 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== STATIC_CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k !== STATIC_CACHE && k !== PAGE_CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });
@@ -30,9 +33,38 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  // Page navigations: always go to the network, fall back to the offline screen.
+  // Page navigations: network first (keeping a copy), then the saved copy, then the offline screen.
   if (request.mode === "navigate") {
-    event.respondWith(fetch(request).catch(() => caches.match(OFFLINE_URL)));
+    event.respondWith(
+      fetch(request)
+        .then((res) => {
+          if (isAppPage(res)) {
+            const copy = res.clone();
+            caches.open(PAGE_CACHE).then((cache) => cache.put(url.pathname, copy));
+          }
+          return res;
+        })
+        .catch(async () => (await caches.match(url.pathname, { cacheName: PAGE_CACHE })) || caches.match(OFFLINE_URL)),
+    );
+    return;
+  }
+
+  // Screen data for in-app navigation (React Server Components): network first,
+  // then the last copy for the same screen and segment, so moving between
+  // screens works offline too.
+  if (request.headers.get("RSC") === "1") {
+    const key = `${url.pathname}?rsc=${request.headers.get("Next-Router-Segment-Prefetch") || "nav"}`;
+    event.respondWith(
+      fetch(request)
+        .then((res) => {
+          if (res.ok && !res.redirected) {
+            const copy = res.clone();
+            caches.open(PAGE_CACHE).then((cache) => cache.put(key, copy));
+          }
+          return res;
+        })
+        .catch(async () => (await caches.match(key, { cacheName: PAGE_CACHE })) || Response.error()),
+    );
     return;
   }
 
@@ -59,6 +91,48 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(fetch(request).catch(() => caches.match(request)));
   }
 });
+
+/** A signed-in screen (not a redirect to /login or an error). */
+function isAppPage(res) {
+  return res.ok && !res.redirected && (res.headers.get("content-type") || "").includes("text/html");
+}
+
+// The app asks to keep its screens (and the build files they load) for offline use.
+self.addEventListener("message", (event) => {
+  if (event.data?.type !== "warm" || !Array.isArray(event.data.urls)) return;
+  event.waitUntil(warm(event.data.urls.filter((u) => typeof u === "string" && u.startsWith("/"))));
+});
+
+const ASSET = /\/_next\/static\/[^"'\s)]+/g;
+
+async function warm(paths) {
+  const pages = await caches.open(PAGE_CACHE);
+  const statics = await caches.open(STATIC_CACHE);
+  for (const path of paths) {
+    try {
+      const res = await fetch(path, { credentials: "same-origin" });
+      if (!isAppPage(res)) continue;
+      const html = await res.clone().text();
+      await pages.put(path, res);
+      const assets = [...new Set(html.match(ASSET) || [])];
+      for (const asset of assets) {
+        if (await statics.match(asset)) continue;
+        const a = await fetch(asset);
+        if (!a.ok) continue;
+        // Stylesheets pull in fonts (relative URLs); keep the Thai and Latin ones too.
+        if (asset.endsWith(".css")) {
+          for (const [, ref] of (await a.clone().text()).matchAll(/url\(([^)]+)\)/g)) {
+            const font = new URL(ref.replace(/["']/g, ""), self.location.origin + asset).pathname;
+            if (/(thai|latin)[^/]*\.woff2$/.test(font) && !assets.includes(font)) assets.push(font);
+          }
+        }
+        await statics.put(asset, a);
+      }
+    } catch {
+      // Offline or a failed page: try again next time the app starts.
+    }
+  }
+}
 
 // Subscription reminders sent by /api/cron/reminders: { title, body, url, tag }.
 self.addEventListener("push", (event) => {

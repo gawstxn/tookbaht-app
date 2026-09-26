@@ -625,6 +625,14 @@ const en: Messages = {
     sent: "Sent. Thank you!",
     failed: "Couldn't send. Try again.",
   },
+  offline: {
+    label: "Offline",
+    pending: "{{count}} waiting to sync",
+    synced: "Synced what you logged offline",
+    dropped: "{{count}} offline changes couldn't be saved",
+    needsConnection: "You need a connection for this",
+    logoutPending: "{{count}} changes made offline haven't synced yet. Signing out now loses them.",
+  },
   toast: {
     iouAdded: "{{name}} owes you {{amount}}",
     iousAdded: "{{count}} friends owe you {{amount}} in total",

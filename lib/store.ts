@@ -7,6 +7,7 @@ import { applyLang, currentLang, t, type Lang } from "./i18n";
 import { TERMS_VERSION } from "./legal";
 import { baht, toISO, todayISO } from "./format";
 import { impliedFeePct, type UsdRate } from "./fx";
+import { isDuplicate, isNetworkError, online, outbox, runOp, snapshot, type Op } from "./offline";
 import { getSupabase } from "./supabase/client";
 import type { Account, Goals, Iou, SavingsGoal, Settings, Subscription, Transaction, User } from "./types";
 
@@ -41,11 +42,19 @@ interface State {
   usdRate: UsdRate | null;
   /** Set while the account is closed and waiting to be deleted (30 days after this). */
   deletionRequestedAt: string | null;
+  /** Changes saved on this device, waiting for a connection. */
+  pending: number;
+  /** Showing data saved on this device because the server couldn't be reached. */
+  offline: boolean;
 }
 
 interface Actions {
   /** Fetch everything for the signed-in user. */
   load: (userId: string) => Promise<void>;
+  /** Send changes made offline (does nothing without any, or still without a connection). */
+  flush: () => Promise<void>;
+  /** Send offline changes, then refresh from the server in the background. */
+  sync: (refetch?: boolean) => Promise<void>;
   /** Clear in-memory data (after sign-out). */
   reset: () => void;
   signOut: () => Promise<void>;
@@ -117,7 +126,24 @@ const initial: State = {
   toast: null,
   usdRate: null,
   deletionRequestedAt: null,
+  pending: 0,
+  offline: false,
 };
+
+/** What is kept on the device so the app opens offline. */
+type Snapshot = Pick<State, "user" | "accounts" | "transactions" | "subscriptions" | "ious" | "savingsGoals" | "goals" | "settings" | "usdRate" | "deletionRequestedAt">;
+export const toSnapshot = (s: State): Snapshot => ({
+  user: s.user,
+  accounts: s.accounts,
+  transactions: s.transactions,
+  subscriptions: s.subscriptions,
+  ious: s.ious,
+  savingsGoals: s.savingsGoals,
+  goals: s.goals,
+  settings: s.settings,
+  usdRate: s.usdRate,
+  deletionRequestedAt: s.deletionRequestedAt,
+});
 
 const SAVE_FAILED = () => t("toast.saveFailed");
 const UNDO = () => t("common.undo");
@@ -127,33 +153,57 @@ export const useStore = create<State & Actions>()((set, get) => {
   const sb = () => getSupabase();
   const ok = (text: string, action?: Toast["action"]) => get().notify(text, { action });
 
-  /** Run a write; on failure undo the optimistic change and show an error toast. */
-  const save = async (write: PromiseLike<{ error: unknown }>, undo: () => void, message = SAVE_FAILED()) => {
-    const { error } = await write;
-    if (error) {
-      console.error(error);
+  type Row = Record<string, unknown>;
+  const ins = (table: string, rows: Row | Row[]): Op => ({ table, kind: "insert", rows });
+  const ups = (table: string, rows: Row): Op => ({ table, kind: "upsert", rows });
+  const upd = (table: string, values: Row, id: string): Op => ({ table, kind: "update", values, match: { col: "id", eq: id } });
+  const del = (table: string, id: string): Op => ({ table, kind: "delete", match: { col: "id", eq: id } });
+
+  const queue = (op: Op) => {
+    const userId = get().userId;
+    const n = userId ? outbox(userId).push(op) : 0;
+    if (n) set({ pending: n });
+    return n > 0;
+  };
+
+  /**
+   * Run a write; on failure undo the optimistic change and show an error toast.
+   * Without a connection the write waits in the outbox instead and the change
+   * stays on screen (unless `queueable` is false: the server must answer now).
+   */
+  const save = async (op: Op, undo: () => void, message = SAVE_FAILED(), { queueable = true } = {}) => {
+    // Keep writes in order: once anything is queued, later writes queue behind it.
+    if (queueable && (get().pending > 0 || !online()) && queue(op)) return true;
+    const res = await runOp(sb(), op);
+    if (!res.error || isDuplicate(res)) return true;
+    if (isNetworkError(res)) {
+      if (queueable && queue(op)) return true;
       undo();
-      get().notify(message, { tone: "error" });
+      get().notify(t("offline.needsConnection"), { tone: "error" });
       return false;
     }
-    return true;
+    console.error(res.error);
+    undo();
+    get().notify(message, { tone: "error" });
+    return false;
   };
+  let flushing = false;
 
   const insertTransaction = (tx: Transaction) => {
     set((s) => ({ transactions: [...s.transactions, tx] }));
-    return save(sb().from("transactions").insert(toRow.transaction(tx)), () =>
+    return save(ins("transactions", toRow.transaction(tx)), () =>
       set((s) => ({ transactions: s.transactions.filter((x) => x.id !== tx.id) })),
     );
   };
   const insertAccount = (account: Account, sortOrder: number) => {
     set((s) => ({ accounts: [...s.accounts, account] }));
-    return save(sb().from("accounts").insert({ ...toRow.account(account), sort_order: sortOrder }), () =>
+    return save(ins("accounts", { ...toRow.account(account), sort_order: sortOrder }), () =>
       set((s) => ({ accounts: s.accounts.filter((x) => x.id !== account.id) })),
     );
   };
   const insertSubscription = (sub: Subscription) => {
     set((s) => ({ subscriptions: [...s.subscriptions, sub] }));
-    return save(sb().from("subscriptions").insert(toRow.subscription(sub)), () =>
+    return save(ins("subscriptions", toRow.subscription(sub)), () =>
       set((s) => ({ subscriptions: s.subscriptions.filter((x) => x.id !== sub.id) })),
     );
   };
@@ -161,17 +211,17 @@ export const useStore = create<State & Actions>()((set, get) => {
   const insertIous = (items: Iou[]) => {
     const ids = new Set(items.map((i) => i.id));
     set((s) => ({ ious: [...s.ious, ...items] }));
-    return save(sb().from("ious").insert(items.map(toRow.iou)), () => set((s) => ({ ious: s.ious.filter((x) => !ids.has(x.id)) })));
+    return save(ins("ious", items.map(toRow.iou)), () => set((s) => ({ ious: s.ious.filter((x) => !ids.has(x.id)) })));
   };
   const patchIou = (id: string, patch: Partial<Iou>) => {
     const prev = get().ious.find((x) => x.id === id);
     if (!prev) return Promise.resolve(false);
     set((s) => ({ ious: s.ious.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
-    return save(sb().from("ious").update(toRow.iou(patch)).eq("id", id), () => set((s) => ({ ious: s.ious.map((x) => (x.id === id ? prev : x)) })));
+    return save(upd("ious", toRow.iou(patch), id), () => set((s) => ({ ious: s.ious.map((x) => (x.id === id ? prev : x)) })));
   };
   const insertSavingsGoal = (goal: SavingsGoal) => {
     set((s) => ({ savingsGoals: [...s.savingsGoals, goal] }));
-    return save(sb().from("savings_goals").insert(toRow.savingsGoal(goal)), () =>
+    return save(ins("savings_goals", toRow.savingsGoal(goal)), () =>
       set((s) => ({ savingsGoals: s.savingsGoals.filter((x) => x.id !== goal.id) })),
     );
   };
@@ -179,7 +229,7 @@ export const useStore = create<State & Actions>()((set, get) => {
     const prev = get().savingsGoals.find((x) => x.id === id);
     if (!prev) return;
     set((s) => ({ savingsGoals: s.savingsGoals.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
-    void save(sb().from("savings_goals").update(toRow.savingsGoal(patch)).eq("id", id), () =>
+    void save(upd("savings_goals", toRow.savingsGoal(patch), id), () =>
       set((s) => ({ savingsGoals: s.savingsGoals.map((x) => (x.id === id ? prev : x)) })),
     );
   };
@@ -188,11 +238,22 @@ export const useStore = create<State & Actions>()((set, get) => {
     ...initial,
 
     load: async (userId) => {
-      set({ status: "loading", userId });
+      set({ status: "loading", userId, pending: outbox(userId).list().length });
+      const cached = snapshot<Snapshot>(userId).read();
+      const showCached = () => {
+        if (!cached || get().userId !== userId) return false;
+        set({ ...cached.data, status: "ready", offline: true });
+        if (cached.data.settings.lang) applyLang(cached.data.settings.lang);
+        return true;
+      };
+      if (!online() && showCached()) return;
       try {
+        // Changes made offline go first, so the fresh copy includes them.
+        await get().flush();
+        if (get().pending > 0 && showCached()) return;
         const data = await fetchAll(sb(), userId);
         if (get().userId !== userId) return;
-        set({ ...data, goals: data.goals ?? EMPTY_GOALS, status: "ready" });
+        set({ ...data, goals: data.goals ?? EMPTY_GOALS, status: "ready", offline: false });
         // The profile's language wins; if it has none yet, store the one in use.
         if (data.settings.lang) applyLang(data.settings.lang);
         else get().setSettings({ lang: currentLang() });
@@ -200,12 +261,68 @@ export const useStore = create<State & Actions>()((set, get) => {
         if (data.subscriptions.some((s) => s.currency === "USD")) void get().ensureUsdRate();
       } catch (e) {
         console.error(e);
-        if (get().userId === userId) set({ status: "error" });
+        if (!showCached() && get().userId === userId) set({ status: "error" });
+      }
+    },
+    flush: async () => {
+      const userId = get().userId;
+      if (!userId || flushing || !online()) return;
+      const box = outbox(userId);
+      if (!box.list().length) return;
+      flushing = true;
+      let dropped = 0;
+      let stalled = false;
+      try {
+        // Refreshes an access token that expired while offline.
+        await sb().auth.getSession();
+        for (let next = box.list()[0]; next; next = box.list()[0]) {
+          const res = await runOp(sb(), next.op);
+          if (res.error && isNetworkError(res)) {
+            stalled = true;
+            break;
+          }
+          if (res.error && !isDuplicate(res)) {
+            console.error("dropped an offline change", next.op, res.error);
+            dropped++;
+          }
+          set({ pending: box.shift(next.id) });
+        }
+      } catch (e) {
+        console.error(e);
+        stalled = true;
+      } finally {
+        flushing = false;
+      }
+      if (stalled || get().userId !== userId) return;
+      if (dropped) get().notify(t("offline.dropped", { count: dropped }), { tone: "error" });
+      else get().notify(t("offline.synced"));
+      // During start-up load() fetches next; otherwise show what the server has now.
+      if (get().status === "ready") await get().sync(dropped > 0);
+    },
+    sync: async (refetch = false) => {
+      await get().flush();
+      const userId = get().userId;
+      // Only showing this device's copy (opened offline), or the server turned changes down: fetch.
+      if (!userId || get().status !== "ready" || get().pending > 0 || !online() || !(refetch || get().offline)) return;
+      // Swap in fresh data without leaving the screen (no loading state).
+      try {
+        const data = await fetchAll(sb(), userId);
+        if (get().userId !== userId || get().pending > 0) return;
+        set({ ...data, goals: data.goals ?? EMPTY_GOALS, offline: false });
+        await get().runAutoLog();
+      } catch (e) {
+        console.error(e);
       }
     },
     reset: () => set({ ...initial, viewMonth: todayISO().slice(0, 7) }),
     signOut: async () => {
+      const userId = get().userId;
       await sb().auth.signOut();
+      // Nothing of this account stays on a shared device.
+      if (userId) {
+        snapshot(userId).clear();
+        outbox(userId).clear();
+      }
       get().reset();
     },
     deleteAccount: async () => {
@@ -250,7 +367,7 @@ export const useStore = create<State & Actions>()((set, get) => {
       if (!prev) return;
       set((s) => ({ accounts: s.accounts.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
       ok(t("toast.saved"));
-      void save(sb().from("accounts").update(toRow.account(patch)).eq("id", id), () =>
+      void save(upd("accounts", toRow.account(patch), id), () =>
         set((s) => ({ accounts: s.accounts.map((x) => (x.id === id ? prev : x)) })),
       );
     },
@@ -260,7 +377,7 @@ export const useStore = create<State & Actions>()((set, get) => {
       const account = prev[index];
       if (!account) return false;
       // Not optimistic: a refused delete (still in use) must not make the account vanish and reappear.
-      const done = await save(sb().from("accounts").delete().eq("id", id), () => {}, t("toast.accountInUse"));
+      const done = await save(del("accounts", id), () => {}, t("toast.accountInUse"), { queueable: false });
       if (done) set((s) => ({ accounts: s.accounts.filter((x) => x.id !== id) }));
       if (done) ok(t("toast.accountDeleted", { name: account.name }), { label: UNDO(), run: () => void insertAccount(account, index) });
       return done;
@@ -273,7 +390,7 @@ export const useStore = create<State & Actions>()((set, get) => {
         void saved.then((done) => {
           if (!done) return;
           set((s) => ({ transactions: s.transactions.filter((x) => x.id !== tx.id) }));
-          void save(sb().from("transactions").delete().eq("id", tx.id), () => set((s) => ({ transactions: [...s.transactions, tx] })));
+          void save(del("transactions", tx.id), () => set((s) => ({ transactions: [...s.transactions, tx] })));
         });
       ok(
         t("toast.txSaved", { type: tx.type === "move" ? t("type.moveLong") : TYPE_META[tx.type].label, amount: baht(tx.amount) }),
@@ -286,7 +403,7 @@ export const useStore = create<State & Actions>()((set, get) => {
       if (!prev) return;
       set((s) => ({ transactions: s.transactions.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
       ok(t("toast.saved"));
-      void save(sb().from("transactions").update(toRow.transaction({ ...prev, ...patch })).eq("id", id), () =>
+      void save(upd("transactions", toRow.transaction({ ...prev, ...patch }), id), () =>
         set((s) => ({ transactions: s.transactions.map((x) => (x.id === id ? prev : x)) })),
       ).then((done) => {
         // A corrected USD charge tells us what the card really adds on top of the rate.
@@ -321,7 +438,7 @@ export const useStore = create<State & Actions>()((set, get) => {
       if (!prev) return;
       set((s) => ({ transactions: s.transactions.filter((x) => x.id !== id) }));
       ok(t("toast.deleted", { name: prev.title || TYPE_META[prev.type].label }), { label: UNDO(), run: () => void insertTransaction(prev) });
-      void save(sb().from("transactions").delete().eq("id", id), () =>
+      void save(del("transactions", id), () =>
         set((s) => ({ transactions: [...s.transactions, prev] })),
       );
     },
@@ -345,7 +462,7 @@ export const useStore = create<State & Actions>()((set, get) => {
             ? t("toast.subResumed", { name: prev.name })
             : t("toast.saved"),
       );
-      void save(sb().from("subscriptions").update(toRow.subscription(patch)).eq("id", id), () =>
+      void save(upd("subscriptions", toRow.subscription(patch), id), () =>
         set((s) => ({ subscriptions: s.subscriptions.map((x) => (x.id === id ? prev : x)) })),
       ).then((done) => {
         // Resuming, turning auto-log on or moving the start date can make charges due now.
@@ -367,16 +484,17 @@ export const useStore = create<State & Actions>()((set, get) => {
           void insertSubscription(prev).then(async (done) => {
             if (!done || !linked.length) return;
             relink(id);
-            await save(sb().from("transactions").update({ subscription_id: id }).in("id", linked), () => relink(undefined));
+            await save({ table: "transactions", kind: "update", values: { subscription_id: id }, match: { col: "id", in: linked } }, () => relink(undefined));
           }),
       });
-      void save(sb().from("subscriptions").delete().eq("id", id), () => {
+      void save(del("subscriptions", id), () => {
         set((s) => ({ subscriptions: [...s.subscriptions, prev] }));
         relink(id);
       });
     },
 
     runAutoLog: async () => {
+      if (!online() || get().pending > 0) return;
       // The database works out what's due (also run hourly by pg_cron) and returns only new rows.
       const { data, error } = await sb().rpc("run_my_auto_log");
       if (error) {
@@ -427,7 +545,7 @@ export const useStore = create<State & Actions>()((set, get) => {
           if (!txId) return;
           const tx = get().transactions.find((x) => x.id === txId);
           set((s) => ({ transactions: s.transactions.filter((x) => x.id !== txId) }));
-          if (tx) void save(sb().from("transactions").delete().eq("id", tx.id), () => set((s) => ({ transactions: [...s.transactions, tx] })));
+          if (tx) void save(del("transactions", tx.id), () => set((s) => ({ transactions: [...s.transactions, tx] })));
         },
       });
     },
@@ -436,7 +554,7 @@ export const useStore = create<State & Actions>()((set, get) => {
       if (!prev) return;
       set((s) => ({ ious: s.ious.filter((x) => x.id !== id) }));
       ok(t("toast.deleted", { name: prev.person }), { label: UNDO(), run: () => void insertIous([prev]) });
-      void save(sb().from("ious").delete().eq("id", id), () => set((s) => ({ ious: [...s.ious, prev] })));
+      void save(del("ious", id), () => set((s) => ({ ious: [...s.ious, prev] })));
     },
 
     addSavingsGoal: (g) => {
@@ -454,7 +572,7 @@ export const useStore = create<State & Actions>()((set, get) => {
       if (!prev) return;
       set((s) => ({ savingsGoals: s.savingsGoals.filter((x) => x.id !== id) }));
       ok(t("toast.deleted", { name: prev.name }), { label: UNDO(), run: () => void insertSavingsGoal(prev) });
-      void save(sb().from("savings_goals").delete().eq("id", id), () => set((s) => ({ savingsGoals: [...s.savingsGoals, prev] })));
+      void save(del("savings_goals", id), () => set((s) => ({ savingsGoals: [...s.savingsGoals, prev] })));
     },
     addToSavings: (id, amount) => {
       const goal = get().savingsGoals.find((x) => x.id === id);
@@ -490,13 +608,13 @@ export const useStore = create<State & Actions>()((set, get) => {
       const prev = get().goals;
       set({ goals });
       ok(t("toast.goalsSaved"));
-      void save(sb().from("goals").upsert({ user_id: get().userId, ...toRow.goals(goals) }), () => set({ goals: prev }));
+      void save(ups("goals", { user_id: get().userId, ...toRow.goals(goals) } as Row), () => set({ goals: prev }));
     },
     setSettings: (p) => {
       const prev = get().settings;
       const settings = { ...prev, ...p };
       set({ settings });
-      void save(sb().from("profiles").update({ settings }).eq("id", get().userId), () => set({ settings: prev }));
+      void save(upd("profiles", { settings }, get().userId!), () => set({ settings: prev }));
     },
     setLanguage: (lang) => {
       applyLang(lang);
@@ -512,3 +630,19 @@ export const useStore = create<State & Actions>()((set, get) => {
     markAllNotificationsRead: () => get().setSettings({ notifReadBefore: Date.now(), notifReadIds: [] }),
   };
 });
+
+// Keep the latest data on this device so the app opens offline.
+let snapshotTimer: ReturnType<typeof setTimeout> | undefined;
+if (typeof window !== "undefined") {
+  useStore.subscribe((state, prev) => {
+    if (state.status !== "ready" || !state.userId) return;
+    const changed = (Object.keys(toSnapshot(state)) as (keyof Snapshot)[]).some((k) => state[k] !== prev[k]);
+    if (!changed && prev.status === "ready") return;
+    clearTimeout(snapshotTimer);
+    const userId = state.userId;
+    snapshotTimer = setTimeout(() => {
+      const now = useStore.getState();
+      if (now.userId === userId && now.status === "ready") snapshot<Snapshot>(userId).save(toSnapshot(now));
+    }, 800);
+  });
+}
