@@ -1,26 +1,24 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { TabScreen, TxIcon, TxRow } from "@/components/app";
+import { TabScreen, TxRow } from "@/components/app";
+import { TxDetailSheet } from "@/components/TxDetailSheet";
 import { DateSheet, MonthSwitcher } from "@/components/pickers";
 import { Icon } from "@/components/ui/Icon";
 import { Chip, Empty, IconButton, ListCard, PickerRow, PrimaryButton, SecondaryButton, Sheet, TabHeader } from "@/components/ui/primitives";
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, TYPE_META, categoryLabel } from "@/lib/constants";
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, categoryLabel } from "@/lib/constants";
 import { baht, baht2, dayHeading, shortDate, todayISO } from "@/lib/format";
 import { filterTransactions, monthTransactions, summarize, type TxFilter } from "@/lib/selectors";
 import { useTranslation } from "react-i18next";
 import { txTitle } from "@/lib/txTitle";
-import { useRouter } from "next/navigation";
-import { formatMoney } from "@/lib/fx";
 import { useStore } from "@/lib/store";
 import type { Transaction, TxType } from "@/lib/types";
 
 type Filter = "all" | TxType;
 
 export default function TransactionsPage() {
-  const { transactions, viewMonth, accounts, deleteTransaction } = useStore();
+  const { transactions, viewMonth, accounts } = useStore();
   const { t: tr } = useTranslation();
-  const router = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
@@ -142,55 +140,7 @@ export default function TransactionsPage() {
 
       <FilterSheet open={filterSheet} value={scope} onClose={() => setFilterSheet(false)} onApply={setScope} />
 
-      <Sheet open={!!selected} onClose={() => setSelected(null)} title={tr("tx.detail")}>
-        {selected ? (
-          <>
-            <div className="flex items-center gap-3">
-              <TxIcon type={selected.type} category={selected.category} size={48} />
-              <div className="flex flex-col">
-                <span className="text-lg font-semibold">{txTitle(selected, accounts)}</span>
-                <span className="font-mono text-xl font-semibold" style={{ color: TYPE_META[selected.type].color }}>
-                  {TYPE_META[selected.type].sign}
-                  {baht2(selected.amount)}
-                </span>
-              </div>
-            </div>
-            <ListCard>
-              <Detail label={tr("common.type")} value={TYPE_META[selected.type].label} />
-              <Detail label={tr("common.date")} value={shortDate(selected.date)} />
-              {selected.type === "move" ? (
-                <>
-                  <Detail label={tr("common.fromAccount")} value={accName(selected.fromId)} />
-                  <Detail label={tr("common.toAccount")} value={accName(selected.toId)} />
-                </>
-              ) : (
-                <>
-                  <Detail label={tr("common.category")} value={categoryLabel(selected.category)} />
-                  <Detail label={tr("common.account")} value={accName(selected.accountId)} />
-                </>
-              )}
-              {selected.note ? <Detail label={tr("common.note")} value={selected.note} /> : null}
-              {selected.subscriptionId ? <Detail label={tr("common.source")} value={tr("tx.fromSub")} /> : null}
-              {selected.origAmount && selected.fxRate ? (
-                <Detail
-                  label={tr("tx.original")}
-                  value={tr("tx.originalValue", { amount: formatMoney(selected.origAmount, selected.origCurrency ?? "USD"), rate: selected.fxRate.toFixed(2) })}
-                />
-              ) : null}
-            </ListCard>
-            <PrimaryButton onClick={() => router.push(`/add?edit=${selected.id}`)}>{tr("tx.edit")}</PrimaryButton>
-            <SecondaryButton
-              tone="danger"
-              onClick={() => {
-                deleteTransaction(selected.id);
-                setSelected(null);
-              }}
-            >
-              {tr("tx.delete")}
-            </SecondaryButton>
-          </>
-        ) : null}
-      </Sheet>
+      <TxDetailSheet tx={selected} onClose={() => setSelected(null)} />
     </TabScreen>
   );
 }
@@ -312,11 +262,3 @@ function Stat({ label, value, color, divided }: { label: string; value: string; 
   );
 }
 
-function Detail({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex min-h-11 items-center justify-between gap-4 text-sm">
-      <span className="text-muted">{label}</span>
-      <span className="text-right font-semibold">{value}</span>
-    </div>
-  );
-}

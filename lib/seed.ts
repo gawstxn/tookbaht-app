@@ -1,5 +1,5 @@
 import { addDays, toISO, todayISO, uid } from "./format";
-import type { Account, Goals, Subscription, Transaction } from "./types";
+import type { Account, Goals, Iou, SavingsGoal, Subscription, Transaction } from "./types";
 
 /** Demo data placed relative to today so the app always looks "lived in". */
 export function seedData() {
@@ -33,6 +33,7 @@ export function seedData() {
     tx({ type: "out", amount: 2490, date: inMonth(5), title: "Shopee", category: "shop", accountId: "acc-paylater" }),
     tx({ type: "out", amount: 65, date: today, title: "ข้าวมันไก่", category: "food", accountId: "acc-cash" }),
     tx({ type: "out", amount: 47, date: today, title: "รถไฟฟ้า", category: "travel", accountId: "acc-salary" }),
+    { ...tx({ type: "out", amount: 1596, date: addDays(today, -3), title: "หมูกระทะ", category: "food", accountId: "acc-credit" }), id: "tx-bbq" },
     tx({ type: "move", amount: 5000, date: today, title: "โอนเข้าบัญชีออม", fromId: "acc-salary", toId: "acc-saving" }),
   ].map((x) => (x.date < monthStart ? { ...x, date: monthStart } : x));
 
@@ -58,5 +59,16 @@ export function seedData() {
     alertAt80: true,
   };
 
-  return { accounts, transactions, subscriptions, goals };
+  // The barbecue was split four ways; one friend has paid back.
+  const bbqDate = transactions.find((x) => x.id === "tx-bbq")!.date;
+  const iou = (person: string, settledOn: string | null): Iou => ({ id: uid(), person, amount: 399, note: "หมูกระทะ", date: bbqDate, transactionId: "tx-bbq", settledOn, createdAt: Date.now() });
+  const ious: Iou[] = [iou("บอส", null), iou("มิ้นท์", null), iou("เจ", today)];
+
+  const nextMarch = `${new Date().getFullYear() + (t.getMonth() >= 2 ? 1 : 0)}-03-31`;
+  const savingsGoals: SavingsGoal[] = [
+    { id: uid(), name: "เที่ยวญี่ปุ่น", target: 40000, saved: 12500, deadline: nextMarch, accountId: null, tone: "#33558f" },
+    { id: uid(), name: "เงินสำรองฉุกเฉิน", target: 150000, saved: 0, deadline: null, accountId: "acc-saving", tone: "#2f5b45" },
+  ];
+
+  return { accounts, transactions, subscriptions, ious, savingsGoals, goals };
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { PushScreen } from "@/components/app";
+import { SavingsGoals } from "@/components/SavingsGoals";
 import { MonthSwitcher } from "@/components/pickers";
 import { Icon } from "@/components/ui/Icon";
 import { Bar, Empty, HeroCard, IconButton, ListCard, PushHeader } from "@/components/ui/primitives";
@@ -113,6 +114,8 @@ export default function GoalsPage() {
           </ListCard>
         </section>
       ) : null}
+
+      <SavingsGoals />
     </PushScreen>
   );
 }

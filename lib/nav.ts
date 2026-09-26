@@ -10,6 +10,18 @@ import { useRouter } from "next/navigation";
  */
 
 let manualBack = false;
+const recent: string[] = [];
+
+/** Remember visited screens (PageTransition calls this), for problem reports. */
+export function rememberPath(path: string) {
+  if (recent.at(-1) !== path) recent.push(path);
+  if (recent.length > 10) recent.shift();
+}
+
+/** The last screen visited other than `except` (e.g. the one before opening the profile). */
+export function lastPathExcept(except: string): string {
+  return [...recent].reverse().find((p) => p !== except) ?? "";
+}
 let committed: (() => void) | null = null;
 
 /** Called by PageTransition after a route change has been committed to the DOM. */

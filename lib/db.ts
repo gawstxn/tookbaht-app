@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Account, Currency, Goals, Settings, Subscription, Transaction, User } from "./types";
+import type { Account, Currency, Goals, Iou, SavingsGoal, Settings, Subscription, Transaction, User } from "./types";
 
 /* Row shapes as stored in Postgres (snake_case). Numeric columns may arrive as strings. */
 
@@ -50,6 +50,25 @@ interface SubscriptionRow {
   remind: boolean;
   auto_log: boolean;
   paused: boolean;
+  tone: string;
+}
+interface IouRow {
+  id: string;
+  person: string;
+  amount: Num;
+  note: string;
+  date: string;
+  transaction_id: string | null;
+  settled_on: string | null;
+  created_at: string;
+}
+interface SavingsGoalRow {
+  id: string;
+  name: string;
+  target: Num;
+  saved: Num;
+  deadline: string | null;
+  account_id: string | null;
   tone: string;
 }
 interface GoalsRow {
@@ -115,6 +134,25 @@ export const fromRow = {
     paused: r.paused,
     tone: r.tone,
   }),
+  iou: (r: IouRow): Iou => ({
+    id: r.id,
+    person: r.person,
+    amount: Number(r.amount),
+    note: r.note ?? "",
+    date: r.date,
+    transactionId: r.transaction_id,
+    settledOn: r.settled_on,
+    createdAt: Date.parse(r.created_at),
+  }),
+  savingsGoal: (r: SavingsGoalRow): SavingsGoal => ({
+    id: r.id,
+    name: r.name,
+    target: Number(r.target),
+    saved: Number(r.saved),
+    deadline: r.deadline,
+    accountId: r.account_id,
+    tone: r.tone,
+  }),
   goals: (r: GoalsRow): Goals => ({
     incomeTarget: Number(r.income_target),
     expenseBudget: Number(r.expense_budget),
@@ -175,6 +213,28 @@ export const toRow = {
       paused: s.paused,
       tone: s.tone,
     }),
+  iou: (i: Partial<Iou>) =>
+    strip({
+      id: i.id,
+      person: i.person,
+      amount: i.amount,
+      note: i.note,
+      date: i.date,
+      // null clears it; undefined leaves it alone.
+      transaction_id: i.transactionId,
+      settled_on: i.settledOn,
+      created_at: i.createdAt ? new Date(i.createdAt).toISOString() : undefined,
+    }),
+  savingsGoal: (g: Partial<SavingsGoal>) =>
+    strip({
+      id: g.id,
+      name: g.name,
+      target: g.target,
+      saved: g.saved,
+      deadline: g.deadline,
+      account_id: g.accountId,
+      tone: g.tone,
+    }),
   goals: (g: Goals) => ({
     income_target: g.incomeTarget,
     expense_budget: g.expenseBudget,
@@ -193,7 +253,7 @@ const PAGE = 1000;
 
 /** Everything the app shows for the signed-in user. */
 export async function fetchAll(sb: SupabaseClient, userId: string) {
-  const [profile, accounts, subscriptions, goals, transactions, rate, session] = await Promise.all([
+  const [profile, accounts, subscriptions, goals, transactions, rate, session, ious, savings] = await Promise.all([
     sb.from("profiles").select("name, email, settings, deletion_requested_at").eq("id", userId).single<ProfileRow>(),
     sb.from("accounts").select("*").order("sort_order").order("created_at").returns<AccountRow[]>(),
     sb.from("subscriptions").select("*").order("created_at").returns<SubscriptionRow[]>(),
@@ -202,8 +262,10 @@ export async function fetchAll(sb: SupabaseClient, userId: string) {
     sb.from("exchange_rates").select("rate, date").eq("currency", "USD").order("date", { ascending: false }).limit(1).maybeSingle<{ rate: Num; date: string }>(),
     // Read from local storage; no request.
     sb.auth.getSession(),
+    sb.from("ious").select("*").order("date").order("created_at").returns<IouRow[]>(),
+    sb.from("savings_goals").select("*").order("created_at").returns<SavingsGoalRow[]>(),
   ]);
-  for (const r of [profile, accounts, subscriptions, goals]) if (r.error) throw r.error;
+  for (const r of [profile, accounts, subscriptions, goals, ious, savings]) if (r.error) throw r.error;
 
   const user: User = { name: profile.data!.name, email: profile.data!.email, provider: session.data.session?.user.app_metadata.provider };
   return {
@@ -214,6 +276,8 @@ export async function fetchAll(sb: SupabaseClient, userId: string) {
     subscriptions: subscriptions.data!.map(fromRow.subscription),
     goals: goals.data ? fromRow.goals(goals.data) : null,
     transactions,
+    ious: ious.data!.map(fromRow.iou),
+    savingsGoals: savings.data!.map(fromRow.savingsGoal),
     usdRate: rate.data ? { rate: Number(rate.data.rate), date: rate.data.date } : null,
   };
 }

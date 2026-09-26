@@ -2,7 +2,7 @@
 
 import { toRow } from "./db";
 import { getSupabase } from "./supabase/client";
-import type { Account, Goals, Settings, Subscription, Transaction } from "./types";
+import type { Account, Goals, Iou, SavingsGoal, Settings, Subscription, Transaction } from "./types";
 
 /** Data saved by the offline-only version of the app. */
 const LEGACY_KEY = "tookbaht-v1";
@@ -12,6 +12,8 @@ export interface LegacyData {
   accounts: Account[];
   transactions: Transaction[];
   subscriptions: Subscription[];
+  ious?: Iou[];
+  savingsGoals?: SavingsGoal[];
   goals?: Goals;
   settings?: Settings;
 }
@@ -102,6 +104,15 @@ export async function importData(userId: string, data: LegacyData): Promise<void
       }),
     );
 
+  const knownTx = new Set(transactions.map((t) => t.id));
+  const savingsGoals = (data.savingsGoals ?? []).map((g) =>
+    toRow.savingsGoal({ ...g, id: newId(g.id), accountId: g.accountId && hasAcc.has(g.accountId) ? newId(g.accountId) : null }),
+  );
+  const ious = (data.ious ?? []).map((i) => {
+    const txId = i.transactionId ? newId(i.transactionId) : undefined;
+    return toRow.iou({ ...i, id: newId(i.id), transactionId: txId && knownTx.has(txId) ? txId : null });
+  });
+
   const inserted: { table: string; ids: string[] }[] = [];
   const insert = async (table: string, rows: Record<string, unknown>[]) => {
     for (let i = 0; i < rows.length; i += CHUNK) {
@@ -116,6 +127,8 @@ export async function importData(userId: string, data: LegacyData): Promise<void
     await insert("accounts", accounts);
     await insert("subscriptions", subscriptions);
     await insert("transactions", transactions);
+    await insert("savings_goals", savingsGoals);
+    await insert("ious", ious);
     if (data.goals) {
       const { error } = await sb.from("goals").upsert({ user_id: userId, ...toRow.goals(data.goals) });
       if (error) throw error;
@@ -132,11 +145,21 @@ export async function importData(userId: string, data: LegacyData): Promise<void
  * first (importData rolls itself back on failure); the old rows are removed
  * only once it is safely stored, so a failed restore loses nothing.
  */
-export async function replaceAllData(userId: string, data: LegacyData, current: { accounts: string[]; transactions: string[]; subscriptions: string[] }): Promise<void> {
+export async function replaceAllData(
+  userId: string,
+  data: LegacyData,
+  current: { accounts: string[]; transactions: string[]; subscriptions: string[]; ious: string[]; savingsGoals: string[] },
+): Promise<void> {
   await importData(userId, data);
   const sb = getSupabase();
-  // Transactions reference subscriptions and accounts, so they go first.
-  for (const [table, ids] of [["transactions", current.transactions], ["subscriptions", current.subscriptions], ["accounts", current.accounts]] as const) {
+  // Rows that reference others go first: debts and goals, then transactions, subscriptions, accounts.
+  for (const [table, ids] of [
+    ["ious", current.ious],
+    ["savings_goals", current.savingsGoals],
+    ["transactions", current.transactions],
+    ["subscriptions", current.subscriptions],
+    ["accounts", current.accounts],
+  ] as const) {
     for (let i = 0; i < ids.length; i += CHUNK) {
       const { error } = await sb.from(table).delete().in("id", ids.slice(i, i + CHUNK));
       if (error) throw error;

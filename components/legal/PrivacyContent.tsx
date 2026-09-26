@@ -27,7 +27,14 @@ function PrivacyTh() {
           </li>
           <li>
             <b>ข้อมูลการเงินที่คุณบันทึกเอง</b> — บัญชี ยอดเริ่มต้น วงเงินและวันครบกำหนดชำระของบัตร/PayLater รายรับ รายจ่าย การโอน โน้ต
-            subscriptions รายการประจำ รายการผ่อน (ราคาสินค้า จำนวนงวด ยอดต่องวด) เป้าหมาย และงบประมาณ
+            subscriptions รายการประจำ รายการผ่อน (ราคาสินค้า จำนวนงวด ยอดต่องวด) เป้าหมาย งบประมาณ และเป้าหมายเก็บเงิน
+          </li>
+          <li>
+            <b>รายการเพื่อนที่ติดเงิน</b> — ชื่อเพื่อนที่คุณพิมพ์เอง จำนวนเงิน โน้ต และวันที่คืน ใช้เพื่อจดว่าใครติดเงินคุณเท่านั้น
+            เราไม่ติดต่อหรือส่งอะไรถึงคนเหล่านั้น แนะนำให้ใส่แค่ชื่อเล่นที่คุณจำได้
+          </li>
+          <li>
+            <b>ข้อความแจ้งปัญหา</b> — ถ้าคุณส่งจากหน้าโปรไฟล์ เราเก็บข้อความ เวอร์ชันแอป หน้าที่เปิดล่าสุด และชื่อรุ่นเบราว์เซอร์
           </li>
           <li>
             <b>การตั้งค่าในแอป</b> — เช่น สถานะการอ่านการแจ้งเตือน และเขตเวลาที่ใช้คำนวณวันตัดบัญชี
@@ -52,7 +59,8 @@ function PrivacyTh() {
           <li>ให้คุณเข้าสู่ระบบ และเห็นข้อมูลเดียวกันในทุกอุปกรณ์</li>
           <li>คำนวณยอดคงเหลือ สรุปรายเดือน งบประมาณ และเป้าหมาย</li>
           <li>บันทึก subscriptions รายการประจำ และงวดผ่อนให้อัตโนมัติเมื่อถึงกำหนด</li>
-          <li>แจ้งเตือนก่อนตัดบัญชี ก่อนวันครบกำหนดชำระ และเมื่องบใกล้เต็มหรือเกิน เมื่อคุณเปิดการแจ้งเตือน</li>
+          <li>แจ้งเตือนก่อนตัดบัญชี ก่อนวันครบกำหนดชำระ เมื่องบใกล้เต็มหรือเกิน และสรุปของเดือนที่แล้วในต้นเดือน เมื่อคุณเปิดการแจ้งเตือน</li>
+          <li>อ่านข้อความแจ้งปัญหาเพื่อแก้ไขและปรับปรุงแอป</li>
         </ul>
         <p>
           เราประมวลผลข้อมูลเพื่อให้บริการตามที่คุณใช้งาน (ฐานสัญญา) และตามความยินยอมของคุณสำหรับการแจ้งเตือน
@@ -91,7 +99,7 @@ function PrivacyTh() {
       <section>
         <h2>5. ระยะเวลาเก็บข้อมูล</h2>
         <p>
-          เราเก็บข้อมูลตราบเท่าที่คุณยังมีบัญชี เมื่อคุณขอลบบัญชีที่หน้าโปรไฟล์ (ต้องยืนยันตัวตนด้วย Google อีกครั้ง)
+          เราเก็บข้อมูลตราบเท่าที่คุณยังมีบัญชี (รวมถึงข้อความแจ้งปัญหา) เมื่อคุณขอลบบัญชีที่หน้าโปรไฟล์ (ต้องยืนยันตัวตนด้วย Google อีกครั้ง)
           บัญชีจะถูกปิดทันที การแจ้งเตือนหยุด และข้อมูลจะถูกเก็บไว้อีก 30 วันเพื่อให้คุณกู้คืนได้โดยเข้าสู่ระบบอีกครั้ง
           เมื่อครบ 30 วัน ข้อมูลทั้งหมดของคุณจะถูกลบออกจากฐานข้อมูลโดยอัตโนมัติและกู้คืนไม่ได้
           สำเนาสำรองของผู้ให้บริการอาจยังคงอยู่ช่วงสั้นๆ ตามรอบการสำรองข้อมูลของผู้ให้บริการ
@@ -104,7 +112,7 @@ function PrivacyTh() {
           <li>ดูและแก้ไขข้อมูลของคุณได้ในแอป</li>
           <li>ส่งออกรายการเป็นไฟล์ CSV หรือสำรองข้อมูลทั้งหมดเป็นไฟล์ JSON ได้ที่หน้าโปรไฟล์</li>
           <li>ลบบัญชีและข้อมูลทั้งหมดได้ด้วยตัวเองที่หน้าโปรไฟล์ (ลบถาวรหลัง 30 วัน และกู้คืนได้ระหว่างนั้น)</li>
-          <li>ปิดการแจ้งเตือนเมื่อไหร่ก็ได้ (ถอนความยินยอม)</li>
+          <li>ปิดการแจ้งเตือนหรือเฉพาะสรุปสิ้นเดือนเมื่อไหร่ก็ได้ (ถอนความยินยอม)</li>
           <li>ขอข้อมูล คัดค้าน หรือร้องเรียนเรื่องการใช้ข้อมูลส่วนบุคคลได้ตาม PDPA</li>
         </ul>
       </section>
@@ -152,7 +160,14 @@ function PrivacyEn() {
           </li>
           <li>
             <b>Money data you enter</b> — accounts, opening balances, card / pay-later limits and due days, income, expenses, transfers, notes,
-            subscriptions, recurring entries, installment purchases (price, number and amount of installments), goals and budgets.
+            subscriptions, recurring entries, installment purchases (price, number and amount of installments), goals, budgets and savings goals.
+          </li>
+          <li>
+            <b>Money friends owe you</b> — the names you type, amounts, notes and when they paid back, used only to track who owes you. We never
+            contact or send anything to these people; we suggest using just a nickname you&apos;ll recognise.
+          </li>
+          <li>
+            <b>Problem reports</b> — if you send one from Profile, the message, app version, last screen you opened and your browser version.
           </li>
           <li>
             <b>App settings</b> — such as notification read state, language, and the time zone used for billing dates.
@@ -177,7 +192,11 @@ function PrivacyEn() {
           <li>To sign you in and show the same data on all your devices</li>
           <li>To calculate balances, monthly summaries, budgets and goals</li>
           <li>To log subscriptions, recurring entries and installments automatically when they fall due</li>
-          <li>With notifications on, to remind you before bills and payment due dates, and when a budget nears or passes its limit</li>
+          <li>
+            With notifications on, to remind you before bills and payment due dates, when a budget nears or passes its limit, and with last
+            month&apos;s summary early in the month
+          </li>
+          <li>To read problem reports so we can fix and improve the app</li>
         </ul>
         <p>
           We process your data to provide the service you use (contract) and, for notifications, with your consent.
@@ -217,7 +236,7 @@ function PrivacyEn() {
       <section>
         <h2>5. How long we keep data</h2>
         <p>
-          We keep your data while you have an account. When you ask to delete your account in Profile (after confirming with Google), the
+          We keep your data, including problem reports, while you have an account. When you ask to delete your account in Profile (after confirming with Google), the
           account is closed at once and notifications stop, and your data is kept for 30 more days so you can restore it by signing in.
           After 30 days all your data is removed from the database automatically and can&apos;t be recovered. Provider backups may keep a
           copy briefly, according to their backup cycle.
@@ -230,7 +249,7 @@ function PrivacyEn() {
           <li>See and edit your data in the app</li>
           <li>Export transactions as CSV, or back up all your data as a JSON file, from Profile</li>
           <li>Delete your account and all data yourself from Profile (deleted for good after 30 days; restorable until then)</li>
-          <li>Turn notifications off at any time (withdraw consent)</li>
+          <li>Turn notifications, or just the monthly summary, off at any time (withdraw consent)</li>
           <li>Request access, object, or complain about the use of your personal data under the PDPA</li>
         </ul>
       </section>

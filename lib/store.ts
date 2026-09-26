@@ -8,7 +8,7 @@ import { TERMS_VERSION } from "./legal";
 import { baht, toISO, todayISO } from "./format";
 import { impliedFeePct, type UsdRate } from "./fx";
 import { getSupabase } from "./supabase/client";
-import type { Account, Goals, Settings, Subscription, Transaction, User } from "./types";
+import type { Account, Goals, Iou, SavingsGoal, Settings, Subscription, Transaction, User } from "./types";
 
 const EMPTY_GOALS: Goals = { incomeTarget: 0, expenseBudget: 0, categoryBudgets: {}, alertAt80: true };
 
@@ -29,6 +29,8 @@ interface State {
   accounts: Account[];
   transactions: Transaction[];
   subscriptions: Subscription[];
+  ious: Iou[];
+  savingsGoals: SavingsGoal[];
   goals: Goals;
   settings: Settings;
   /** Selected month on overview/list screens, "YYYY-MM". */
@@ -74,6 +76,22 @@ interface Actions {
   /** Log due subscription charges as expenses (idempotent across devices). */
   runAutoLog: () => Promise<void>;
 
+  /** Record what friends owe (one row per friend when splitting a bill). */
+  addIous: (items: Omit<Iou, "id" | "createdAt">[]) => void;
+  updateIou: (id: string, patch: Partial<Omit<Iou, "id" | "createdAt">>) => void;
+  /** Mark a debt paid back; with an account, the money is also logged as income there. */
+  settleIou: (id: string, intoAccountId?: string) => void;
+  deleteIou: (id: string) => void;
+
+  addSavingsGoal: (g: Omit<SavingsGoal, "id">) => string;
+  updateSavingsGoal: (id: string, patch: Partial<Omit<SavingsGoal, "id">>) => void;
+  deleteSavingsGoal: (id: string) => void;
+  /** Put money towards a manual goal (negative takes some out). */
+  addToSavings: (id: string, amount: number) => void;
+
+  /** Send a problem report from the profile screen. Resolves false when it couldn't be sent. */
+  sendFeedback: (message: string, page: string) => Promise<boolean>;
+
   setGoals: (g: Goals) => void;
   setSettings: (s: Partial<Settings>) => void;
   /** Switch the UI language and remember it on the profile. */
@@ -91,6 +109,8 @@ const initial: State = {
   accounts: [],
   transactions: [],
   subscriptions: [],
+  ious: [],
+  savingsGoals: [],
   goals: EMPTY_GOALS,
   settings: { faceLock: false },
   viewMonth: todayISO().slice(0, 7),
@@ -135,6 +155,32 @@ export const useStore = create<State & Actions>()((set, get) => {
     set((s) => ({ subscriptions: [...s.subscriptions, sub] }));
     return save(sb().from("subscriptions").insert(toRow.subscription(sub)), () =>
       set((s) => ({ subscriptions: s.subscriptions.filter((x) => x.id !== sub.id) })),
+    );
+  };
+
+  const insertIous = (items: Iou[]) => {
+    const ids = new Set(items.map((i) => i.id));
+    set((s) => ({ ious: [...s.ious, ...items] }));
+    return save(sb().from("ious").insert(items.map(toRow.iou)), () => set((s) => ({ ious: s.ious.filter((x) => !ids.has(x.id)) })));
+  };
+  const patchIou = (id: string, patch: Partial<Iou>) => {
+    const prev = get().ious.find((x) => x.id === id);
+    if (!prev) return Promise.resolve(false);
+    set((s) => ({ ious: s.ious.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
+    return save(sb().from("ious").update(toRow.iou(patch)).eq("id", id), () => set((s) => ({ ious: s.ious.map((x) => (x.id === id ? prev : x)) })));
+  };
+  const insertSavingsGoal = (goal: SavingsGoal) => {
+    set((s) => ({ savingsGoals: [...s.savingsGoals, goal] }));
+    return save(sb().from("savings_goals").insert(toRow.savingsGoal(goal)), () =>
+      set((s) => ({ savingsGoals: s.savingsGoals.filter((x) => x.id !== goal.id) })),
+    );
+  };
+  const patchSavingsGoal = (id: string, patch: Partial<SavingsGoal>) => {
+    const prev = get().savingsGoals.find((x) => x.id === id);
+    if (!prev) return;
+    set((s) => ({ savingsGoals: s.savingsGoals.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
+    void save(sb().from("savings_goals").update(toRow.savingsGoal(patch)).eq("id", id), () =>
+      set((s) => ({ savingsGoals: s.savingsGoals.map((x) => (x.id === id ? prev : x)) })),
     );
   };
 
@@ -340,6 +386,104 @@ export const useStore = create<State & Actions>()((set, get) => {
       const added = (data as TransactionRow[]).map(fromRow.transaction);
       const known = new Set(get().transactions.map((t) => t.id));
       set((s) => ({ transactions: [...s.transactions, ...added.filter((t) => !known.has(t.id))] }));
+    },
+
+    addIous: (items) => {
+      if (!items.length) return;
+      const now = Date.now();
+      const rows: Iou[] = items.map((i, n) => ({ ...i, id: crypto.randomUUID(), createdAt: now + n }));
+      void insertIous(rows);
+      const total = rows.reduce((s, i) => s + i.amount, 0);
+      ok(rows.length === 1 ? t("toast.iouAdded", { name: rows[0].person, amount: baht(total) }) : t("toast.iousAdded", { count: rows.length, amount: baht(total) }));
+    },
+    updateIou: (id, patch) => {
+      void patchIou(id, patch);
+      ok(t("toast.saved"));
+    },
+    settleIou: (id, intoAccountId) => {
+      const iou = get().ious.find((x) => x.id === id);
+      if (!iou) return;
+      const today = todayISO();
+      void patchIou(id, { settledOn: today });
+      let txId: string | undefined;
+      if (intoAccountId) {
+        const tx: Transaction = {
+          id: crypto.randomUUID(),
+          type: "in",
+          amount: iou.amount,
+          date: today,
+          title: t("ious.repaidTitle", { name: iou.person }),
+          category: "repay",
+          accountId: intoAccountId,
+          createdAt: Date.now(),
+        };
+        txId = tx.id;
+        void insertTransaction(tx);
+      }
+      ok(t("toast.iouSettled", { name: iou.person, amount: baht(iou.amount) }), {
+        label: UNDO(),
+        run: () => {
+          void patchIou(id, { settledOn: null });
+          if (!txId) return;
+          const tx = get().transactions.find((x) => x.id === txId);
+          set((s) => ({ transactions: s.transactions.filter((x) => x.id !== txId) }));
+          if (tx) void save(sb().from("transactions").delete().eq("id", tx.id), () => set((s) => ({ transactions: [...s.transactions, tx] })));
+        },
+      });
+    },
+    deleteIou: (id) => {
+      const prev = get().ious.find((x) => x.id === id);
+      if (!prev) return;
+      set((s) => ({ ious: s.ious.filter((x) => x.id !== id) }));
+      ok(t("toast.deleted", { name: prev.person }), { label: UNDO(), run: () => void insertIous([prev]) });
+      void save(sb().from("ious").delete().eq("id", id), () => set((s) => ({ ious: [...s.ious, prev] })));
+    },
+
+    addSavingsGoal: (g) => {
+      const goal: SavingsGoal = { ...g, id: crypto.randomUUID() };
+      void insertSavingsGoal(goal);
+      ok(t("toast.savingsAdded", { name: goal.name }));
+      return goal.id;
+    },
+    updateSavingsGoal: (id, patch) => {
+      patchSavingsGoal(id, patch);
+      ok(t("toast.saved"));
+    },
+    deleteSavingsGoal: (id) => {
+      const prev = get().savingsGoals.find((x) => x.id === id);
+      if (!prev) return;
+      set((s) => ({ savingsGoals: s.savingsGoals.filter((x) => x.id !== id) }));
+      ok(t("toast.deleted", { name: prev.name }), { label: UNDO(), run: () => void insertSavingsGoal(prev) });
+      void save(sb().from("savings_goals").delete().eq("id", id), () => set((s) => ({ savingsGoals: [...s.savingsGoals, prev] })));
+    },
+    addToSavings: (id, amount) => {
+      const goal = get().savingsGoals.find((x) => x.id === id);
+      if (!goal || !amount) return;
+      const before = goal.saved;
+      const saved = Math.max(0, Math.round((before + amount) * 100) / 100);
+      patchSavingsGoal(id, { saved });
+      ok(amount > 0 ? t("toast.savingsIn", { name: goal.name, amount: baht(amount) }) : t("toast.savingsOut", { name: goal.name, amount: baht(-amount) }), {
+        label: UNDO(),
+        run: () => patchSavingsGoal(id, { saved: before }),
+      });
+    },
+
+    sendFeedback: async (message, page) => {
+      const { error } = await sb()
+        .from("feedback")
+        .insert({
+          message: message.trim().slice(0, 2000),
+          app_version: `${process.env.NEXT_PUBLIC_APP_VERSION} (${process.env.NEXT_PUBLIC_APP_COMMIT})`.slice(0, 40),
+          page: page.slice(0, 200),
+          user_agent: navigator.userAgent.slice(0, 300),
+        });
+      if (error) {
+        console.error(error);
+        get().notify(t("feedback.failed"), { tone: "error" });
+        return false;
+      }
+      ok(t("feedback.sent"));
+      return true;
     },
 
     setGoals: (goals) => {

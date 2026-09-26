@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { TabScreen } from "@/components/app";
 import { Icon } from "@/components/ui/Icon";
 import { PushToggle } from "@/components/PushToggle";
@@ -9,20 +9,23 @@ import { LockSettings } from "@/components/LockSettings";
 import { readLock } from "@/lib/appLock";
 import { startReauth } from "@/lib/reauth";
 import { useTranslation } from "react-i18next";
-import { ListCard, PrimaryButton, SecondaryButton, Sheet, TabHeader, cx } from "@/components/ui/primitives";
+import { ListCard, PrimaryButton, SecondaryButton, Sheet, SwitchRow, TabHeader, cx } from "@/components/ui/primitives";
+import { FeedbackSheet } from "@/components/FeedbackSheet";
 import { currentLang, type Lang } from "@/lib/i18n";
 import { setThemePref, themePref, type ThemePref } from "@/lib/theme";
 import { BackupError, backupFileName, makeBackup, parseBackup, type BackupData } from "@/lib/backup";
 import { TYPE_META, categoryLabel } from "@/lib/constants";
 import { shortDate } from "@/lib/format";
+import { debtsByPerson } from "@/lib/ious";
 import { replaceAllData } from "@/lib/legacyImport";
 import { useStore } from "@/lib/store";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, userId, accounts, transactions, subscriptions, goals, settings, usdRate, signOut, setLanguage, load, notify } = useStore();
+  const { user, userId, accounts, transactions, subscriptions, ious, savingsGoals, goals, settings, usdRate, signOut, setLanguage, setSettings, load, notify } = useStore();
+  const owedCount = useMemo(() => debtsByPerson(ious).length, [ious]);
   const { t: tr } = useTranslation();
-  const [sheet, setSheet] = useState<"" | "logout" | "delete" | "restore" | "lang" | "theme" | "lock" | "currency">("");
+  const [sheet, setSheet] = useState<"" | "logout" | "delete" | "restore" | "lang" | "theme" | "lock" | "currency" | "feedback" | "data" | "account">("");
   // Per-device setting, read after mount (profile only renders once data has loaded).
   const [lock, setLock] = useState(readLock);
   const [restoring, setRestoring] = useState<BackupData | null>(null);
@@ -55,7 +58,7 @@ export default function ProfilePage() {
   };
 
   const exportBackup = () => {
-    const file = makeBackup({ accounts, transactions, subscriptions, goals, settings });
+    const file = makeBackup({ accounts, transactions, subscriptions, ious, savingsGoals, goals, settings });
     download(new Blob([JSON.stringify(file, null, 1)], { type: "application/json" }), backupFileName());
   };
 
@@ -80,7 +83,13 @@ export default function ProfilePage() {
       await replaceAllData(
         userId,
         { ...restoring, settings: restoring.settings ? { ...restoring.settings, ...keep } : undefined },
-        { accounts: accounts.map((a) => a.id), transactions: transactions.map((t) => t.id), subscriptions: subscriptions.map((s) => s.id) },
+        {
+          accounts: accounts.map((a) => a.id),
+          transactions: transactions.map((t) => t.id),
+          subscriptions: subscriptions.map((s) => s.id),
+          ious: ious.map((i) => i.id),
+          savingsGoals: savingsGoals.map((g) => g.id),
+        },
       );
       await load(userId);
       notify(tr("profile.restored"));
@@ -116,9 +125,9 @@ export default function ProfilePage() {
       <Group title={tr("profile.finance")}>
         <NavRow label={tr("profile.myAccounts")} value={tr("common.accounts", { count: accounts.length })} onClick={() => router.push("/accounts")} />
         <NavRow label={tr("profile.currency")} value={tr("profile.currencyValue")} onClick={() => setSheet("currency")} />
-        <NavRow label={tr("profile.export")} value="CSV" icon="download" onClick={exportCsv} />
-        <NavRow label={tr("profile.backup")} value="JSON" icon="download" onClick={exportBackup} />
-        <NavRow label={tr("profile.restore")} onClick={() => fileInput.current?.click()} />
+        <NavRow label={tr("ious.title")} value={owedCount ? tr("ious.people", { count: owedCount }) : undefined} onClick={() => router.push("/ious")} />
+        <NavRow label={tr("savings.title")} value={savingsGoals.length ? String(savingsGoals.length) : undefined} onClick={() => router.push("/goals")} />
+        <NavRow label={tr("profile.myData")} value={tr("profile.myDataValue")} onClick={() => setSheet("data")} />
       </Group>
       <input
         ref={fileInput}
@@ -146,28 +155,28 @@ export default function ProfilePage() {
 
       <Group title={tr("profile.notifications")}>
         <PushToggle />
+        <SwitchRow
+          label={tr("summary.label")}
+          hint={tr("summary.hint")}
+          checked={settings.monthlySummary !== false}
+          onChange={(on) => {
+            setSettings({ monthlySummary: on });
+            notify(on ? tr("summary.on") : tr("summary.off"));
+          }}
+        />
       </Group>
 
       <Group title={tr("profile.about")}>
         <NavRow label={tr("login.terms")} onClick={() => router.push("/terms")} />
         <NavRow label={tr("login.privacy")} onClick={() => router.push("/privacy")} />
+        <NavRow label={tr("feedback.row")} onClick={() => setSheet("feedback")} />
       </Group>
 
       <Group title={tr("profile.account")}>
+        <NavRow label={tr("profile.manageAccount")} onClick={() => setSheet("account")} />
         <button type="button" onClick={() => setSheet("logout")} className="flex min-h-[52px] w-full items-center gap-3 text-left text-[15px]">
           <Icon name="logout" size={18} />
           {tr("profile.logout")}
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setConfirmed(false);
-            setSheet("delete");
-          }}
-          className="flex min-h-[52px] w-full items-center gap-3 text-left text-[15px] text-danger"
-        >
-          <Icon name="trash" size={18} />
-          {tr("profile.delete")}
         </button>
       </Group>
 
@@ -231,6 +240,47 @@ export default function ProfilePage() {
         </ListCard>
         <PrimaryButton onClick={() => setSheet("")}>{tr("common.gotIt")}</PrimaryButton>
       </Sheet>
+
+      <Sheet open={sheet === "data"} onClose={() => setSheet("")} title={tr("profile.myData")}>
+        <ListCard>
+          <SheetRow icon="download" label={tr("profile.export")} hint={tr("profile.exportHint")} onClick={exportCsv} />
+          <SheetRow icon="download" label={tr("profile.backup")} hint={tr("profile.backupHint")} onClick={exportBackup} />
+          <SheetRow
+            icon="upload"
+            label={tr("profile.restore")}
+            hint={tr("profile.restoreHint")}
+            onClick={() => {
+              setSheet("");
+              fileInput.current?.click();
+            }}
+          />
+        </ListCard>
+      </Sheet>
+
+      <Sheet open={sheet === "account"} onClose={() => setSheet("")} title={tr("profile.manageAccount")}>
+        <ListCard>
+          <div className="flex min-h-[52px] items-center justify-between gap-3">
+            <span className="text-[15px]">{tr("profile.signedInAs")}</span>
+            <span className="truncate text-[13px] text-muted">{user?.email}</span>
+          </div>
+          <div className="flex min-h-[52px] items-center justify-between gap-3">
+            <span className="text-[15px]">{tr("profile.signInWith")}</span>
+            <span className="text-[13px] text-muted">{user?.provider === "google" ? "Google" : tr("profile.emailProvider")}</span>
+          </div>
+        </ListCard>
+        <p className="text-xs leading-relaxed text-muted">{tr("profile.deleteIntro")}</p>
+        <SecondaryButton
+          tone="danger"
+          onClick={() => {
+            setConfirmed(false);
+            setSheet("delete");
+          }}
+        >
+          {tr("profile.delete")}
+        </SecondaryButton>
+      </Sheet>
+
+      <FeedbackSheet open={sheet === "feedback"} onClose={() => setSheet("")} />
 
       <LockSettings open={sheet === "lock"} onClose={() => setSheet("")} onChange={setLock} />
 
@@ -312,6 +362,20 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
       <h2 className="text-base font-semibold">{title}</h2>
       <ListCard>{children}</ListCard>
     </section>
+  );
+}
+
+function SheetRow({ icon, label, hint, onClick }: { icon: "download" | "upload"; label: string; hint: string; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="flex min-h-[60px] w-full items-center gap-3 py-2 text-left">
+      <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-chip">
+        <Icon name={icon} size={18} strokeWidth={2} />
+      </span>
+      <span className="flex min-w-0 grow flex-col">
+        <span className="text-[15px] font-medium">{label}</span>
+        <span className="text-xs text-muted">{hint}</span>
+      </span>
+    </button>
   );
 }
 
