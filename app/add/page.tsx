@@ -35,6 +35,8 @@ function AddForm() {
   const accounts = useStore((s) => s.accounts);
   const txs = useStore((s) => s.transactions);
   const keypadMath = useStore((s) => s.settings.keypadMath !== false);
+  const setSettings = useStore((s) => s.setSettings);
+  const notify = useStore((s) => s.notify);
   const addTransaction = useStore((s) => s.addTransaction);
   const updateTransaction = useStore((s) => s.updateTransaction);
   // /add?edit=<id> edits a saved transaction with the same form.
@@ -131,7 +133,30 @@ function AddForm() {
 
   return (
     <PushScreen className="gap-3">
-      <PushHeader title={editing ? t("tx.editTitle") : t("add.title")} backIcon="close" onBack={() => goBack()} />
+      <PushHeader
+        title={editing ? t("tx.editTitle") : t("add.title")}
+        backIcon="close"
+        onBack={() => goBack()}
+        action={
+          <button
+            type="button"
+            aria-pressed={keypadMath}
+            aria-label={t("profile.keypadMath")}
+            onClick={() => {
+              // Turning the keys off keeps the amount: a half-typed sum becomes its total.
+              if (keypadMath && summing) setAmount(value > 0 ? String(value) : "");
+              setSettings({ keypadMath: !keypadMath });
+              notify(t(keypadMath ? "profile.keypadMathOff" : "profile.keypadMathOn"));
+            }}
+            className={cx(
+              "flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
+              keypadMath ? "bg-ink text-on-ink" : "border border-line bg-card text-muted",
+            )}
+          >
+            <Icon name="calc" size={20} strokeWidth={keypadMath ? 2.2 : 2} />
+          </button>
+        }
+      />
 
       <Segmented
         label={t("add.typeLabel")}
