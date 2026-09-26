@@ -63,6 +63,8 @@ The app version in `package.json` is shown on the profile page, and every merge 
 
 If a PR mixes types, use the highest one. Bump with `npm version <x.y.z> --no-git-tag-version` so `package-lock.json` stays in sync.
 
+A `feat:` release also adds its highlights to `RELEASES` in `lib/whatsNew.ts` (copy under `whatsNew.<key>` in both locales); users see them once in the "มีอะไรใหม่" drawer after updating.
+
 # Tests
 
 `npm test` runs Vitest: unit tests for `lib/` in `tests/unit`, and database tests in `tests/db` that apply every migration in `supabase/migrations` to an in-memory Postgres (PGlite) — no Docker needed. CI runs them on every PR. Add a test with any change to money maths, billing dates, auto-log or RLS; a new migration is picked up automatically.
