@@ -22,6 +22,12 @@ import { PrimaryButton, cx } from "./ui/primitives";
 const TAB_ROOTS = ["/", "/transactions", "/subscriptions", "/profile"];
 const depth = (path: string) => (TAB_ROOTS.includes(path) ? 0 : path.split("/").filter(Boolean).length);
 
+/** Screens kept by the service worker so they open offline. */
+const OFFLINE_PAGES = [
+  "/", "/transactions", "/subscriptions", "/profile", "/add", "/goals", "/goals/edit", "/ious", "/ious/split",
+  "/insights", "/accounts", "/notifications", "/subscriptions/new", "/recurring/new", "/terms", "/privacy",
+];
+
 /** Screens that work without a session or before any data exists. */
 const NO_DATA_PATHS = ["/login", "/auth/", "/terms", "/privacy"];
 
@@ -45,6 +51,37 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     applyLang(preferredLang());
   }, []);
+
+  // Send changes made offline when the connection comes back, the app returns
+  // to the foreground, and every 10 s while some are still waiting.
+  useEffect(() => {
+    const sync = () => void useStore.getState().sync();
+    const onVisible = () => document.visibilityState === "visible" && sync();
+    // The connection is often not usable yet when "online" fires; try again shortly.
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    const onOnline = () => {
+      sync();
+      clearTimeout(retry);
+      retry = setTimeout(sync, 2500);
+    };
+    window.addEventListener("online", onOnline);
+    document.addEventListener("visibilitychange", onVisible);
+    const timer = setInterval(() => {
+      if (useStore.getState().pending > 0 || useStore.getState().offline) sync();
+    }, 10_000);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      clearTimeout(retry);
+      document.removeEventListener("visibilitychange", onVisible);
+      clearInterval(timer);
+    };
+  }, []);
+
+  // Once signed in, have the service worker keep the app's screens for offline use.
+  useEffect(() => {
+    if (status !== "ready" || process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return;
+    void navigator.serviceWorker.ready.then((reg) => reg.active?.postMessage({ type: "warm", urls: OFFLINE_PAGES }));
+  }, [status]);
 
   // Logos are a separate chunk; fetch it while the user's data loads.
   useEffect(() => {
@@ -119,6 +156,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Fragment key={i18n.language}>{content}</Fragment>
         </PageTransition>
       </div>
+      {status === "ready" && TAB_ROOTS.includes(pathname) ? <OfflinePill /> : null}
       <LockGate active={!noData} />
       <ToastHost />
     </div>
@@ -203,6 +241,39 @@ function LoadError() {
       <p className="text-sm text-muted">{t("shell.checkConnection")}</p>
       <PrimaryButton onClick={retry}>{t("common.retry")}</PrimaryButton>
     </main>
+  );
+}
+
+/** Small pill above the tab bar while offline or while changes wait to be sent (tab screens only). */
+function OfflinePill() {
+  const { t } = useTranslation();
+  const pending = useStore((s) => s.pending);
+  const offline = useStore((s) => s.offline);
+  // Shares the toast's spot; the toast wins while it's up.
+  const toast = useStore((s) => s.toast);
+  const [online, setOnline] = useState(true);
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine);
+    update();
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    return () => {
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+    };
+  }, []);
+  if (toast || (online && !offline && pending === 0)) return null;
+  const text = pending > 0 ? t("offline.pending", { count: pending }) : t("offline.label");
+  return (
+    <div
+      role="status"
+      className="pointer-events-none fixed inset-x-0 bottom-[calc(86px+env(safe-area-inset-bottom))] z-[55] mx-auto flex max-w-[430px] justify-center"
+    >
+      <span className="flex min-h-6 items-center gap-1.5 rounded-full bg-hero px-3 text-[11px] font-semibold text-on-hero shadow-hero">
+        <span className={cx("h-1.5 w-1.5 rounded-full", online ? "bg-lime" : "bg-peach")} />
+        {online ? text : `${t("offline.label")}${pending > 0 ? " · " + text : ""}`}
+      </span>
+    </div>
   );
 }
 

@@ -22,7 +22,7 @@ import { useStore } from "@/lib/store";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, userId, accounts, transactions, subscriptions, ious, savingsGoals, goals, settings, usdRate, signOut, setLanguage, setSettings, load, notify } = useStore();
+  const { user, userId, accounts, transactions, subscriptions, ious, savingsGoals, goals, settings, usdRate, pending, signOut, setLanguage, setSettings, load, notify } = useStore();
   const owedCount = useMemo(() => debtsByPerson(ious).length, [ious]);
   const { t: tr } = useTranslation();
   const [sheet, setSheet] = useState<"" | "logout" | "delete" | "restore" | "lang" | "theme" | "lock" | "currency" | "feedback" | "data" | "account">("");
@@ -186,6 +186,7 @@ export default function ProfilePage() {
 
       <Sheet open={sheet === "logout"} onClose={() => setSheet("")} title={tr("profile.logoutTitle")}>
         <p className="text-sm text-muted">{tr("profile.logoutLead")}</p>
+        {pending > 0 ? <p className="text-sm font-semibold text-danger">{tr("offline.logoutPending", { count: pending })}</p> : null}
         <PrimaryButton
           disabled={busy}
           onClick={async () => {
