@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { TabScreen } from "@/components/app";
 import { Icon } from "@/components/ui/Icon";
 import { PushToggle } from "@/components/PushToggle";
@@ -9,20 +9,23 @@ import { LockSettings } from "@/components/LockSettings";
 import { readLock } from "@/lib/appLock";
 import { startReauth } from "@/lib/reauth";
 import { useTranslation } from "react-i18next";
-import { ListCard, PrimaryButton, SecondaryButton, Sheet, TabHeader, cx } from "@/components/ui/primitives";
+import { ListCard, PrimaryButton, SecondaryButton, Sheet, SwitchRow, TabHeader, cx } from "@/components/ui/primitives";
+import { FeedbackSheet } from "@/components/FeedbackSheet";
 import { currentLang, type Lang } from "@/lib/i18n";
 import { setThemePref, themePref, type ThemePref } from "@/lib/theme";
 import { BackupError, backupFileName, makeBackup, parseBackup, type BackupData } from "@/lib/backup";
 import { TYPE_META, categoryLabel } from "@/lib/constants";
 import { shortDate } from "@/lib/format";
+import { debtsByPerson } from "@/lib/ious";
 import { replaceAllData } from "@/lib/legacyImport";
 import { useStore } from "@/lib/store";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, userId, accounts, transactions, subscriptions, goals, settings, usdRate, signOut, setLanguage, load, notify } = useStore();
+  const { user, userId, accounts, transactions, subscriptions, ious, savingsGoals, goals, settings, usdRate, signOut, setLanguage, setSettings, load, notify } = useStore();
+  const owedCount = useMemo(() => debtsByPerson(ious).length, [ious]);
   const { t: tr } = useTranslation();
-  const [sheet, setSheet] = useState<"" | "logout" | "delete" | "restore" | "lang" | "theme" | "lock" | "currency">("");
+  const [sheet, setSheet] = useState<"" | "logout" | "delete" | "restore" | "lang" | "theme" | "lock" | "currency" | "feedback">("");
   // Per-device setting, read after mount (profile only renders once data has loaded).
   const [lock, setLock] = useState(readLock);
   const [restoring, setRestoring] = useState<BackupData | null>(null);
@@ -55,7 +58,7 @@ export default function ProfilePage() {
   };
 
   const exportBackup = () => {
-    const file = makeBackup({ accounts, transactions, subscriptions, goals, settings });
+    const file = makeBackup({ accounts, transactions, subscriptions, ious, savingsGoals, goals, settings });
     download(new Blob([JSON.stringify(file, null, 1)], { type: "application/json" }), backupFileName());
   };
 
@@ -80,7 +83,13 @@ export default function ProfilePage() {
       await replaceAllData(
         userId,
         { ...restoring, settings: restoring.settings ? { ...restoring.settings, ...keep } : undefined },
-        { accounts: accounts.map((a) => a.id), transactions: transactions.map((t) => t.id), subscriptions: subscriptions.map((s) => s.id) },
+        {
+          accounts: accounts.map((a) => a.id),
+          transactions: transactions.map((t) => t.id),
+          subscriptions: subscriptions.map((s) => s.id),
+          ious: ious.map((i) => i.id),
+          savingsGoals: savingsGoals.map((g) => g.id),
+        },
       );
       await load(userId);
       notify(tr("profile.restored"));
@@ -115,6 +124,8 @@ export default function ProfilePage() {
 
       <Group title={tr("profile.finance")}>
         <NavRow label={tr("profile.myAccounts")} value={tr("common.accounts", { count: accounts.length })} onClick={() => router.push("/accounts")} />
+        <NavRow label={tr("ious.title")} value={owedCount ? tr("ious.people", { count: owedCount }) : undefined} onClick={() => router.push("/ious")} />
+        <NavRow label={tr("savings.title")} value={savingsGoals.length ? String(savingsGoals.length) : undefined} onClick={() => router.push("/goals")} />
         <NavRow label={tr("profile.currency")} value={tr("profile.currencyValue")} onClick={() => setSheet("currency")} />
         <NavRow label={tr("profile.export")} value="CSV" icon="download" onClick={exportCsv} />
         <NavRow label={tr("profile.backup")} value="JSON" icon="download" onClick={exportBackup} />
@@ -146,11 +157,21 @@ export default function ProfilePage() {
 
       <Group title={tr("profile.notifications")}>
         <PushToggle />
+        <SwitchRow
+          label={tr("summary.label")}
+          hint={tr("summary.hint")}
+          checked={settings.monthlySummary !== false}
+          onChange={(on) => {
+            setSettings({ monthlySummary: on });
+            notify(on ? tr("summary.on") : tr("summary.off"));
+          }}
+        />
       </Group>
 
       <Group title={tr("profile.about")}>
         <NavRow label={tr("login.terms")} onClick={() => router.push("/terms")} />
         <NavRow label={tr("login.privacy")} onClick={() => router.push("/privacy")} />
+        <NavRow label={tr("feedback.row")} onClick={() => setSheet("feedback")} />
       </Group>
 
       <Group title={tr("profile.account")}>
@@ -231,6 +252,8 @@ export default function ProfilePage() {
         </ListCard>
         <PrimaryButton onClick={() => setSheet("")}>{tr("common.gotIt")}</PrimaryButton>
       </Sheet>
+
+      <FeedbackSheet open={sheet === "feedback"} onClose={() => setSheet("")} />
 
       <LockSettings open={sheet === "lock"} onClose={() => setSheet("")} onChange={setLock} />
 

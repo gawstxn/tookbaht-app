@@ -32,6 +32,13 @@ export interface PendingBudget {
   spent: number | string;
   budget: number | string;
 }
+export interface PendingSummary {
+  user_id: string;
+  month: string;
+  income: number | string;
+  expense: number | string;
+  over_budget: string[];
+}
 /* Push text in the user's language (the cron route has no i18n instance). */
 
 export function chargeText(lang: Lang, r: PendingReminder) {
@@ -50,6 +57,28 @@ export function chargeText(lang: Lang, r: PendingReminder) {
 export function dueText(lang: Lang, r: PendingDue) {
   const owed = baht(Number(r.owed));
   return lang === "en" ? { title: `${r.name} payment is due tomorrow`, body: `Owed ${owed}` } : { title: `ครบกำหนดชำระ ${r.name} พรุ่งนี้`, body: `ยอดค้างจ่าย ${owed}` };
+}
+
+const MONTHS = {
+  th: ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"],
+  en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+};
+
+/** Last month in one notification: in, out, what was left, and budgets that went over. */
+export function summaryText(lang: Lang, r: PendingSummary) {
+  const month = MONTHS[lang][Number(r.month.slice(5, 7)) - 1];
+  const income = Number(r.income);
+  const expense = Number(r.expense);
+  const left = income - expense;
+  const leftText = (left < 0 ? "−" : "") + baht(Math.abs(left));
+  const cats = (lang === "en" ? en.cat : th.cat) as Record<string, string>;
+  const over = r.over_budget.map((k) => cats[k] ?? k);
+  if (lang === "en") {
+    const body = `In ${baht(income)} · Out ${baht(expense)} · ${left < 0 ? "Short" : "Saved"} ${leftText}`;
+    return { title: `Your ${month} summary`, body: over.length ? `${body}\nOver budget: ${over.join(", ")}` : body };
+  }
+  const body = `รับ ${baht(income)} · จ่าย ${baht(expense)} · ${left < 0 ? "ขาด" : "เหลือเก็บ"} ${leftText}`;
+  return { title: `สรุปเดือน${month}`, body: over.length ? `${body}\nเกินงบ: ${over.join(", ")}` : body };
 }
 
 export function budgetText(lang: Lang, r: PendingBudget) {

@@ -18,7 +18,7 @@ import type { Transaction, TxType } from "@/lib/types";
 type Filter = "all" | TxType;
 
 export default function TransactionsPage() {
-  const { transactions, viewMonth, accounts, deleteTransaction } = useStore();
+  const { transactions, viewMonth, accounts, ious, deleteTransaction } = useStore();
   const { t: tr } = useTranslation();
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
@@ -177,8 +177,14 @@ export default function TransactionsPage() {
                   value={tr("tx.originalValue", { amount: formatMoney(selected.origAmount, selected.origCurrency ?? "USD"), rate: selected.fxRate.toFixed(2) })}
                 />
               ) : null}
+              {ious.some((i) => i.transactionId === selected.id) ? (
+                <Detail label={tr("split.splitWith")} value={ious.filter((i) => i.transactionId === selected.id).map((i) => i.person).join(", ")} />
+              ) : null}
             </ListCard>
             <PrimaryButton onClick={() => router.push(`/add?edit=${selected.id}`)}>{tr("tx.edit")}</PrimaryButton>
+            {selected.type === "out" && !ious.some((i) => i.transactionId === selected.id) ? (
+              <SecondaryButton onClick={() => router.push(`/ious/split?tx=${selected.id}`)}>{tr("split.action")}</SecondaryButton>
+            ) : null}
             <SecondaryButton
               tone="danger"
               onClick={() => {

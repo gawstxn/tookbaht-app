@@ -38,6 +38,7 @@ function TermsTh() {
         <ul>
           <li>เข้าสู่ระบบด้วยบัญชี Google ของคุณ และคุณรับผิดชอบการดูแลความปลอดภัยของบัญชีนั้น</li>
           <li>ข้อมูลที่คุณบันทึกเป็นของคุณ คุณส่งออกหรือลบได้ตลอดเวลาที่หน้าโปรไฟล์</li>
+          <li>เมื่อจดว่าเพื่อนติดเงิน ใส่เฉพาะชื่อที่จำเป็น และไม่ใส่ข้อมูลส่วนตัวอื่นของบุคคลอื่น</li>
           <li>
             การเก็บและใช้ข้อมูลเป็นไปตาม{" "}
             <Link href="/privacy" className="font-semibold underline">
@@ -123,6 +124,7 @@ function TermsEn() {
         <ul>
           <li>You sign in with your Google account and are responsible for keeping it secure.</li>
           <li>The data you enter is yours. You can export or delete it at any time in Profile.</li>
+          <li>When tracking money friends owe you, enter only the name you need and no other personal details about other people.</li>
           <li>
             How we collect and use data is described in the{" "}
             <Link href="/privacy" className="font-semibold underline">

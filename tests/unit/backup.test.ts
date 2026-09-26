@@ -10,6 +10,8 @@ const data: BackupData = {
   subscriptions: [
     { id: "s1", kind: "subscription", entryType: "out", name: "Netflix", amount: 419, currency: "THB", cycle: "month", startDate: "2026-08-06", accountId: "a1", category: "fun", remind: true, autoLog: true, paused: false, tone: "#000" },
   ],
+  ious: [{ id: "i1", person: "บอส", amount: 300, note: "หมูกระทะ", date: "2026-09-02", transactionId: "t1", settledOn: null, createdAt: 3 }],
+  savingsGoals: [{ id: "g1", name: "เที่ยวญี่ปุ่น", target: 40000, saved: 5000, deadline: "2027-03-31", accountId: null, tone: "#33558f" }],
   goals: { incomeTarget: 50000, expenseBudget: 30000, categoryBudgets: { food: 8000 }, alertAt80: true },
   settings: { faceLock: false },
 };
@@ -26,6 +28,18 @@ const problem = (text: string) => {
 describe("backup files", () => {
   it("round-trips the user's data", () => {
     expect(parseBackup(file())).toEqual(data);
+  });
+
+  it("reads files made before debts and savings goals existed", () => {
+    const old = JSON.parse(file());
+    delete old.ious;
+    delete old.savingsGoals;
+    expect(parseBackup(JSON.stringify(old))).toMatchObject({ ious: [], savingsGoals: [] });
+  });
+
+  it("rejects a damaged debt or goal", () => {
+    expect(problem(file({ ious: [{ id: "i", person: "", amount: 1, date: "2026-09-02" }] }))).toBe("damaged");
+    expect(problem(file({ savingsGoals: [{ id: "g", name: "x", target: 0, saved: 0 }] }))).toBe("damaged");
   });
 
   it("names the file by date", () => {

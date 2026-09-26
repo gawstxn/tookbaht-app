@@ -82,6 +82,35 @@ export interface Subscription {
   tone: string;
 }
 
+/** Money a friend owes the user, e.g. their share of a shared meal. */
+export interface Iou {
+  id: string;
+  /** The friend's name, as the user typed it. */
+  person: string;
+  amount: number;
+  note: string;
+  date: ISODate;
+  /** The bill it came from, when split from a saved expense. */
+  transactionId?: string | null;
+  /** When the friend paid it back. */
+  settledOn?: ISODate | null;
+  createdAt: number;
+}
+
+/** A lump sum to save up for ("เที่ยวญี่ปุ่น ฿40,000 ภายในมี.ค."). */
+export interface SavingsGoal {
+  id: string;
+  name: string;
+  target: number;
+  /** Saved so far, added to by hand (used when no account is linked). */
+  saved: number;
+  /** Last day to reach the target (the end of the chosen month). */
+  deadline?: ISODate | null;
+  /** When set, progress is this account's balance. */
+  accountId?: string | null;
+  tone: string;
+}
+
 export interface Goals {
   incomeTarget: number;
   expenseBudget: number;
@@ -99,4 +128,6 @@ export interface Settings {
   termsAcceptedAt?: string;
   /** UI language; also used for push reminders sent by the server. */
   lang?: "th" | "en";
+  /** Push a summary of last month on the 1st (on unless false). */
+  monthlySummary?: boolean;
 }

@@ -12,12 +12,14 @@ import { Bar, Empty, HeroCard, ListCard, SectionHeader, TabHeader } from "@/comp
 import { budgetBanner } from "@/lib/budget";
 import { formatMoney } from "@/lib/fx";
 import { baht, splitDecimals, todayISO } from "@/lib/format";
+import { debtsByPerson } from "@/lib/ious";
 import { isService, monthTransactions, summarize, upcomingSubscriptions } from "@/lib/selectors";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
 
 export default function OverviewPage() {
-  const { transactions, subscriptions, goals, viewMonth } = useStore();
+  const { transactions, subscriptions, goals, viewMonth, ious } = useStore();
+  const owed = useMemo(() => debtsByPerson(ious), [ious]);
   const { t: tr } = useTranslation();
   const today = todayISO();
 
@@ -64,6 +66,19 @@ export default function OverviewPage() {
       </HeroCard>
 
       <BudgetBannerCard banner={banner} />
+
+      {owed.length ? (
+        <Link href="/ious" className="flex min-h-[60px] items-center gap-3 rounded-2xl border border-line bg-card px-4 py-2.5">
+          <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-income-tint text-income">
+            <Icon name="users" size={18} strokeWidth={2} />
+          </span>
+          <span className="flex min-w-0 grow flex-col">
+            <span className="text-[15px] font-semibold">{tr("ious.homeTitle", { amount: baht(owed.reduce((s, p) => s + p.total, 0)) })}</span>
+            <span className="truncate text-xs text-muted">{owed.map((p) => p.person).join(", ")}</span>
+          </span>
+          <Icon name="chevronRight" size={16} strokeWidth={2} className="text-faint" />
+        </Link>
+      ) : null}
 
       <QuickEntries heading />
 

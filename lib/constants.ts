@@ -36,6 +36,7 @@ export const INCOME_CATEGORIES: CategoryDef[] = [
   cat("sell", "#c98a1e", "tag"),
   cat("interest", "#5f6259", "percent"),
   cat("gift", "#ffb38a", "gift"),
+  cat("repay", "#5b4a7a", "users"),
   cat("other-in", "#b9b4a7", "dots"),
 ];
 

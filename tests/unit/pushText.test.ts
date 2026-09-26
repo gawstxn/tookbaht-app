@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { budgetText, chargeText, dueText, type PendingReminder } from "@/lib/pushText";
+import { budgetText, chargeText, dueText, summaryText, type PendingReminder } from "@/lib/pushText";
 
 const charge = (p: Partial<PendingReminder>): PendingReminder => ({
   subscription_id: "s", user_id: "u", name: "Netflix", amount: "419.00", currency: "THB", due_date: "2026-09-26",
@@ -30,5 +30,12 @@ describe("push texts", () => {
     expect(budgetText("th", { ...base, level: 80, spent: "850" }).title).toBe("อาหาร ใช้ไปแล้ว 85% ของงบ");
     expect(budgetText("th", { ...base, level: 100, spent: "1200" })).toEqual({ title: "อาหาร เกินงบแล้ว ฿200", body: "ใช้ไป ฿1,200 จากงบ ฿1,000" });
     expect(budgetText("en", { ...base, budget_key: "total", level: 100, spent: "1200" }).title).toBe("Overall budget is over by ฿200");
+  });
+
+  it("sums up last month with the budgets that went over", () => {
+    const r = { user_id: "u", month: "2026-09", income: "30000.00", expense: "21450.5", over_budget: ["food", "total"] };
+    expect(summaryText("th", r)).toEqual({ title: "สรุปเดือนกันยายน", body: "รับ ฿30,000 · จ่าย ฿21,451 · เหลือเก็บ ฿8,550\nเกินงบ: อาหาร, งบรวม" });
+    expect(summaryText("en", { ...r, over_budget: [] })).toEqual({ title: "Your September summary", body: "In ฿30,000 · Out ฿21,451 · Saved ฿8,550" });
+    expect(summaryText("th", { ...r, income: 1000, expense: 1500, over_budget: [] }).body).toBe("รับ ฿1,000 · จ่าย ฿1,500 · ขาด −฿500");
   });
 });
