@@ -76,6 +76,7 @@ interface GoalsRow {
   expense_budget: Num;
   category_budgets: Record<string, Num>;
   alert_at_80: boolean;
+  rollover_keys: string[] | null;
 }
 interface ProfileRow {
   name: string;
@@ -158,6 +159,7 @@ export const fromRow = {
     expenseBudget: Number(r.expense_budget),
     categoryBudgets: Object.fromEntries(Object.entries(r.category_budgets ?? {}).map(([k, v]) => [k, Number(v)])),
     alertAt80: r.alert_at_80,
+    rolloverKeys: r.rollover_keys ?? [],
   }),
 };
 
@@ -240,6 +242,7 @@ export const toRow = {
     expense_budget: g.expenseBudget,
     category_budgets: g.categoryBudgets,
     alert_at_80: g.alertAt80,
+    rollover_keys: g.rolloverKeys ?? [],
     updated_at: new Date().toISOString(),
   }),
 };

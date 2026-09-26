@@ -2,7 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import Link from "next/link";
 import { PushScreen } from "@/components/app";
+import { NetWorthChart, SpendCalendar } from "@/components/insightCharts";
+import { Icon } from "@/components/ui/Icon";
 import { Card, Empty, PushHeader } from "@/components/ui/primitives";
 import { categoryLabel } from "@/lib/constants";
 import { baht, displayYear, monthKey, monthLabel, monthNamesShort, todayISO } from "@/lib/format";
@@ -100,6 +103,16 @@ export default function InsightsPage() {
           <Empty>{t("insights.noSpend")}</Empty>
         )}
       </section>
+
+      <SpendCalendar month={sel.month} />
+
+      <NetWorthChart />
+
+      <Link href="/insights/year" className="flex min-h-[56px] items-center gap-3 rounded-2xl border border-line bg-card px-4">
+        <Icon name="calendar" size={20} strokeWidth={2} />
+        <span className="grow text-[15px] font-semibold">{t("year.open", { year: displayYear(Number(current.slice(0, 4))) })}</span>
+        <Icon name="chevronRight" size={16} strokeWidth={2} className="text-faint" />
+      </Link>
     </PushScreen>
   );
 }

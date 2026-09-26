@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Bar, Empty, HeroCard, IconButton, ListCard, PushHeader } from "@/components/ui/primitives";
 import { categoryLabel } from "@/lib/constants";
 import { baht, todayISO } from "@/lib/format";
+import { rolloverCarry } from "@/lib/budget";
 import { daysLeftInMonth, monthPace, monthTransactions, spendByCategory, summarize } from "@/lib/selectors";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
@@ -28,9 +29,11 @@ export default function GoalsPage() {
   const remaining = goals.expenseBudget - sum.expense;
   const perDay = left > 0 ? Math.max(0, remaining) / left : 0;
 
+  const carry = rolloverCarry(goals, transactions, viewMonth);
   const cats = Object.entries(goals.categoryBudgets)
     .filter(([, b]) => b > 0)
-    .map(([key, budget]) => {
+    .map(([key, base]) => {
+      const budget = base + (carry[key] ?? 0);
       const spent = byCat[key] ?? 0;
       const r = spent / budget;
       const over = r > 1;
@@ -106,6 +109,7 @@ export default function GoalsPage() {
                   color={c.over ? "var(--color-expense)" : c.fast ? "var(--color-warn)" : "var(--color-income)"}
                   marker={pace > 0 && pace < 1 ? { at: pace, color: "var(--color-ink)" } : undefined}
                 />
+                {carry[c.key] ? <span className="text-xs text-income">{tr("goals.carried", { amount: baht(carry[c.key]) })}</span> : null}
                 <span className={c.over ? "text-xs font-semibold text-danger" : "text-xs text-muted"}>
                   {c.over ? tr("goals.over", { amount: baht(c.spent - c.budget) }) : tr("goals.catLeft", { amount: baht(c.budget - c.spent) }) + (c.fast ? tr("goals.fast") : "")}
                 </span>

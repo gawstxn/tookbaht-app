@@ -1,4 +1,4 @@
-import { budgetLines } from "./budget";
+import { budgetLines, rolloverCarry, withCarry } from "./budget";
 import { baht, addDays, fromISO, monthKey, monthLabel, relativeDue, shiftMonth, toISO } from "./format";
 import { formatMoney } from "./fx";
 import { t } from "./i18n";
@@ -85,7 +85,7 @@ export function buildNotifications(input: {
   // Budget alerts for this month, timed at the transaction that crossed the line.
   const month = monthKey(today);
   const monthTxs = monthTransactions(transactions, month);
-  const { cats, total } = budgetLines(goals, monthTxs);
+  const { cats, total } = budgetLines(withCarry(goals, rolloverCarry(goals, transactions, month)), monthTxs);
   const daysLeft = daysLeftInMonth(month, today);
   for (const line of [...(total ? [total] : []), ...cats]) {
     const pick = (t: Transaction) => (t.type === "out" && (line.key === "total" || t.category === line.key) ? t.amount : 0);
@@ -172,7 +172,7 @@ export function buildNotifications(input: {
   const lastTxs = monthTransactions(transactions, lastMonth);
   if (lastTxs.length) {
     const sum = summarize(lastTxs);
-    const over = budgetLines(goals, lastTxs);
+    const over = budgetLines(withCarry(goals, rolloverCarry(goals, transactions, lastMonth)), lastTxs);
     const overLabels = [...(over.total && over.total.spent > over.total.budget ? [over.total] : []), ...over.cats.filter((c) => c.spent > c.budget)].map((l) => l.label);
     const body = t(sum.net < 0 ? "notif.summaryShort" : "notif.summaryBody", {
       income: baht(sum.income),

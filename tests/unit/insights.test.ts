@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { categoryBreakdown, compact, monthlySeries, niceTicks } from "@/lib/insights";
+import { categoryBreakdown, compact, dailySpend, monthlySeries, netWorthSeries, niceTicks, yearSummary, yearsWithData } from "@/lib/insights";
 import type { Transaction } from "@/lib/types";
 
 let n = 0;
@@ -49,5 +49,44 @@ describe("insights", () => {
 
   it("shortens axis numbers", () => {
     expect([compact(45000), compact(2500), compact(1_250_000), compact(800)]).toEqual(["45K", "2.5K", "1.3M", "800"]);
+  });
+});
+
+describe("calendar, net worth and the year", () => {
+  const acc = (id: string, kind: "bank" | "credit", openingBalance: number) => ({ id, name: id, kind, openingBalance, mono: "", tone: "", fxFeePct: 0 });
+  const tx = (p: Partial<import("@/lib/types").Transaction>) => ({ id: Math.random().toString(), type: "out" as const, amount: 0, date: "2026-09-01", title: "", accountId: "bank", category: "food", createdAt: 1, ...p });
+
+  it("sums spending per day", () => {
+    const d = dailySpend([tx({ amount: 50, date: "2026-09-02" }), tx({ amount: 25, date: "2026-09-02" }), tx({ amount: 9, date: "2026-08-31" })], "2026-09");
+    expect(d).toEqual({ "2026-09-02": 75 });
+  });
+
+  it("tracks net worth: cash in accounts less what cards owe, at each month end", () => {
+    const accounts = [acc("bank", "bank", 10000), acc("card", "credit", 50000)];
+    const txs = [
+      tx({ amount: 2000, date: "2026-08-05", accountId: "card" }),
+      tx({ type: "in", amount: 30000, date: "2026-09-01", category: "salary" }),
+      tx({ type: "move", amount: 2000, date: "2026-09-05", accountId: undefined, fromId: "bank", toId: "card" }),
+    ];
+    expect(netWorthSeries(accounts, txs, "2026-09", 3)).toEqual([
+      { month: "2026-07", value: 10000 },
+      { month: "2026-08", value: 8000 },
+      { month: "2026-09", value: 38000 },
+    ]);
+  });
+
+  it("sums up a year", () => {
+    const txs = [
+      tx({ type: "in", amount: 30000, date: "2026-01-01", category: "salary" }),
+      tx({ amount: 1200, date: "2026-01-10", category: "food" }),
+      tx({ amount: 419, date: "2026-02-05", category: "sub", subscriptionId: "s" }),
+      tx({ amount: 5000, date: "2025-12-20" }),
+    ];
+    const y = yearSummary(txs, 2026);
+    expect({ income: y.income, expense: y.expense, automatic: y.automatic, entries: y.entries, biggest: y.biggest?.amount, best: y.bestMonth?.month }).toEqual({
+      income: 30000, expense: 1619, automatic: 419, entries: 3, biggest: 1200, best: "2026-01",
+    });
+    expect(y.topCategories[0]).toEqual({ key: "food", amount: 1200 });
+    expect(yearsWithData(txs)).toEqual([2026, 2025]);
   });
 });

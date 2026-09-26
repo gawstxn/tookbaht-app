@@ -10,7 +10,7 @@ import { NotificationBell } from "@/components/notifications";
 import { QuickEntries } from "@/components/QuickEntries";
 import { TxDetailSheet } from "@/components/TxDetailSheet";
 import { Bar, Card, Empty, HeroCard, ListCard, SectionHeader, TabHeader, cx } from "@/components/ui/primitives";
-import { budgetBanner, dailyAllowance } from "@/lib/budget";
+import { budgetBanner, dailyAllowance, rolloverCarry, withCarry } from "@/lib/budget";
 import { formatMoney } from "@/lib/fx";
 import { baht, splitDecimals, todayISO } from "@/lib/format";
 import { debtsByPerson } from "@/lib/ious";
@@ -33,7 +33,8 @@ export default function OverviewPage() {
     () => [...month].sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt).slice(0, 5),
     [month],
   );
-  const banner = budgetBanner(goals, month, viewMonth, today);
+  const monthGoals = useMemo(() => withCarry(goals, rolloverCarry(goals, transactions, viewMonth)), [goals, transactions, viewMonth]);
+  const banner = budgetBanner(monthGoals, month, viewMonth, today);
   const allowance = useMemo(() => dailyAllowance(goals, month, viewMonth, today), [goals, month, viewMonth, today]);
   const [whole, dec] = splitDecimals(sum.net);
   const incomePct = goals.incomeTarget ? sum.income / goals.incomeTarget : 0;

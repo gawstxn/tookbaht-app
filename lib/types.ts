@@ -116,6 +116,8 @@ export interface Goals {
   expenseBudget: number;
   categoryBudgets: Record<string, number>;
   alertAt80: boolean;
+  /** Categories whose unused budget carries into the next month. */
+  rolloverKeys?: string[];
 }
 
 export interface Settings {
