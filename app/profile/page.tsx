@@ -124,6 +124,7 @@ export default function ProfilePage() {
 
       <Group title={tr("profile.finance")}>
         <NavRow label={tr("profile.myAccounts")} value={tr("common.accounts", { count: accounts.length })} onClick={() => router.push("/accounts")} />
+        <NavRow label={tr("profile.currency")} value={tr("profile.currencyValue")} onClick={() => setSheet("currency")} />
         <NavRow label={tr("ious.title")} value={owedCount ? tr("ious.people", { count: owedCount }) : undefined} onClick={() => router.push("/ious")} />
         <NavRow label={tr("savings.title")} value={savingsGoals.length ? String(savingsGoals.length) : undefined} onClick={() => router.push("/goals")} />
         <NavRow label={tr("profile.myData")} value={tr("profile.myDataValue")} onClick={() => setSheet("data")} />
@@ -142,7 +143,6 @@ export default function ProfilePage() {
       <Group title={tr("profile.display")}>
         <NavRow label={tr("lang.title")} value={langOptions.find((o) => o.value === currentLang())?.label} onClick={() => setSheet("lang")} />
         <NavRow label={tr("theme.title")} value={themeOptions.find((o) => o.value === theme)?.label} onClick={() => setSheet("theme")} />
-        <NavRow label={tr("profile.currency")} value={tr("profile.currencyValue")} onClick={() => setSheet("currency")} />
       </Group>
 
       <Group title={tr("lock.group")}>
