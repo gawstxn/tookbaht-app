@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { entryDefaults, quickEntries } from "@/lib/quick";
+import { entryDefaults, quickEntries, recentDuplicate } from "@/lib/quick";
 import type { Transaction } from "@/lib/types";
 
 let seq = 0;
@@ -75,5 +75,22 @@ describe("entry defaults", () => {
   it("returns nothing without history and skips subscription charges", () => {
     expect(entryDefaults([], "out", ACCOUNTS)).toEqual({ category: undefined, accountId: undefined });
     expect(entryDefaults([tx({ category: "sub", subscriptionId: "s" })], "out", ACCOUNTS)).toEqual({ category: undefined, accountId: undefined });
+  });
+});
+
+describe("double taps", () => {
+  const now = 1_000_000_000;
+  const entry = { type: "out" as const, amount: 65, date: "2026-09-20", category: "food", accountId: "cash" };
+
+  it("finds the same entry saved minutes ago", () => {
+    const dup = tx({ createdAt: now - 60_000 });
+    expect(recentDuplicate([dup], entry, now)?.id).toBe(dup.id);
+  });
+
+  it("ignores older, different or auto-logged entries", () => {
+    expect(recentDuplicate([tx({ createdAt: now - 20 * 60_000 })], entry, now)).toBeUndefined();
+    expect(recentDuplicate([tx({ createdAt: now, amount: 70 })], entry, now)).toBeUndefined();
+    expect(recentDuplicate([tx({ createdAt: now, accountId: "bank" })], entry, now)).toBeUndefined();
+    expect(recentDuplicate([tx({ createdAt: now, subscriptionId: "s" })], entry, now)).toBeUndefined();
   });
 });

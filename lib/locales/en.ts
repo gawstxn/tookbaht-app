@@ -141,6 +141,8 @@ const en: Messages = {
     summaryBody: "In {{income}} · Out {{expense}} · Saved {{left}}",
     summaryShort: "In {{income}} · Out {{expense}} · Short {{left}}",
     summaryOver: "Over budget: {{list}}",
+    priceUp: "{{name}} went up",
+    priceUpBody: "{{to}} this time, was {{from}}",
     weeklyBody: "Spent {{amount}} · See all",
   },
   add: {
@@ -623,6 +625,12 @@ const en: Messages = {
     linkedLead: "Progress follows this account's balance; best for a savings account set aside for this goal.",
     manualLead: "Tap \"Put in\" whenever you set money aside; balances don't change.",
   },
+  reminder: {
+    label: "Remind me at 8 pm",
+    hint: "If I haven't logged anything that day",
+    on: "Evening reminder on",
+    off: "Evening reminder off",
+  },
   summary: {
     label: "Monthly summary",
     hint: "On the 1st: last month's income, spending, savings and budgets that went over",
@@ -648,6 +656,16 @@ const en: Messages = {
     dropped: "{{count}} offline changes couldn't be saved",
     needsConnection: "You need a connection for this",
     logoutPending: "{{count}} changes made offline haven't synced yet. Signing out now loses them.",
+  },
+  allowance: {
+    left: "Left to spend today",
+    over: "Over today's share by",
+    spent: "Spent {{spent}} of {{perDay}} a day",
+  },
+  dup: {
+    title: "Log it again?",
+    lead: "You logged {{title}} {{amount}} {{minutes}} min ago. Save another one?",
+    save: "Save another",
   },
   toast: {
     iouAdded: "{{name}} owes you {{amount}}",

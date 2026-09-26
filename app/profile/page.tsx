@@ -173,6 +173,15 @@ export default function ProfilePage() {
             notify(on ? tr("summary.on") : tr("summary.off"));
           }}
         />
+        <SwitchRow
+          label={tr("reminder.label")}
+          hint={tr("reminder.hint")}
+          checked={settings.dailyReminder === true}
+          onChange={(on) => {
+            setSettings({ dailyReminder: on });
+            notify(on ? tr("reminder.on") : tr("reminder.off"));
+          }}
+        />
       </Group>
 
       <Group title={tr("profile.about")}>

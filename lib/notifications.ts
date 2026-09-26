@@ -5,7 +5,7 @@ import { t } from "./i18n";
 import { REPAY_CATEGORY, accountDue, daysLeftInMonth, monthTransactions, nextCharge, summarize } from "./selectors";
 import type { Account, Goals, Settings, Subscription, Transaction } from "./types";
 
-export type NotifKind = "due" | "over" | "near" | "autolog" | "income" | "weekly" | "summary";
+export type NotifKind = "due" | "over" | "near" | "autolog" | "income" | "weekly" | "summary" | "price";
 
 export interface AppNotification {
   id: string;
@@ -145,6 +145,25 @@ export function buildNotifications(input: {
       title: t("notif.autoLogged", { name: tx.title }),
       body: t("notif.fromAccount", { amount: `−${baht(tx.amount)}`, account: accName(tx.accountId) }),
       href: "/transactions",
+    });
+  }
+
+  // A service that charged more than last time. Dollar prices compare in dollars,
+  // so exchange-rate swings don't count as a price rise.
+  for (const s of subscriptions) {
+    const logged = transactions.filter((tx) => tx.subscriptionId === s.id).sort((a, b) => a.date.localeCompare(b.date) || a.createdAt - b.createdAt);
+    if (logged.length < 2) continue;
+    const [prev, last] = logged.slice(-2);
+    const price = (tx: Transaction) => tx.origAmount ?? tx.amount;
+    const currency = last.origCurrency ?? "THB";
+    if ((prev.origCurrency ?? "THB") !== currency || price(last) < price(prev) * 1.01) continue;
+    out.push({
+      id: `price:${s.id}:${last.date}`,
+      kind: "price",
+      at: Math.max(last.createdAt, at(last.date, 0)),
+      title: t("notif.priceUp", { name: s.name }),
+      body: t("notif.priceUpBody", { from: formatMoney(price(prev), currency), to: formatMoney(price(last), currency) }),
+      href: `/subscriptions/${s.id}`,
     });
   }
 
