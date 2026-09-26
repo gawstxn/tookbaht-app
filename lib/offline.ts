@@ -16,7 +16,7 @@ export type Op =
   | { table: string; kind: "delete"; match: Match };
 
 export interface OpResult {
-  error: { message?: string; code?: string } | null;
+  error: { message?: string; code?: string; hint?: string } | null;
   status: number;
 }
 

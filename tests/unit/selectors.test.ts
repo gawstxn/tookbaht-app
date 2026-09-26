@@ -228,3 +228,18 @@ describe("deleting an account", () => {
     expect(accountDeleteBlock("b", [a, b], [tx({ type: "out", amount: 1, accountId: "a" })], [])).toBeNull();
   });
 });
+
+describe("money paid back", () => {
+  const base = { id: "x", date: "2026-09-10", title: "", accountId: "a", createdAt: 1 };
+  it("lowers spending instead of adding income", () => {
+    const txs = [
+      { ...base, type: "out" as const, amount: 1200, category: "food" },
+      { ...base, type: "in" as const, amount: 900, category: "repay" },
+      { ...base, type: "in" as const, amount: 30000, category: "salary" },
+    ];
+    expect(summarize(txs)).toEqual({ income: 30000, expense: 300, moved: 0, net: 29700 });
+  });
+  it("never shows negative spending", () => {
+    expect(summarize([{ ...base, type: "in" as const, amount: 500, category: "repay" }]).expense).toBe(0);
+  });
+});

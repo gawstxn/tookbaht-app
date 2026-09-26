@@ -51,8 +51,8 @@ interface State {
 interface Actions {
   /** Fetch everything for the signed-in user. */
   load: (userId: string) => Promise<void>;
-  /** Send changes made offline (does nothing without any, or still without a connection). */
-  flush: () => Promise<void>;
+  /** Send changes made offline (does nothing without any, or still without a connection). Resolves how many the server refused. */
+  flush: () => Promise<number>;
   /** Send offline changes, then refresh from the server in the background. */
   sync: (refetch?: boolean) => Promise<void>;
   /** Clear in-memory data (after sign-out). */
@@ -146,6 +146,10 @@ export const toSnapshot = (s: State): Snapshot => ({
 });
 
 const SAVE_FAILED = () => t("toast.saveFailed");
+/** Give up on loading after this long (a weak signal can leave requests hanging). */
+const FETCH_TIMEOUT = 15_000;
+const within = <T,>(promise: Promise<T>, ms: number) =>
+  Promise.race([promise, new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timed out")), ms))]);
 const UNDO = () => t("common.undo");
 let toastSeq = 0;
 
@@ -184,10 +188,20 @@ export const useStore = create<State & Actions>()((set, get) => {
     }
     console.error(res.error);
     undo();
-    get().notify(message, { tone: "error" });
+    get().notify(res.error.hint === "row_limit" ? t("toast.rowLimit") : message, { tone: "error" });
     return false;
   };
   let flushing = false;
+  let syncing = false;
+
+  /** After fresh data arrives: language, charges due now, the USD rate. */
+  const afterFetch = (data: Awaited<ReturnType<typeof fetchAll>>) => {
+    // The profile's language wins; if it has none yet, store the one in use.
+    if (data.settings.lang) applyLang(data.settings.lang);
+    else get().setSettings({ lang: currentLang() });
+    void get().runAutoLog();
+    if (data.subscriptions.some((s) => s.currency === "USD")) void get().ensureUsdRate();
+  };
 
   const insertTransaction = (tx: Transaction) => {
     set((s) => ({ transactions: [...s.transactions, tx] }));
@@ -239,36 +253,31 @@ export const useStore = create<State & Actions>()((set, get) => {
 
     load: async (userId) => {
       set({ status: "loading", userId, pending: outbox(userId).list().length });
+      // With a copy on this device, show it at once and refresh in the background:
+      // opening never waits on the network (a weak signal can hang for a long time).
       const cached = snapshot<Snapshot>(userId).read();
-      const showCached = () => {
-        if (!cached || get().userId !== userId) return false;
-        set({ ...cached.data, status: "ready", offline: true });
+      if (cached) {
+        set({ ...cached.data, status: "ready", offline: false });
         if (cached.data.settings.lang) applyLang(cached.data.settings.lang);
-        return true;
-      };
-      if (!online() && showCached()) return;
+        void get().sync(true);
+        return;
+      }
       try {
-        // Changes made offline go first, so the fresh copy includes them.
         await get().flush();
-        if (get().pending > 0 && showCached()) return;
-        const data = await fetchAll(sb(), userId);
+        const data = await within(fetchAll(sb(), userId), FETCH_TIMEOUT);
         if (get().userId !== userId) return;
         set({ ...data, goals: data.goals ?? EMPTY_GOALS, status: "ready", offline: false });
-        // The profile's language wins; if it has none yet, store the one in use.
-        if (data.settings.lang) applyLang(data.settings.lang);
-        else get().setSettings({ lang: currentLang() });
-        await get().runAutoLog();
-        if (data.subscriptions.some((s) => s.currency === "USD")) void get().ensureUsdRate();
+        afterFetch(data);
       } catch (e) {
         console.error(e);
-        if (!showCached() && get().userId === userId) set({ status: "error" });
+        if (get().userId === userId) set({ status: "error" });
       }
     },
     flush: async () => {
       const userId = get().userId;
-      if (!userId || flushing || !online()) return;
+      if (!userId || flushing || !online()) return 0;
       const box = outbox(userId);
-      if (!box.list().length) return;
+      if (!box.list().length) return 0;
       flushing = true;
       let dropped = 0;
       let stalled = false;
@@ -293,25 +302,34 @@ export const useStore = create<State & Actions>()((set, get) => {
       } finally {
         flushing = false;
       }
-      if (stalled || get().userId !== userId) return;
+      if (stalled || get().userId !== userId) return dropped;
       if (dropped) get().notify(t("offline.dropped", { count: dropped }), { tone: "error" });
       else get().notify(t("offline.synced"));
-      // During start-up load() fetches next; otherwise show what the server has now.
-      if (get().status === "ready") await get().sync(dropped > 0);
+      void get().runAutoLog();
+      return dropped;
     },
     sync: async (refetch = false) => {
-      await get().flush();
-      const userId = get().userId;
-      // Only showing this device's copy (opened offline), or the server turned changes down: fetch.
-      if (!userId || get().status !== "ready" || get().pending > 0 || !online() || !(refetch || get().offline)) return;
-      // Swap in fresh data without leaving the screen (no loading state).
+      if (syncing) return;
+      syncing = true;
       try {
-        const data = await fetchAll(sb(), userId);
-        if (get().userId !== userId || get().pending > 0) return;
-        set({ ...data, goals: data.goals ?? EMPTY_GOALS, offline: false });
-        await get().runAutoLog();
-      } catch (e) {
-        console.error(e);
+        // The server turned some changes down: show what it has instead.
+        if ((await get().flush()) > 0) refetch = true;
+        const userId = get().userId;
+        // Showing this device's copy, or the server turned changes down: fetch.
+        if (!userId || get().status !== "ready" || get().pending > 0 || !(refetch || get().offline)) return;
+        if (!online()) return void set({ offline: true });
+        // Swap in fresh data without leaving the screen (no loading state).
+        try {
+          const data = await within(fetchAll(sb(), userId), FETCH_TIMEOUT);
+          if (get().userId !== userId || get().pending > 0) return;
+          set({ ...data, goals: data.goals ?? EMPTY_GOALS, offline: false });
+          afterFetch(data);
+        } catch (e) {
+          console.error(e);
+          if (get().userId === userId) set({ offline: true });
+        }
+      } finally {
+        syncing = false;
       }
     },
     reset: () => set({ ...initial, viewMonth: todayISO().slice(0, 7) }),

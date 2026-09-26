@@ -77,10 +77,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Once signed in, have the service worker keep the app's screens for offline use.
+  // Once signed in, have the service worker keep the app's screens for offline use,
+  // including each subscription's and account's detail screen.
   useEffect(() => {
     if (status !== "ready" || process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return;
-    void navigator.serviceWorker.ready.then((reg) => reg.active?.postMessage({ type: "warm", urls: OFFLINE_PAGES }));
+    const { subscriptions, accounts } = useStore.getState();
+    const detail = [...subscriptions.map((s) => `/subscriptions/${s.id}`), ...accounts.map((a) => `/accounts/${a.id}`)].slice(0, 80);
+    const build = `${process.env.NEXT_PUBLIC_APP_VERSION}-${process.env.NEXT_PUBLIC_APP_COMMIT}`;
+    void navigator.serviceWorker.ready.then((reg) => reg.active?.postMessage({ type: "warm", urls: [...OFFLINE_PAGES, ...detail], build }));
   }, [status]);
 
   // Logos are a separate chunk; fetch it while the user's data loads.

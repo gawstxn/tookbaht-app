@@ -6,15 +6,25 @@ export function monthTransactions(txs: Transaction[], key: string) {
   return txs.filter((t) => monthKey(t.date) === key);
 }
 
+/** Money friends paid back ("ได้เงินคืน"): it lowers what the user spent rather than counting as income. */
+export const REPAY_CATEGORY = "repay";
+
+/**
+ * Month totals. A repayment is taken off spending (the bill was logged in
+ * full, but only the user's share was really spent), so it doesn't inflate
+ * income or the income goal. Account balances still count it as money in.
+ */
 export function summarize(txs: Transaction[]) {
   let income = 0;
   let expense = 0;
   let moved = 0;
   for (const t of txs) {
-    if (t.type === "in") income += t.amount;
+    if (t.type === "in" && t.category === REPAY_CATEGORY) expense -= t.amount;
+    else if (t.type === "in") income += t.amount;
     else if (t.type === "out") expense += t.amount;
     else moved += t.amount;
   }
+  expense = Math.max(0, expense);
   return { income, expense, moved, net: income - expense };
 }
 
