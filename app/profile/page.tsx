@@ -143,6 +143,15 @@ export default function ProfilePage() {
       <Group title={tr("profile.display")}>
         <NavRow label={tr("lang.title")} value={langOptions.find((o) => o.value === currentLang())?.label} onClick={() => setSheet("lang")} />
         <NavRow label={tr("theme.title")} value={themeOptions.find((o) => o.value === theme)?.label} onClick={() => setSheet("theme")} />
+        <SwitchRow
+          label={tr("profile.keypadMath")}
+          hint={tr("profile.keypadMathHint")}
+          checked={settings.keypadMath !== false}
+          onChange={(on) => {
+            setSettings({ keypadMath: on });
+            notify(on ? tr("profile.keypadMathOn") : tr("profile.keypadMathOff"));
+          }}
+        />
       </Group>
 
       <Group title={tr("lock.group")}>

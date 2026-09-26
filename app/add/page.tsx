@@ -34,6 +34,9 @@ function AddForm() {
   const params = useSearchParams();
   const accounts = useStore((s) => s.accounts);
   const txs = useStore((s) => s.transactions);
+  const keypadMath = useStore((s) => s.settings.keypadMath !== false);
+  const setSettings = useStore((s) => s.setSettings);
+  const notify = useStore((s) => s.notify);
   const addTransaction = useStore((s) => s.addTransaction);
   const updateTransaction = useStore((s) => s.updateTransaction);
   // /add?edit=<id> edits a saved transaction with the same form.
@@ -130,7 +133,30 @@ function AddForm() {
 
   return (
     <PushScreen className="gap-3">
-      <PushHeader title={editing ? t("tx.editTitle") : t("add.title")} backIcon="close" onBack={() => goBack()} />
+      <PushHeader
+        title={editing ? t("tx.editTitle") : t("add.title")}
+        backIcon="close"
+        onBack={() => goBack()}
+        action={
+          <button
+            type="button"
+            aria-pressed={keypadMath}
+            aria-label={t("profile.keypadMath")}
+            onClick={() => {
+              // Turning the keys off keeps the amount: a half-typed sum becomes its total.
+              if (keypadMath && summing) setAmount(value > 0 ? String(value) : "");
+              setSettings({ keypadMath: !keypadMath });
+              notify(t(keypadMath ? "profile.keypadMathOff" : "profile.keypadMathOn"));
+            }}
+            className={cx(
+              "flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
+              keypadMath ? "bg-ink text-on-ink" : "border border-line bg-card text-muted",
+            )}
+          >
+            <Icon name="calc" size={20} strokeWidth={keypadMath ? 2.2 : 2} />
+          </button>
+        }
+      />
 
       <Segmented
         label={t("add.typeLabel")}
@@ -214,14 +240,14 @@ function AddForm() {
         />
       </div>
 
-      <div className="mt-auto grid grid-cols-4 gap-1.5">
-        {KEYS.map((k) => (
+      <div className={cx("mt-auto grid gap-1.5", keypadMath ? "grid-cols-4" : "grid-cols-3")}>
+        {(keypadMath ? MATH_KEYS : PLAIN_KEYS).map((k) => (
           <button
             key={k}
             type="button"
             aria-label={k === "del" ? t("add.del") : k === "+" ? t("add.plus") : k === "-" ? t("add.minus") : k === "*" ? t("add.times") : k}
             onClick={() => press(k)}
-            className={cx("flex min-h-[50px] items-center justify-center rounded-xl font-mono text-[22px] font-medium", /[0-9]/.test(k) ? "bg-card" : "bg-chip", k === "del" && "col-span-2")}
+            className={cx("flex min-h-[50px] items-center justify-center rounded-xl font-mono text-[22px] font-medium", /[0-9]/.test(k) ? "bg-card" : "bg-chip", k === "del" && keypadMath && "col-span-2")}
           >
             {k === "del" ? <Icon name="del" size={24} /> : (OP_LABEL[k] ?? k)}
           </button>
@@ -251,8 +277,10 @@ function AddForm() {
   );
 }
 
-/** Number pad with + − × down the right; the entry saves the total. */
-const KEYS: CalcKey[] = ["1", "2", "3", "+", "4", "5", "6", "-", "7", "8", "9", "*", ".", "0", "del"];
+/** Number pad with + − × down the right (unless turned off in Profile); the entry saves the total. */
+const MATH_KEYS: CalcKey[] = ["1", "2", "3", "+", "4", "5", "6", "-", "7", "8", "9", "*", ".", "0", "del"];
+/** Without the calculator (switch in Profile). */
+const PLAIN_KEYS: CalcKey[] = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "del"];
 const OP_LABEL: Partial<Record<CalcKey, string>> = { "+": "+", "-": "−", "*": "×" };
 
 function FieldButton({ label, value, onClick }: { label: string; value: string; onClick: () => void }) {

@@ -7,6 +7,7 @@ import { baht2, todayISO } from "@/lib/format";
 import { accountBalance, reconcileEntry } from "@/lib/selectors";
 import { useStore } from "@/lib/store";
 import type { Account } from "@/lib/types";
+import { BahtInput } from "./BahtInput";
 
 /** Enter the balance the bank shows; the difference is logged as income or an expense. */
 export function ReconcileSheet({ account, onClose }: { account: Account | undefined; onClose: () => void }) {
@@ -40,9 +41,8 @@ function ReconcileFields({ account, onDone }: { account: Account; onDone: () => 
           <span className="shrink-0 text-[13px] text-muted">{t(credit ? "accounts.actualCredit" : "accounts.actual")}</span>
           <span className="flex grow items-baseline justify-end gap-0.5 font-mono text-[24px] font-semibold">
             ฿
-            <input
+            <BahtInput
               autoFocus
-              inputMode="decimal"
               value={text}
               onChange={(e) => setText(e.target.value.replace(/[^0-9.]/g, ""))}
               placeholder="0"

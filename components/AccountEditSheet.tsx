@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { MONO_TONES } from "@/lib/constants";
 import { t } from "@/lib/i18n";
 import type { Account, AccountKind } from "@/lib/types";
+import { BahtInput } from "./BahtInput";
 
 export type AccountDraft = Omit<Account, "id">;
 
@@ -103,8 +104,7 @@ function AccountFields({
           <span className="shrink-0 text-[13px] text-muted">{balanceLabel(kind)}</span>
           <span className="flex grow items-baseline gap-0.5 font-mono text-[26px] font-semibold">
             ฿
-            <input
-              inputMode="decimal"
+            <BahtInput
               value={balanceText}
               onChange={(e) => setBalanceText(e.target.value.replace(/[^0-9.]/g, ""))}
               placeholder="0"
