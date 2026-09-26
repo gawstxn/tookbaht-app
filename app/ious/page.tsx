@@ -7,42 +7,61 @@ import { AmountInput } from "@/components/AmountInput";
 import { ConfirmSheet } from "@/components/ConfirmSheet";
 import { PersonField, personTone } from "@/components/ious";
 import { Icon } from "@/components/ui/Icon";
-import { Chip, Empty, HeroCard, IconButton, ListCard, Monogram, PrimaryButton, PushHeader, SecondaryButton, Sheet } from "@/components/ui/primitives";
+import { Chip, Empty, HeroCard, IconButton, ListCard, Monogram, PrimaryButton, PushHeader, SecondaryButton, Segmented, Sheet } from "@/components/ui/primitives";
+import { EXPENSE_CATEGORIES } from "@/lib/constants";
 import { baht, baht2, shortDate, todayISO } from "@/lib/format";
 import { debtsByPerson, knownPeople, owedTotal } from "@/lib/ious";
 import { useGoBack } from "@/lib/nav";
 import { useStore } from "@/lib/store";
-import type { Iou } from "@/lib/types";
+import type { Iou, IouDirection } from "@/lib/types";
 
-/** ใครติดเงินเรา: unpaid debts by friend, recently repaid ones below. */
+/** Money owed between the user and friends, in two tabs: friends who owe the user, and friends the user owes. */
 export default function IousPage() {
   const { t } = useTranslation();
   const goBack = useGoBack("/");
   const ious = useStore((s) => s.ious);
+  const [dir, setDir] = useState<IouDirection>("owed_to_me");
   const [adding, setAdding] = useState(false);
   const [selected, setSelected] = useState<Iou | null>(null);
-  const people = useMemo(() => debtsByPerson(ious), [ious]);
-  const total = useMemo(() => owedTotal(ious), [ious]);
+  const iOwe = dir === "i_owe";
+  const people = useMemo(() => debtsByPerson(ious, dir), [ious, dir]);
+  const total = useMemo(() => owedTotal(ious, dir), [ious, dir]);
   const settled = useMemo(
-    () => ious.filter((i) => i.settledOn).sort((a, b) => b.settledOn!.localeCompare(a.settledOn!) || b.createdAt - a.createdAt).slice(0, 10),
-    [ious],
+    () =>
+      ious
+        .filter((i) => i.settledOn && (i.direction ?? "owed_to_me") === dir)
+        .sort((a, b) => b.settledOn!.localeCompare(a.settledOn!) || b.createdAt - a.createdAt)
+        .slice(0, 10),
+    [ious, dir],
   );
 
   return (
     <PushScreen>
       <PushHeader title={t("ious.title")} onBack={goBack} action={<IconButton icon="plus" label={t("ious.add")} variant="dark" onClick={() => setAdding(true)} />} />
 
+      <Segmented
+        label={t("ious.title")}
+        value={dir}
+        onChange={setDir}
+        options={[
+          { value: "owed_to_me", label: t("ious.tabOwedToMe") },
+          { value: "i_owe", label: t("ious.tabIOwe") },
+        ]}
+      />
+
       <HeroCard label={t("ious.title")}>
         <div className="flex flex-col gap-1">
-          <span className="text-[13px] text-on-ink-muted">{t("ious.owedToYou")}</span>
+          <span className="text-[13px] text-on-ink-muted">{t(iOwe ? "ious.youOwe" : "ious.owedToYou")}</span>
           <span className="font-mono text-4xl font-semibold leading-tight tracking-tight">{baht2(total)}</span>
         </div>
-        <span className="text-xs text-on-ink-muted">{people.length ? t("ious.people", { count: people.length }) : t("ious.allClear")}</span>
+        <span className="text-xs text-on-ink-muted">
+          {people.length ? t(iOwe ? "ious.peopleIOwe" : "ious.people", { count: people.length }) : t(iOwe ? "ious.allPaid" : "ious.allClear")}
+        </span>
       </HeroCard>
 
       <p className="flex items-start gap-2 text-xs leading-relaxed text-muted">
         <Icon name="users" size={16} strokeWidth={2} className="mt-px shrink-0" />
-        {t("ious.hint")}
+        {t(iOwe ? "ious.hintIOwe" : "ious.hint")}
       </p>
 
       {people.length ? (
@@ -51,7 +70,7 @@ export default function IousPage() {
             <div className="flex items-center gap-2.5">
               <Monogram text={(p.person[0] ?? "?").toUpperCase()} tone={personTone(p.person)} size={30} />
               <h2 className="grow text-base font-semibold">{p.person}</h2>
-              <span className="font-mono text-[15px] font-semibold text-income">{baht2(p.total)}</span>
+              <span className={iOwe ? "font-mono text-[15px] font-semibold text-expense" : "font-mono text-[15px] font-semibold text-income"}>{baht2(p.total)}</span>
             </div>
             <ListCard>
               {p.items.map((i) => (
@@ -61,7 +80,7 @@ export default function IousPage() {
           </section>
         ))
       ) : (
-        <Empty>{t("ious.empty")}</Empty>
+        <Empty>{t(iOwe ? "ious.emptyIOwe" : "ious.empty")}</Empty>
       )}
 
       {settled.length ? (
@@ -75,7 +94,7 @@ export default function IousPage() {
         </section>
       ) : null}
 
-      <AddIouSheet open={adding} onClose={() => setAdding(false)} />
+      <AddIouSheet open={adding} direction={dir} onClose={() => setAdding(false)} />
       <IouSheet iou={selected} onClose={() => setSelected(null)} />
     </PushScreen>
   );
@@ -96,7 +115,7 @@ function IouRow({ iou, onClick, showPerson }: { iou: Iou; onClick: () => void; s
 }
 
 /** "มิ้นท์ติดเงิน ฿300 ค่าหนัง" without a bill to split. */
-function AddIouSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+function AddIouSheet({ open, direction, onClose }: { open: boolean; direction: IouDirection; onClose: () => void }) {
   const { t } = useTranslation();
   const ious = useStore((s) => s.ious);
   const addIous = useStore((s) => s.addIous);
@@ -117,7 +136,7 @@ function AddIouSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
   const canSave = person.trim().length > 0 && value > 0;
 
   return (
-    <Sheet open={open} onClose={onClose} title={t("ious.addTitle")}>
+    <Sheet open={open} onClose={onClose} title={t(direction === "i_owe" ? "ious.addTitleIOwe" : "ious.addTitle")}>
       <PersonField value={person} onChange={setPerson} names={names} />
       <AmountInput label={t("ious.amount")} value={amount} onChange={setAmount} />
       <input
@@ -131,7 +150,7 @@ function AddIouSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
       <PrimaryButton
         disabled={!canSave}
         onClick={() => {
-          addIous([{ person: person.trim(), amount: value, note: note.trim(), date: todayISO(), transactionId: null, settledOn: null }]);
+          addIous([{ direction, person: person.trim(), amount: value, note: note.trim(), date: todayISO(), transactionId: null, settledOn: null }]);
           onClose();
         }}
       >
@@ -150,13 +169,16 @@ function IouSheet({ iou, onClose }: { iou: Iou | null; onClose: () => void }) {
   const updateIou = useStore((s) => s.updateIou);
   const deleteIou = useStore((s) => s.deleteIou);
   const [into, setInto] = useState("");
+  const [category, setCategory] = useState("food");
   const [confirming, setConfirming] = useState(false);
   if (!iou && confirming) setConfirming(false);
   const [shown, setShown] = useState<Iou | null>(iou);
   if (iou && iou !== shown) {
     setShown(iou);
     setInto("");
+    setCategory("food");
   }
+  const iOwe = shown?.direction === "i_owe";
   const bill = iou?.transactionId ? transactions.find((x) => x.id === iou.transactionId) : undefined;
 
   return (
@@ -184,7 +206,7 @@ function IouSheet({ iou, onClose }: { iou: Iou | null; onClose: () => void }) {
           ) : (
             <>
               <div className="flex flex-col gap-2">
-                <span className="text-[13px] text-muted">{t("ious.receivedInto")}</span>
+                <span className="text-[13px] text-muted">{t(iOwe ? "ious.paidFrom" : "ious.receivedInto")}</span>
                 <div className="flex flex-wrap gap-1.5">
                   <Chip size="sm" on={!into} onClick={() => setInto("")}>
                     {t("ious.dontLog")}
@@ -195,15 +217,24 @@ function IouSheet({ iou, onClose }: { iou: Iou | null; onClose: () => void }) {
                     </Chip>
                   ))}
                 </div>
-                <span className="text-xs leading-relaxed text-faint">{into ? t("ious.logHint") : t("ious.dontLogHint")}</span>
+                {iOwe && into ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {EXPENSE_CATEGORIES.filter((c) => c.key !== "sub").map((c) => (
+                      <Chip key={c.key} size="sm" on={category === c.key} onClick={() => setCategory(c.key)}>
+                        {c.label}
+                      </Chip>
+                    ))}
+                  </div>
+                ) : null}
+                <span className="text-xs leading-relaxed text-faint">{into ? t(iOwe ? "ious.logHintIOwe" : "ious.logHint") : t("ious.dontLogHint")}</span>
               </div>
               <PrimaryButton
                 onClick={() => {
-                  settleIou(iou.id, into || undefined);
+                  settleIou(iou.id, into || undefined, iOwe ? category : undefined);
                   onClose();
                 }}
               >
-                {t("ious.settle")}
+                {t(iOwe ? "ious.settleIOwe" : "ious.settle")}
               </PrimaryButton>
             </>
           )}

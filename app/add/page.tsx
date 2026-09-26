@@ -5,6 +5,7 @@ import { Suspense, useMemo, useRef, useState } from "react";
 import { PushScreen } from "@/components/app";
 import { ConfirmSheet } from "@/components/ConfirmSheet";
 import { QuickEntries } from "@/components/QuickEntries";
+import { TagField } from "@/components/TagField";
 import { AccountSheet, DateSheet } from "@/components/pickers";
 import { Icon } from "@/components/ui/Icon";
 import { Chip, PrimaryButton, PushHeader, Segmented, cx } from "@/components/ui/primitives";
@@ -67,6 +68,7 @@ function AddForm() {
   const [to, setTo] = useState(editing?.toId ?? initial?.toId ?? "");
   const [date, setDate] = useState(editing?.date ?? today);
   const [note, setNote] = useState(editing?.note ?? "");
+  const [tag, setTag] = useState(editing?.tag ?? "");
   const [sheet, setSheet] = useState<"" | "acc" | "from" | "to" | "date">("");
 
   // "Subscriptions" is for auto-logged charges; offer it only when editing one.
@@ -117,8 +119,8 @@ function AddForm() {
     const title = note.trim() || kept || fallback;
     const fields =
       type === "move"
-        ? { type, amount: value, date, title, note: undefined, category: undefined, accountId: undefined, fromId: from, toId: to }
-        : { type, amount: value, date, title, note: note.trim() || undefined, category: cat, accountId: acc, fromId: undefined, toId: undefined };
+        ? { type, amount: value, date, title, note: undefined, category: undefined, accountId: undefined, fromId: from, toId: to, tag: tag || undefined }
+        : { type, amount: value, date, title, note: note.trim() || undefined, category: cat, accountId: acc, fromId: undefined, toId: undefined, tag: tag || undefined };
     if (!editing && !confirmedDuplicate) {
       const now = clock();
       const dup = recentDuplicate(txs, fields, now);
@@ -248,6 +250,7 @@ function AddForm() {
           placeholder={copy.note}
           className="min-h-11 w-full rounded-xl border border-line bg-card px-3 text-sm outline-none"
         />
+        <TagField value={tag} onChange={setTag} />
       </div>
 
       <div className={cx("mt-auto grid gap-1.5", keypadMath ? "grid-cols-4" : "grid-cols-3")}>

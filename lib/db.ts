@@ -28,6 +28,7 @@ export interface TransactionRow {
   from_id: string | null;
   to_id: string | null;
   subscription_id: string | null;
+  tag: string | null;
   orig_amount: Num | null;
   orig_currency: Currency | null;
   fx_rate: Num | null;
@@ -54,6 +55,7 @@ interface SubscriptionRow {
 }
 interface IouRow {
   id: string;
+  direction: Iou["direction"] | null;
   person: string;
   amount: Num;
   note: string;
@@ -111,6 +113,7 @@ export const fromRow = {
     fromId: opt(r.from_id),
     toId: opt(r.to_id),
     subscriptionId: opt(r.subscription_id),
+    tag: opt(r.tag ?? null),
     origAmount: r.orig_amount === null ? undefined : Number(r.orig_amount),
     origCurrency: opt(r.orig_currency),
     fxRate: r.fx_rate === null ? undefined : Number(r.fx_rate),
@@ -137,6 +140,7 @@ export const fromRow = {
   }),
   iou: (r: IouRow): Iou => ({
     id: r.id,
+    direction: r.direction ?? "owed_to_me",
     person: r.person,
     amount: Number(r.amount),
     note: r.note ?? "",
@@ -190,6 +194,7 @@ export const toRow = {
       from_id: t.fromId ?? null,
       to_id: t.toId ?? null,
       subscription_id: t.subscriptionId ?? null,
+      tag: t.tag?.trim() || null,
       orig_amount: t.origAmount ?? null,
       orig_currency: t.origCurrency ?? null,
       fx_rate: t.fxRate ?? null,
@@ -218,6 +223,7 @@ export const toRow = {
   iou: (i: Partial<Iou>) =>
     strip({
       id: i.id,
+      direction: i.direction,
       person: i.person,
       amount: i.amount,
       note: i.note,
