@@ -10,6 +10,7 @@ import { useStore } from "@/lib/store";
 import { txTitle } from "@/lib/txTitle";
 import type { Transaction } from "@/lib/types";
 import { TxIcon } from "./app";
+import { ConfirmSheet } from "./ConfirmSheet";
 import { ListCard, PrimaryButton, SecondaryButton, Sheet } from "./ui/primitives";
 
 /** A saved entry's details with edit, split and delete (activity list and home). */
@@ -23,10 +24,13 @@ export function TxDetailSheet({ tx: open, onClose }: { tx: Transaction | null; o
   const [shown, setShown] = useState<Transaction | null>(open);
   if (open && open !== shown) setShown(open);
   const tx = open ?? shown;
+  const [confirming, setConfirming] = useState(false);
+  if (!open && confirming) setConfirming(false);
   const accName = (id?: string) => accounts.find((a) => a.id === id)?.name ?? "—";
 
   return (
-    <Sheet open={!!open} onClose={() => onClose()} title={tr("tx.detail")}>
+    <>
+    <Sheet open={!!open && !confirming} onClose={() => onClose()} title={tr("tx.detail")}>
       {tx ? (
         <>
           <div className="flex items-center gap-3">
@@ -69,18 +73,24 @@ export function TxDetailSheet({ tx: open, onClose }: { tx: Transaction | null; o
           {tx.type === "out" && !ious.some((i) => i.transactionId === tx.id) ? (
             <SecondaryButton onClick={() => router.push(`/ious/split?tx=${tx.id}`)}>{tr("split.action")}</SecondaryButton>
           ) : null}
-          <SecondaryButton
-            tone="danger"
-            onClick={() => {
-              deleteTransaction(tx.id);
-              onClose();
-            }}
-          >
+          <SecondaryButton tone="danger" onClick={() => setConfirming(true)}>
             {tr("tx.delete")}
           </SecondaryButton>
         </>
       ) : null}
     </Sheet>
+    <ConfirmSheet
+      open={!!open && confirming}
+      onClose={() => setConfirming(false)}
+      title={tr("tx.deleteTitle")}
+      lead={tx ? tr("tx.deleteLead", { name: txTitle(tx, accounts), amount: baht2(tx.amount) }) : ""}
+      confirmLabel={tr("tx.delete")}
+      onConfirm={() => {
+        if (tx) deleteTransaction(tx.id);
+        onClose();
+      }}
+    />
+    </>
   );
 }
 
