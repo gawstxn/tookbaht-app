@@ -8,7 +8,7 @@ import { accountSubtitle } from "@/lib/selectors";
 import type { CategoryDef } from "@/lib/constants";
 import { Icon } from "./ui/Icon";
 import { AccountMark } from "./app";
-import { PrimaryButton, Sheet, cx } from "./ui/primitives";
+import { PrimaryButton, SecondaryButton, Sheet, cx } from "./ui/primitives";
 
 /* ---------- calendar ---------- */
 
@@ -119,6 +119,96 @@ export function DateSheet({
       <Calendar key={open ? "o" : "c"} value={value} onChange={onChange} min={min} max={max} />
       {hint ? <p className="text-center text-[13px] text-muted">{hint}</p> : null}
       <PrimaryButton onClick={onClose}>{t("common.ok")}</PrimaryButton>
+    </Sheet>
+  );
+}
+
+/* ---------- month ---------- */
+
+/** Pick a month ("YYYY-MM") a year at a time; months before `min` are disabled. `onClear` adds a "no month" button. */
+export function MonthSheet({
+  open,
+  onClose,
+  title,
+  value,
+  onChange,
+  min,
+  onClear,
+  clearLabel,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  value: string;
+  onChange: (key: string) => void;
+  min?: string;
+  onClear?: () => void;
+  clearLabel?: string;
+}) {
+  const { t } = useTranslation();
+  const start = Number((value || min || monthKey(todayISO())).slice(0, 4));
+  const [year, setYear] = useState(start);
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setYear(start);
+  }
+  const minYear = min ? Number(min.slice(0, 4)) : -Infinity;
+  const names = monthNamesShort();
+  return (
+    <Sheet open={open} onClose={onClose} title={title}>
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          aria-label={t("picker.prevYear")}
+          disabled={year <= minYear}
+          onClick={() => setYear(year - 1)}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-line bg-card disabled:opacity-30"
+        >
+          <Icon name="back" size={18} strokeWidth={2} />
+        </button>
+        <span className="text-base font-semibold">{displayYear(year)}</span>
+        <button
+          type="button"
+          aria-label={t("picker.nextYear")}
+          onClick={() => setYear(year + 1)}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-line bg-card"
+        >
+          <Icon name="chevronRight" size={18} strokeWidth={2} />
+        </button>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {names.map((name, i) => {
+          const key = `${year}-${String(i + 1).padStart(2, "0")}`;
+          const on = key === value;
+          const off = !!min && key < min;
+          return (
+            <button
+              key={key}
+              type="button"
+              aria-pressed={on}
+              disabled={off}
+              onClick={() => {
+                onChange(key);
+                onClose();
+              }}
+              className={cx("min-h-12 rounded-2xl border text-sm font-semibold disabled:opacity-30", on ? "border-ink bg-ink text-on-ink" : "border-line bg-card")}
+            >
+              {name}
+            </button>
+          );
+        })}
+      </div>
+      {onClear ? (
+        <SecondaryButton
+          onClick={() => {
+            onClear();
+            onClose();
+          }}
+        >
+          {clearLabel}
+        </SecondaryButton>
+      ) : null}
     </Sheet>
   );
 }

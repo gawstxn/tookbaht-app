@@ -9,8 +9,9 @@ import { endOfMonth, savingsProgress } from "@/lib/savings";
 import { useStore } from "@/lib/store";
 import type { SavingsGoal } from "@/lib/types";
 import { AmountInput } from "./AmountInput";
+import { MonthSheet } from "./pickers";
 import { Icon } from "./ui/Icon";
-import { Bar, Card, Chip, PrimaryButton, SecondaryButton, Sheet, cx } from "./ui/primitives";
+import { Bar, Card, Chip, PickerRow, PrimaryButton, SecondaryButton, Sheet, cx } from "./ui/primitives";
 
 /** Savings goals on the goals screen: progress, what to save per month, add / top up / edit. */
 export function SavingsGoals() {
@@ -163,6 +164,7 @@ function GoalFormSheet({ goal, onClose }: { goal: SavingsGoal | "new" | null; on
   const [target, setTarget] = useState("");
   const [month, setMonth] = useState("");
   const [accountId, setAccountId] = useState("");
+  const [picking, setPicking] = useState(false);
   const [shown, setShown] = useState<typeof goal>(null);
   if (goal && goal !== shown) {
     setShown(goal);
@@ -184,53 +186,48 @@ function GoalFormSheet({ goal, onClose }: { goal: SavingsGoal | "new" | null; on
   };
 
   return (
-    <Sheet open={!!goal} onClose={onClose} title={existing ? t("savings.editTitle") : t("savings.newTitle")}>
-      <input
-        value={name}
-        maxLength={60}
-        onChange={(e) => setName(e.target.value)}
-        placeholder={t("savings.namePlaceholder")}
-        aria-label={t("savings.name")}
-        className="min-h-11 w-full rounded-xl border border-line bg-card px-3 text-[15px] outline-none"
-      />
-      <AmountInput label={t("savings.target")} value={target} onChange={setTarget} />
-      <Card className="flex min-h-[52px] items-center justify-between gap-3 px-4">
-        <label htmlFor="deadline" className="text-[13px] text-muted">
-          {t("savings.by")}
-        </label>
-        <span className="flex items-center gap-2">
-          <input
-            id="deadline"
-            type="month"
-            min={thisMonth}
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-            className="min-h-9 bg-transparent text-right text-[15px] font-semibold outline-none"
-          />
-          {month ? (
-            <button type="button" aria-label={t("savings.noDeadline")} onClick={() => setMonth("")} className="flex h-8 w-8 items-center justify-center rounded-full bg-chip">
-              <Icon name="close" size={14} strokeWidth={2.2} />
-            </button>
-          ) : null}
-        </span>
-      </Card>
-      <div className="flex flex-col gap-2">
-        <span className="text-[13px] text-muted">{t("savings.keptIn")}</span>
-        <div className="flex flex-wrap gap-1.5">
-          <Chip size="sm" on={!accountId} onClick={() => setAccountId("")}>
-            {t("savings.manual")}
-          </Chip>
-          {savers.map((a) => (
-            <Chip key={a.id} size="sm" on={accountId === a.id} onClick={() => setAccountId(a.id)}>
-              {a.name}
+    <>
+      <Sheet open={!!goal && !picking} onClose={onClose} title={existing ? t("savings.editTitle") : t("savings.newTitle")}>
+        <input
+          value={name}
+          maxLength={60}
+          onChange={(e) => setName(e.target.value)}
+          placeholder={t("savings.namePlaceholder")}
+          aria-label={t("savings.name")}
+          className="min-h-11 w-full rounded-xl border border-line bg-card px-3 text-[15px] outline-none"
+        />
+        <AmountInput label={t("savings.target")} value={target} onChange={setTarget} />
+        <Card className="px-4">
+          <PickerRow label={t("savings.by")} value={month ? monthLabel(month) : t("savings.noDeadline")} onClick={() => setPicking(true)} />
+        </Card>
+        <div className="flex flex-col gap-2">
+          <span className="text-[13px] text-muted">{t("savings.keptIn")}</span>
+          <div className="flex flex-wrap gap-1.5">
+            <Chip size="sm" on={!accountId} onClick={() => setAccountId("")}>
+              {t("savings.manual")}
             </Chip>
-          ))}
+            {savers.map((a) => (
+              <Chip key={a.id} size="sm" on={accountId === a.id} onClick={() => setAccountId(a.id)}>
+                {a.name}
+              </Chip>
+            ))}
+          </div>
+          <span className="text-xs leading-relaxed text-faint">{accountId ? t("savings.linkedLead") : t("savings.manualLead")}</span>
         </div>
-        <span className="text-xs leading-relaxed text-faint">{accountId ? t("savings.linkedLead") : t("savings.manualLead")}</span>
-      </div>
-      <PrimaryButton disabled={!canSave} onClick={save}>
-        {t("common.save")}
-      </PrimaryButton>
-    </Sheet>
+        <PrimaryButton disabled={!canSave} onClick={save}>
+          {t("common.save")}
+        </PrimaryButton>
+      </Sheet>
+      <MonthSheet
+        open={!!goal && picking}
+        onClose={() => setPicking(false)}
+        title={t("savings.by")}
+        value={month}
+        min={thisMonth}
+        onChange={setMonth}
+        onClear={() => setMonth("")}
+        clearLabel={t("savings.noDeadline")}
+      />
+    </>
   );
 }

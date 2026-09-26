@@ -529,7 +529,7 @@ const en: Messages = {
     on: "Notifications turned on for this device",
     off: "Notifications turned off for this device",
   },
-  picker: { prevMonth: "Previous month", nextMonth: "Next month", pickMonth: "Choose month", otherSide: "Already chosen on the other side" },
+  picker: { prevYear: "Previous year", nextYear: "Next year", prevMonth: "Previous month", nextMonth: "Next month", pickMonth: "Choose month", otherSide: "Already chosen on the other side" },
   ious: {
     title: "Who owes me",
     add: "Add someone who owes you",

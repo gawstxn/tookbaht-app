@@ -531,7 +531,7 @@ const th = {
     on: "เปิดการแจ้งเตือนบนเครื่องนี้แล้ว",
     off: "ปิดการแจ้งเตือนบนเครื่องนี้แล้ว",
   },
-  picker: { prevMonth: "เดือนก่อน", nextMonth: "เดือนถัดไป", pickMonth: "เลือกเดือน", otherSide: "เลือกไว้อีกฝั่งแล้ว" },
+  picker: { prevYear: "ปีก่อน", nextYear: "ปีถัดไป", prevMonth: "เดือนก่อน", nextMonth: "เดือนถัดไป", pickMonth: "เลือกเดือน", otherSide: "เลือกไว้อีกฝั่งแล้ว" },
   ious: {
     title: "ใครติดเงินเรา",
     add: "เพิ่มคนที่ติดเงิน",
