@@ -68,6 +68,24 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // The slip reader's engine and Thai data (large, rarely change): keep after first use.
+  if (url.pathname.startsWith("/ocr/")) {
+    event.respondWith(
+      caches.match(request, { cacheName: STATIC_CACHE }).then(
+        (hit) =>
+          hit ||
+          fetch(request).then((res) => {
+            if (res.ok) {
+              const copy = res.clone();
+              caches.open(STATIC_CACHE).then((cache) => cache.put(request, copy));
+            }
+            return res;
+          }),
+      ),
+    );
+    return;
+  }
+
   // Build assets have content hashes in their names, so cache-first is safe.
   if (url.pathname.startsWith("/_next/static/")) {
     event.respondWith(

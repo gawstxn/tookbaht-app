@@ -41,6 +41,6 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     // Everything except build assets, PWA files and images.
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|offline.html|icons/|.*\\.(?:png|jpg|jpeg|svg|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|offline.html|icons/|ocr/|.*\\.(?:png|jpg|jpeg|svg|webp|ico)$).*)",
   ],
 };

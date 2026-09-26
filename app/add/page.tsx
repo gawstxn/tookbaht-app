@@ -5,6 +5,7 @@ import { Suspense, useMemo, useRef, useState } from "react";
 import { PushScreen } from "@/components/app";
 import { ConfirmSheet } from "@/components/ConfirmSheet";
 import { QuickEntries } from "@/components/QuickEntries";
+import { SlipReader } from "@/components/SlipReader";
 import { TagField } from "@/components/TagField";
 import { AccountSheet, DateSheet } from "@/components/pickers";
 import { Icon } from "@/components/ui/Icon";
@@ -250,7 +251,21 @@ function AddForm() {
           placeholder={copy.note}
           className="min-h-11 w-full rounded-xl border border-line bg-card px-3 text-sm outline-none"
         />
-        <TagField value={tag} onChange={setTag} />
+        <div className="flex flex-wrap gap-2">
+          <TagField value={tag} onChange={setTag} />
+          {!editing && type !== "in" ? (
+            <SlipReader
+              onRead={(f) => {
+                // Fill what the slip shows; everything stays editable before saving.
+                if (f.amount) setAmount(String(f.amount));
+                if (f.date) setDate(f.date);
+                const label = f.memo || f.receiver;
+                if (label && !note.trim()) setNote(label);
+                notify(t("slip.filled", { amount: f.amount ? baht2(f.amount) : "—", date: f.date ? shortDate(f.date) : "—" }));
+              }}
+            />
+          ) : null}
+        </div>
       </div>
 
       <div className={cx("mt-auto grid gap-1.5", keypadMath ? "grid-cols-4" : "grid-cols-3")}>
