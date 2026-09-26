@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { budgetBanner, dailyAllowance } from "@/lib/budget";
+import { budgetBanner, dailyAllowance, rolloverCarry, withCarry } from "@/lib/budget";
 import type { Goals, Transaction } from "@/lib/types";
 
 let n = 0;
@@ -68,5 +68,20 @@ describe("today's allowance", () => {
   it("is only for the current month with an overall budget", () => {
     expect(dailyAllowance(goals, [], "2026-08", "2026-09-16")).toBeNull();
     expect(dailyAllowance({ ...goals, expenseBudget: 0 }, [], "2026-09", "2026-09-16")).toBeNull();
+  });
+});
+
+describe("budget rollover", () => {
+  const goals = { incomeTarget: 0, expenseBudget: 0, categoryBudgets: { food: 500, shop: 1000 }, alertAt80: true, rolloverKeys: ["food"] };
+  const out = (amount: number, date: string, category = "food") => ({ id: date + amount, type: "out" as const, amount, date, title: "", category, accountId: "a", createdAt: 1 });
+
+  it("carries last month's unused budget for the chosen categories only", () => {
+    const carry = rolloverCarry(goals, [out(300, "2026-08-10"), out(200, "2026-08-11", "shop")], "2026-09");
+    expect(carry).toEqual({ food: 200 });
+    expect(withCarry(goals, carry).categoryBudgets).toEqual({ food: 700, shop: 1000 });
+  });
+
+  it("never carries a negative amount", () => {
+    expect(rolloverCarry(goals, [out(900, "2026-08-10")], "2026-09")).toEqual({ food: 0 });
   });
 });

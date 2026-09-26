@@ -1,7 +1,7 @@
 import { categoryLabel } from "./constants";
-import { baht, monthKey } from "./format";
+import { baht, monthKey, shiftMonth } from "./format";
 import { t } from "./i18n";
-import { daysLeftInMonth, spendByCategory, summarize } from "./selectors";
+import { daysLeftInMonth, monthTransactions, spendByCategory, summarize } from "./selectors";
 import type { Goals, Transaction } from "./types";
 
 export interface BudgetLine {
@@ -10,6 +10,25 @@ export interface BudgetLine {
   budget: number;
   spent: number;
   pct: number;
+}
+
+/**
+ * What each rollover category carries into `month`: last month's budget
+ * minus what it spent, never below zero (one month back only).
+ */
+export function rolloverCarry(goals: Goals, txs: Transaction[], month: string): Record<string, number> {
+  const keys = (goals.rolloverKeys ?? []).filter((k) => (goals.categoryBudgets[k] ?? 0) > 0);
+  if (!keys.length) return {};
+  const spent = spendByCategory(monthTransactions(txs, shiftMonth(month, -1)));
+  return Object.fromEntries(keys.map((k) => [k, Math.max(0, goals.categoryBudgets[k] - (spent[k] ?? 0))]));
+}
+
+/** Goals with this month's carried-over amounts added to the category budgets. */
+export function withCarry(goals: Goals, carry: Record<string, number>): Goals {
+  if (!Object.keys(carry).length) return goals;
+  const categoryBudgets = { ...goals.categoryBudgets };
+  for (const [k, v] of Object.entries(carry)) categoryBudgets[k] = (categoryBudgets[k] ?? 0) + v;
+  return { ...goals, categoryBudgets };
 }
 
 /** Category budgets (plus the overall budget as "งบรวม") with this month's spend. */

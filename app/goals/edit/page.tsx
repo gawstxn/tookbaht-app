@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { PushScreen } from "@/components/app";
 import { MoneyField } from "@/components/MoneyField";
-import { ListCard, PrimaryButton, PushHeader, SwitchRow } from "@/components/ui/primitives";
+import { Icon } from "@/components/ui/Icon";
+import { ListCard, PrimaryButton, PushHeader, SwitchRow, cx } from "@/components/ui/primitives";
 import { EXPENSE_CATEGORIES } from "@/lib/constants";
 import { baht } from "@/lib/format";
 import { useTranslation } from "react-i18next";
@@ -24,6 +25,7 @@ export default function GoalEditPage() {
   const [expense, setExpense] = useState(goals.expenseBudget);
   const [alert, setAlert] = useState(goals.alertAt80);
   const [budgets, setBudgets] = useState<Record<string, number>>(goals.categoryBudgets);
+  const [rollover, setRollover] = useState<string[]>(goals.rolloverKeys ?? []);
 
   const cats = EXPENSE_CATEGORIES.filter((c) => c.key !== "other");
   const allocated = Object.values(budgets).reduce((a, b) => a + b, 0);
@@ -60,6 +62,24 @@ export default function GoalEditPage() {
             <label key={c.key} className="flex min-h-[52px] items-center gap-3">
               <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c.dot }} />
               <span className="grow text-sm">{c.label}</span>
+              {budgets[c.key] ? (
+                <button
+                  type="button"
+                  aria-pressed={rollover.includes(c.key)}
+                  aria-label={tr("goals.rolloverFor", { label: c.label })}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setRollover((r) => (r.includes(c.key) ? r.filter((k) => k !== c.key) : [...r, c.key]));
+                  }}
+                  className={cx(
+                    "flex h-9 shrink-0 items-center gap-1 rounded-full px-2.5 text-xs font-semibold",
+                    rollover.includes(c.key) ? "bg-ink text-on-ink" : "border border-line text-muted",
+                  )}
+                >
+                  <Icon name="repeat" size={13} strokeWidth={2.2} />
+                  {tr("goals.rollover")}
+                </button>
+              ) : null}
               <span className="flex min-h-9 items-center gap-0.5 rounded-[10px] bg-paper px-2.5 font-mono text-sm font-semibold">
                 ฿
                 <input
@@ -74,6 +94,7 @@ export default function GoalEditPage() {
             </label>
           ))}
         </ListCard>
+        <p className="text-xs leading-relaxed text-muted">{tr("goals.rolloverHint")}</p>
       </section>
 
       <ListCard>
@@ -84,7 +105,7 @@ export default function GoalEditPage() {
         <PrimaryButton
           once
           onClick={() => {
-            setGoals({ incomeTarget: income, expenseBudget: expense, categoryBudgets: budgets, alertAt80: alert });
+            setGoals({ incomeTarget: income, expenseBudget: expense, categoryBudgets: budgets, alertAt80: alert, rolloverKeys: rollover.filter((k) => (budgets[k] ?? 0) > 0) });
             router.replace("/goals");
           }}
         >
