@@ -340,12 +340,19 @@ export function Sheet({ open, onClose, title, children, titleClassName }: { open
     return () => clearTimeout(t);
   }, [closing]);
 
+  // Parents often pass a new onClose each render; reading it through a ref keeps
+  // the effect below from re-running (and pulling focus out of a text field) while typing.
+  const closeRef = useRef(onClose);
+  useEffect(() => {
+    closeRef.current = onClose;
+  });
+
   useEffect(() => {
     if (!open) return;
     const prev = document.activeElement as HTMLElement | null;
     panel.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") closeRef.current();
     };
     document.addEventListener("keydown", onKey);
     const overflow = document.body.style.overflow;
@@ -355,7 +362,7 @@ export function Sheet({ open, onClose, title, children, titleClassName }: { open
       document.body.style.overflow = overflow;
       prev?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!mounted) return null;
   return (

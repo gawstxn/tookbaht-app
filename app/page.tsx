@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { SubMono, TabScreen, TxIcon, TxRow } from "@/components/app";
 import { MonthSwitcher } from "@/components/pickers";
 import { Icon } from "@/components/ui/Icon";
 import { BudgetBannerCard } from "@/components/BudgetBanner";
 import { NotificationBell } from "@/components/notifications";
 import { QuickEntries } from "@/components/QuickEntries";
+import { TxDetailSheet } from "@/components/TxDetailSheet";
 import { Bar, Empty, HeroCard, ListCard, SectionHeader, TabHeader } from "@/components/ui/primitives";
 import { budgetBanner } from "@/lib/budget";
 import { formatMoney } from "@/lib/fx";
@@ -16,10 +17,12 @@ import { debtsByPerson } from "@/lib/ious";
 import { isService, monthTransactions, summarize, upcomingSubscriptions } from "@/lib/selectors";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
+import type { Transaction } from "@/lib/types";
 
 export default function OverviewPage() {
   const { transactions, subscriptions, goals, viewMonth, ious } = useStore();
   const owed = useMemo(() => debtsByPerson(ious), [ious]);
+  const [selected, setSelected] = useState<Transaction | null>(null);
   const { t: tr } = useTranslation();
   const today = todayISO();
 
@@ -111,13 +114,15 @@ export default function OverviewPage() {
         {recent.length ? (
           <ListCard>
             {recent.map((t) => (
-              <TxRow key={t.id} t={t} />
+              <TxRow key={t.id} t={t} onClick={() => setSelected(t)} />
             ))}
           </ListCard>
         ) : (
           <Empty>{tr("overview.noTx")}</Empty>
         )}
       </section>
+
+      <TxDetailSheet tx={selected} onClose={() => setSelected(null)} />
     </TabScreen>
   );
 }
