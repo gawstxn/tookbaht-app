@@ -101,12 +101,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const sb = getSupabase();
     const { data } = sb.auth.onAuthStateChange((event, session) => {
-      const { userId, load, reset } = useStore.getState();
+      const { userId, load, signedOut } = useStore.getState();
       if (session?.user && session.user.id !== userId) {
         // Defer so we don't call Supabase inside its own auth callback.
         setTimeout(() => void load(session.user.id), 0);
       } else if (!session && event === "SIGNED_OUT") {
-        reset();
+        signedOut();
         router.replace("/login");
       }
     });

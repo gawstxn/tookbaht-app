@@ -6,7 +6,8 @@ const MIGRATIONS = join(__dirname, "../../supabase/migrations");
 
 /**
  * An in-memory Postgres with every migration applied, plus the few pieces of
- * Supabase the schema relies on (auth.users, auth.uid(), the API roles).
+ * Supabase the schema relies on (auth.users, auth.uid(), the API roles and
+ * their default privileges).
  * pg_cron doesn't exist here, so the scheduling tail of that migration is cut.
  */
 export async function migratedDb() {
@@ -18,6 +19,9 @@ export async function migratedDb() {
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     grant usage on schema public, auth to anon, authenticated, service_role;
     grant execute on function auth.uid() to anon, authenticated, service_role;
+    -- Like a hosted Supabase project: new tables and functions are open to the API roles unless a migration says otherwise.
+    alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+    alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
   `);
   for (const file of readdirSync(MIGRATIONS).sort()) {
     const sql = readFileSync(join(MIGRATIONS, file), "utf8").replace(/create extension if not exists pg_cron[\s\S]*$/m, "");
