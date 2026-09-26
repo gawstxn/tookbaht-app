@@ -94,6 +94,21 @@ describe.sequential("ious, savings goals, monthly summary and feedback", () => {
     expect(await t.rows(`select * from public.pending_month_summaries()`)).toEqual([]);
   });
 
+  it("counts money paid back as less spending, not income", async () => {
+    await t.db.exec(`update public.profiles set settings = '{}' where id = '${A}'; delete from public.month_summaries_sent;`);
+    await t.as(A, `insert into public.transactions (type, amount, date, title, category, account_id) values ('in', 300, '2026-09-25', 'บอส คืนเงิน', 'repay', '${accA}')`);
+    const [row] = await t.rows<{ income: string; expense: string; over_budget: string[] }>(`select * from public.pending_month_summaries()`);
+    // 1,100 spent − 300 paid back; the 1,000 overall budget is no longer over, food (700 of 500) still is.
+    expect({ income: Number(row.income), expense: Number(row.expense), over: [...row.over_budget] }).toEqual({ income: 30000, expense: 800, over: ["food"] });
+
+    await setToday("2026-09-26");
+    const alerts = await t.rows<{ budget_key: string; spent: string }>(`select budget_key, spent from public.pending_budget_alerts() where user_id = '${A}' order by budget_key`);
+    expect(alerts.map((r) => [r.budget_key, Number(r.spent)])).toEqual([
+      ["food", 700],
+      ["total", 800],
+    ]);
+  });
+
   it("only the server can read pending summaries", async () => {
     await expect(t.as(A, `select * from public.pending_month_summaries()`)).rejects.toThrow(/permission/);
     await expect(t.as(A, `select * from public.month_summaries_sent`)).rejects.toThrow(/permission/);

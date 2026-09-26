@@ -100,15 +100,23 @@ function isAppPage(res) {
 // The app asks to keep its screens (and the build files they load) for offline use.
 self.addEventListener("message", (event) => {
   if (event.data?.type !== "warm" || !Array.isArray(event.data.urls)) return;
-  event.waitUntil(warm(event.data.urls.filter((u) => typeof u === "string" && u.startsWith("/"))));
+  const build = typeof event.data.build === "string" ? event.data.build : "";
+  event.waitUntil(warm(event.data.urls.filter((u) => typeof u === "string" && u.startsWith("/")), build));
 });
 
 const ASSET = /\/_next\/static\/[^"'\s)]+/g;
 
-async function warm(paths) {
+const WARMED = "/__warmed";
+
+/** Fetch screens not kept yet; after a new build, fetch them all again (their build files changed). */
+async function warm(paths, build) {
   const pages = await caches.open(PAGE_CACHE);
   const statics = await caches.open(STATIC_CACHE);
+  const marker = await pages.match(WARMED);
+  const sameBuild = !!build && !!marker && (await marker.text()) === build;
+  let complete = true;
   for (const path of paths) {
+    if (sameBuild && (await pages.match(path))) continue;
     try {
       const res = await fetch(path, { credentials: "same-origin" });
       if (!isAppPage(res)) continue;
@@ -130,8 +138,10 @@ async function warm(paths) {
       }
     } catch {
       // Offline or a failed page: try again next time the app starts.
+      complete = false;
     }
   }
+  if (build && complete) await pages.put(WARMED, new Response(build));
 }
 
 // Subscription reminders sent by /api/cron/reminders: { title, body, url, tag }.
