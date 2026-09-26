@@ -4,7 +4,9 @@ import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import { balanceLabel, monoFor } from "@/components/AccountEditSheet";
 import { AccountMark } from "@/components/app";
+import { InstallPrompt } from "@/components/InstallPrompt";
 import { MoneyField } from "@/components/MoneyField";
+import { PushToggle } from "@/components/PushToggle";
 import { TermsCheckbox } from "@/components/TermsConsent";
 import { Card, Chip, ListCard, PrimaryButton, SecondaryButton } from "@/components/ui/primitives";
 import { baht } from "@/lib/format";
@@ -38,12 +40,16 @@ const getLegacy = () => (legacyCache === undefined ? (legacyCache = readLegacyDa
 /** Suggested spending budgets, as a share of income. */
 const BUDGET_SHARES = [70, 80, 90];
 
-/** First run: pick starter accounts, then monthly goals (skippable), or bring over data from the device-only version. */
+/**
+ * First run: pick starter accounts, then monthly goals (skippable), then
+ * install the app and turn on notifications — or bring over data from the
+ * device-only version.
+ */
 export default function OnboardingPage() {
   const router = useRouter();
   const { user, userId, accounts, addAccount, load, acceptTerms } = useStore();
   // Accounts already exist when the page is reopened after step 1.
-  const [step, setStep] = useState<"accounts" | "goals">(() => (accounts.length ? "goals" : "accounts"));
+  const [step, setStep] = useState<"accounts" | "goals" | "notify">(() => (accounts.length ? "goals" : "accounts"));
   const [agreed, setAgreed] = useState(false);
   const { t: tr } = useTranslation();
   const legacy = useSyncExternalStore(noop, getLegacy, () => null);
@@ -116,7 +122,8 @@ export default function OnboardingPage() {
     );
   }
 
-  if (step === "goals") return <GoalsStep name={user?.name} accountCount={accounts.length} />;
+  if (step === "goals") return <GoalsStep name={user?.name} onNext={() => setStep("notify")} />;
+  if (step === "notify") return <NotifyStep name={user?.name} accountCount={accounts.length} />;
 
   return (
     <main className="flex min-h-dvh flex-col gap-5 px-6 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[calc(40px+env(safe-area-inset-top)+var(--standalone-top,0px))]">
@@ -177,8 +184,7 @@ export default function OnboardingPage() {
 }
 
 /** Step 2: monthly income target and spending budget, which drive the budget banner and alerts. */
-function GoalsStep({ name, accountCount }: { name?: string; accountCount: number }) {
-  const router = useRouter();
+function GoalsStep({ name, onNext }: { name?: string; onNext: () => void }) {
   const { t: tr } = useTranslation();
   const goals = useStore((s) => s.goals);
   const setGoals = useStore((s) => s.setGoals);
@@ -186,9 +192,9 @@ function GoalsStep({ name, accountCount }: { name?: string; accountCount: number
   const [expense, setExpense] = useState(goals.expenseBudget);
   const finish = (save: boolean) => {
     if (save) setGoals({ ...goals, incomeTarget: income, expenseBudget: expense });
-    // One message for the whole setup.
-    useStore.getState().notify(tr("onboarding.ready", { count: accountCount }));
-    router.replace("/");
+    // One message for the whole setup comes at the end.
+    useStore.getState().dismissToast();
+    onNext();
   };
   const left = income - expense;
 
@@ -235,6 +241,42 @@ function GoalsStep({ name, accountCount }: { name?: string; accountCount: number
       ) : null}
       <div className="mt-auto flex flex-col gap-2.5">
         <PrimaryButton once disabled={!income && !expense} onClick={() => finish(true)}>
+          {tr("onboarding.next")}
+        </PrimaryButton>
+      </div>
+    </main>
+  );
+}
+
+/** Step 3: add the app to the home screen and turn on reminders (both optional). */
+function NotifyStep({ name, accountCount }: { name?: string; accountCount: number }) {
+  const router = useRouter();
+  const { t: tr } = useTranslation();
+  const finish = () => {
+    useStore.getState().notify(tr("onboarding.ready", { count: accountCount }));
+    router.replace("/");
+  };
+  return (
+    <main className="flex min-h-dvh flex-col gap-5 px-6 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[calc(40px+env(safe-area-inset-top)+var(--standalone-top,0px))]">
+      <Heading
+        name={name}
+        step={3}
+        action={
+          <button type="button" onClick={finish} className="min-h-9 rounded-full px-1 text-sm font-semibold text-muted">
+            {tr("onboarding.skipGoals")}
+          </button>
+        }
+      />
+      <section className="flex flex-col gap-2">
+        <h2 className="text-base font-semibold">{tr("onboarding.notifyTitle")}</h2>
+        <p className="text-sm text-muted">{tr("onboarding.notifyLead")}</p>
+      </section>
+      <InstallPrompt />
+      <ListCard>
+        <PushToggle />
+      </ListCard>
+      <div className="mt-auto flex flex-col gap-2.5">
+        <PrimaryButton once onClick={finish}>
           {tr("onboarding.finish")}
         </PrimaryButton>
       </div>
@@ -242,7 +284,7 @@ function GoalsStep({ name, accountCount }: { name?: string; accountCount: number
   );
 }
 
-function Heading({ name, step, action }: { name?: string; step?: 1 | 2; action?: React.ReactNode }) {
+function Heading({ name, step, action }: { name?: string; step?: 1 | 2 | 3; action?: React.ReactNode }) {
   const { t: tr } = useTranslation();
   return (
     <header className="flex flex-col gap-1">
@@ -253,7 +295,7 @@ function Heading({ name, step, action }: { name?: string; step?: 1 | 2; action?:
       <h1 className="font-serif text-[28px] font-bold leading-tight">{tr("onboarding.title")}</h1>
       {step ? (
         <div className="mt-1 flex items-center gap-2" aria-label={tr("onboarding.step", { n: step })}>
-          {[1, 2].map((n) => (
+          {[1, 2, 3].map((n) => (
             <span key={n} aria-hidden="true" className={n <= step ? "h-1.5 w-6 rounded-full bg-ink" : "h-1.5 w-6 rounded-full bg-chip"} />
           ))}
           <span className="text-xs text-muted">{tr("onboarding.step", { n: step })}</span>

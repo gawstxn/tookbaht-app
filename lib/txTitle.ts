@@ -1,11 +1,11 @@
 import { categoryLabel } from "./constants";
 import { t } from "./i18n";
-import en from "./locales/en";
+import { enCat, enTransferTo } from "./locales/en.titles";
 import th from "./locales/th";
 import type { Account, Transaction } from "./types";
 
 const defaultCategoryTitles = (key?: string) =>
-  key ? [(th.cat as Record<string, string>)[key], (en.cat as Record<string, string>)[key]].filter(Boolean) : [];
+  key ? [(th.cat as Record<string, string>)[key], (enCat as Record<string, string>)[key]].filter(Boolean) : [];
 
 /**
  * Title to show for a transaction. Entries saved without a note get a default
@@ -23,7 +23,7 @@ export function isDefaultTitle(tx: Pick<Transaction, "type" | "title" | "categor
   if (!tx.title) return true;
   if (tx.type === "move") {
     const to = accounts.find((a) => a.id === tx.toId)?.name ?? "";
-    return [th.add.transferTo, en.add.transferTo].map((p) => p.replace("{{name}}", to)).includes(tx.title);
+    return [th.add.transferTo, enTransferTo].map((p) => p.replace("{{name}}", to)).includes(tx.title);
   }
   return defaultCategoryTitles(tx.category).includes(tx.title);
 }

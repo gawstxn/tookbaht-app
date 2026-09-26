@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
 import { ACCOUNT_KIND_ICON, TYPE_META, categoryIcon, categoryLabel } from "@/lib/constants";
 import { findBrand, onColor, type Brand } from "@/lib/brands";
+import { useBrandPath } from "@/lib/brandLogos";
 import { baht2, relativeDue } from "@/lib/format";
 import { txTitle } from "@/lib/txTitle";
 import type { Account, Subscription, Transaction } from "@/lib/types";
@@ -137,16 +138,20 @@ export function SubMono({ s, size = 40 }: { s: Pick<Subscription, "name" | "tone
 
 export function BrandMark({ brand, size = 40 }: { brand: Brand; size?: number }) {
   const fg = onColor(brand.color);
+  const path = useBrandPath(brand.key);
   return (
     <span
       aria-hidden="true"
       className="flex shrink-0 items-center justify-center font-bold"
       style={{ width: size, height: size, borderRadius: size * 0.3, background: brand.color, color: fg }}
     >
-      {brand.path ? (
-        <svg viewBox="0 0 24 24" width={size * 0.56} height={size * 0.56} fill="currentColor">
-          <path d={brand.path} />
-        </svg>
+      {brand.logo ? (
+        // Plain brand-colour tile for the moment before the logos arrive.
+        path ? (
+          <svg viewBox="0 0 24 24" width={size * 0.56} height={size * 0.56} fill="currentColor">
+            <path d={path} />
+          </svg>
+        ) : null
       ) : (
         <span style={{ fontSize: size * (brand.label!.length > 2 ? 0.3 : 0.4), letterSpacing: "-0.02em" }}>{brand.label}</span>
       )}
