@@ -727,6 +727,17 @@ const en: Messages = {
     total: "Spent {{amount}} · {{count}} entries",
     all: "All tags",
   },
+  slip: {
+    read: "Read a slip",
+    title: "Reading slip",
+    loading: "Getting the reader ready (takes a moment the first time)",
+    reading: "Reading the amount and date from the slip",
+    private: "Read on this device only. The slip photo isn't sent anywhere or kept.",
+    nothing: "Couldn't find an amount on the slip. Try a clearer photo, or enter it yourself.",
+    failed: "Couldn't read the slip. Try again.",
+    unsupported: "This device can't read slips (needs iOS 16.4 or later)",
+    filled: "Filled in from the slip: {{amount}} · {{date}}. Check before saving.",
+  },
   toast: {
     iouAdded: "{{name}} owes you {{amount}}",
     iousAdded: "{{count}} friends owe you {{amount}} in total",

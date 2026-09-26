@@ -94,7 +94,7 @@ function PrivacyTh() {
           แอปใช้คุกกี้เฉพาะที่จำเป็นสำหรับการเข้าสู่ระบบ เก็บไฟล์ของแอปไว้ในเครื่องเพื่อให้เปิดได้เร็วและแสดงหน้าออฟไลน์
           และเก็บการตั้งค่าเฉพาะเครื่องไว้ในเบราว์เซอร์ ได้แก่ ธีม ภาษา และล็อกแอป ไม่มีคุกกี้โฆษณาหรือคุกกี้ติดตาม
           เพื่อให้เปิดแอปและจดรายการได้ตอนไม่มีอินเทอร์เน็ต แอปเก็บสำเนาข้อมูลของคุณล่าสุด และรายการที่จดตอนออฟไลน์ซึ่งรอส่งขึ้นเซิร์ฟเวอร์
-          ไว้ในเบราว์เซอร์ของอุปกรณ์นั้น สำเนานี้ถูกลบเมื่อคุณออกจากระบบ
+          ไว้ในเบราว์เซอร์ของอุปกรณ์นั้น สำเนานี้ถูกลบเมื่อคุณออกจากระบบ ส่วนรูปสลิปที่ใช้ &quot;อ่านสลิป&quot; จะถูกอ่านบนอุปกรณ์ของคุณเท่านั้น ไม่ถูกส่งขึ้นเซิร์ฟเวอร์และไม่ถูกเก็บไว้
         </p>
       </section>
 
@@ -232,7 +232,7 @@ function PrivacyEn() {
           The app only uses cookies needed to keep you signed in, stores its own files on your device so it opens quickly and can show an
           offline screen, and keeps per-device settings (theme, language and the app lock) in the browser. There are no advertising or
           tracking cookies. So the app opens and you can log entries without a connection, it also keeps a copy of your latest data, and
-          entries made offline that are waiting to be sent, in that device&apos;s browser. This copy is removed when you sign out.
+          entries made offline that are waiting to be sent, in that device&apos;s browser. This copy is removed when you sign out. Slip photos used with &quot;Read a slip&quot; are read on your device only; they are never uploaded or kept.
         </p>
       </section>
 
