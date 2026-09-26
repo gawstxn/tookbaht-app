@@ -130,4 +130,6 @@ export interface Settings {
   lang?: "th" | "en";
   /** Push a summary of last month on the 1st (on unless false). */
   monthlySummary?: boolean;
+  /** + − × keys on the add screen's keypad (on unless false). */
+  keypadMath?: boolean;
 }

@@ -9,6 +9,7 @@ import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, MONO_TONES, categoryLabel } from
 import { baht2, shortDate, stepCycle, todayISO } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { Cycle, Subscription, TxType } from "@/lib/types";
+import { BahtInput } from "./BahtInput";
 
 export type RecurringDraft = Omit<Subscription, "id">;
 
@@ -95,8 +96,7 @@ export function RecurringForm({ title, saveLabel, initial, onSave, onBack }: { t
           <span className="shrink-0 text-[13px] text-muted">{t(plan ? "rec.amountInstallment" : "rec.amount")}</span>
           <span className="flex grow items-baseline justify-end gap-0.5 font-mono text-[26px] font-semibold">
             ฿
-            <input
-              inputMode="decimal"
+            <BahtInput
               value={amountText}
               onChange={(e) => {
                 const v = e.target.value.replace(/[^0-9.]/g, "");

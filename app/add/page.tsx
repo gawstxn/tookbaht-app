@@ -34,6 +34,7 @@ function AddForm() {
   const params = useSearchParams();
   const accounts = useStore((s) => s.accounts);
   const txs = useStore((s) => s.transactions);
+  const keypadMath = useStore((s) => s.settings.keypadMath !== false);
   const addTransaction = useStore((s) => s.addTransaction);
   const updateTransaction = useStore((s) => s.updateTransaction);
   // /add?edit=<id> edits a saved transaction with the same form.
@@ -214,14 +215,14 @@ function AddForm() {
         />
       </div>
 
-      <div className="mt-auto grid grid-cols-4 gap-1.5">
-        {KEYS.map((k) => (
+      <div className={cx("mt-auto grid gap-1.5", keypadMath ? "grid-cols-4" : "grid-cols-3")}>
+        {(keypadMath ? MATH_KEYS : PLAIN_KEYS).map((k) => (
           <button
             key={k}
             type="button"
             aria-label={k === "del" ? t("add.del") : k === "+" ? t("add.plus") : k === "-" ? t("add.minus") : k === "*" ? t("add.times") : k}
             onClick={() => press(k)}
-            className={cx("flex min-h-[50px] items-center justify-center rounded-xl font-mono text-[22px] font-medium", /[0-9]/.test(k) ? "bg-card" : "bg-chip", k === "del" && "col-span-2")}
+            className={cx("flex min-h-[50px] items-center justify-center rounded-xl font-mono text-[22px] font-medium", /[0-9]/.test(k) ? "bg-card" : "bg-chip", k === "del" && keypadMath && "col-span-2")}
           >
             {k === "del" ? <Icon name="del" size={24} /> : (OP_LABEL[k] ?? k)}
           </button>
@@ -251,8 +252,10 @@ function AddForm() {
   );
 }
 
-/** Number pad with + − × down the right; the entry saves the total. */
-const KEYS: CalcKey[] = ["1", "2", "3", "+", "4", "5", "6", "-", "7", "8", "9", "*", ".", "0", "del"];
+/** Number pad with + − × down the right (unless turned off in Profile); the entry saves the total. */
+const MATH_KEYS: CalcKey[] = ["1", "2", "3", "+", "4", "5", "6", "-", "7", "8", "9", "*", ".", "0", "del"];
+/** Without the calculator (switch in Profile). */
+const PLAIN_KEYS: CalcKey[] = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "del"];
 const OP_LABEL: Partial<Record<CalcKey, string>> = { "+": "+", "-": "−", "*": "×" };
 
 function FieldButton({ label, value, onClick }: { label: string; value: string; onClick: () => void }) {

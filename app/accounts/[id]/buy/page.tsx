@@ -11,6 +11,7 @@ import { addDays, baht2, diffDays, shortDate, stepCycle, todayISO } from "@/lib/
 import { accountDue, creditSummary, planInterest } from "@/lib/selectors";
 import { useGoBack } from "@/lib/nav";
 import { useStore } from "@/lib/store";
+import { BahtInput } from "@/components/BahtInput";
 
 const MONTH_CHOICES = [3, 6, 10, 12];
 const money = (s: string) => s.replace(/[^0-9.]/g, "");
@@ -82,7 +83,7 @@ export default function BuyInInstallmentsPage() {
           <span className="shrink-0 text-[13px] text-muted">{t("pay.price")}</span>
           <span className="flex grow items-baseline justify-end gap-0.5 font-mono text-[26px] font-semibold">
             ฿
-            <input inputMode="decimal" value={priceText} onChange={(e) => setPriceText(money(e.target.value))} placeholder="0" aria-label={t("pay.price")} className="w-full min-w-0 bg-transparent text-right outline-none" />
+            <BahtInput value={priceText} onChange={(e) => setPriceText(money(e.target.value))} placeholder="0" aria-label={t("pay.price")} className="w-full min-w-0 bg-transparent text-right outline-none" />
           </span>
         </label>
         {price > available ? <p className="-mt-1 text-right text-xs font-semibold text-danger">{t("pay.overLimit", { amount: baht2(price - available) })}</p> : null}
@@ -119,8 +120,7 @@ export default function BuyInInstallmentsPage() {
           </span>
           <span className="flex grow items-baseline justify-end gap-0.5 font-mono text-[24px] font-semibold">
             ฿
-            <input
-              inputMode="decimal"
+            <BahtInput
               value={perTouched ? perText : per ? String(per) : ""}
               onChange={(e) => {
                 setPerTouched(true);

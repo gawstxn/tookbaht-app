@@ -15,6 +15,7 @@ import { seedData } from "@/lib/seed";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
 import type { AccountKind } from "@/lib/types";
+import { BahtInput } from "@/components/BahtInput";
 
 interface Starter {
   name: string;
@@ -153,8 +154,7 @@ export default function OnboardingPage() {
               />
               <label className="flex items-baseline gap-1 text-xs text-muted">
                 <span className="shrink-0 whitespace-nowrap">{balanceLabel(s.kind)} ฿</span>
-                <input
-                  inputMode="decimal"
+                <BahtInput
                   value={s.balance}
                   placeholder="0"
                   onChange={(e) => update(i, { balance: e.target.value.replace(/[^0-9.]/g, ""), on: true })}

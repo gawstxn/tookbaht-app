@@ -7,6 +7,7 @@ import { Card, ListCard, PickerRow, PrimaryButton, Sheet } from "@/components/ui
 import { todayISO } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { Account } from "@/lib/types";
+import { BahtInput } from "./BahtInput";
 
 /** Record paying a card / pay-later bill: a transfer from the usual bank account, remembered for next time. */
 export function PayBillSheet({ account, amount, open, onClose }: { account: Account; amount: number; open: boolean; onClose: () => void }) {
@@ -36,8 +37,7 @@ function PayBillFields({ account, amount, onDone }: { account: Account; amount: 
           <span className="shrink-0 text-[13px] text-muted">{t("pay.payAmount")}</span>
           <span className="flex grow items-baseline justify-end gap-0.5 font-mono text-[26px] font-semibold">
             ฿
-            <input
-              inputMode="decimal"
+            <BahtInput
               value={text}
               onChange={(e) => setText(e.target.value.replace(/[^0-9.]/g, ""))}
               placeholder="0"

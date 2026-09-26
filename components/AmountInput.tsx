@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/primitives";
+import { BahtInput } from "./BahtInput";
 
 /** Keep digits and one dot with up to two decimals ("12.345" → "12.34"). */
 export function cleanAmount(text: string): string {
@@ -15,8 +16,7 @@ export function AmountInput({ label, value, onChange }: { label: string; value: 
         <span className="shrink-0 text-[13px] text-muted">{label}</span>
         <span className="flex grow items-baseline gap-0.5 font-mono text-[26px] font-semibold">
           ฿
-          <input
-            inputMode="decimal"
+          <BahtInput
             value={value}
             onChange={(e) => onChange(cleanAmount(e.target.value))}
             placeholder="0"

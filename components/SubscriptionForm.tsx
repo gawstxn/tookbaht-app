@@ -12,6 +12,7 @@ import { baht, cyclePer, fromISO, monthlyEquivalent, shortDate, todayISO } from 
 import { useStore } from "@/lib/store";
 import { formatMoney, toTHB } from "@/lib/fx";
 import type { Currency, Cycle, Subscription } from "@/lib/types";
+import { BahtInput } from "./BahtInput";
 
 export type SubDraft = Omit<Subscription, "id">;
 
@@ -164,8 +165,7 @@ export function SubscriptionForm({
         <label className="flex items-baseline gap-2">
           <span className="flex grow items-baseline gap-0.5 font-mono text-[30px] font-semibold">
             {d.currency === "USD" ? "US$" : "฿"}
-            <input
-              inputMode="decimal"
+            <BahtInput
               value={amountText}
               onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
               placeholder="0"
