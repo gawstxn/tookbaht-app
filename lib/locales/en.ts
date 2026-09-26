@@ -586,7 +586,7 @@ const en: Messages = {
     title: "Savings goals",
     add: "Add",
     empty: "Save up for something big, e.g. Japan trip ฿40,000 by March",
-    done: "Goal reached 🎉",
+    done: "Goal reached",
     overdue: "Past the deadline, {{amount}} to go",
     perMonth: "Save {{amount}} a month to make it by {{month}}",
     left: "{{amount}} to go",
