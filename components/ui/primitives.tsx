@@ -321,7 +321,23 @@ export function Empty({ children }: { children: ReactNode }) {
 
 /* ---------- bottom sheet ---------- */
 
-export function Sheet({ open, onClose, title, children, titleClassName }: { open: boolean; onClose: () => void; title: string; children: ReactNode; titleClassName?: string }) {
+export function Sheet({
+  open,
+  onClose,
+  title,
+  children,
+  titleClassName,
+  variant = "sheet",
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: ReactNode;
+  titleClassName?: string;
+  /** "modal": a card in the middle of the screen, for announcements rather than choices. */
+  variant?: "sheet" | "modal";
+}) {
+  const modal = variant === "modal";
   const { t } = useTranslation();
   const titleId = useId();
   const panel = useRef<HTMLDivElement>(null);
@@ -366,9 +382,16 @@ export function Sheet({ open, onClose, title, children, titleClassName }: { open
 
   if (!mounted) return null;
   return (
-    <div className={cx("fixed inset-0 z-50 flex justify-center bg-hero/45 dark:bg-black/60", closing ? "animate-fade-out pointer-events-none" : "animate-fade")}>
-      <div className="flex w-full max-w-[430px] flex-col">
-      <button type="button" aria-label={t("common.close")} tabIndex={-1} onClick={onClose} className="grow" />
+    <div
+      className={cx(
+        "fixed inset-0 z-50 flex justify-center bg-hero/45 dark:bg-black/60",
+        modal && "items-center px-5",
+        closing ? "animate-fade-out pointer-events-none" : "animate-fade",
+      )}
+    >
+      {modal ? <button type="button" aria-label={t("common.close")} tabIndex={-1} onClick={onClose} className="absolute inset-0" /> : null}
+      <div className={cx("flex w-full flex-col", modal ? "relative max-w-[390px]" : "max-w-[430px]")}>
+      {modal ? null : <button type="button" aria-label={t("common.close")} tabIndex={-1} onClick={onClose} className="grow" />}
       <div
         ref={panel}
         tabIndex={-1}
@@ -378,9 +401,13 @@ export function Sheet({ open, onClose, title, children, titleClassName }: { open
         onAnimationEnd={(e) => {
           if (closing && e.target === e.currentTarget) setMounted(false);
         }}
-        className={cx(closing ? "animate-sheet-out" : "animate-sheet", "flex max-h-[88dvh] flex-col gap-3.5 overflow-y-auto rounded-t-[28px] bg-paper px-6 pb-[calc(32px+env(safe-area-inset-bottom))] pt-2.5 shadow-sheet outline-none")}
+        className={cx(
+          modal
+            ? cx(closing ? "animate-modal-out" : "animate-modal", "flex max-h-[82dvh] flex-col gap-3.5 overflow-y-auto rounded-[28px] bg-paper px-6 py-6 shadow-sheet outline-none")
+            : cx(closing ? "animate-sheet-out" : "animate-sheet", "flex max-h-[88dvh] flex-col gap-3.5 overflow-y-auto rounded-t-[28px] bg-paper px-6 pb-[calc(32px+env(safe-area-inset-bottom))] pt-2.5 shadow-sheet outline-none"),
+        )}
       >
-        <span aria-hidden="true" className="h-1 w-10 self-center rounded-full bg-line-strong" />
+        {modal ? null : <span aria-hidden="true" className="h-1 w-10 self-center rounded-full bg-line-strong" />}
         <div className="flex items-center justify-between">
           <h2 id={titleId} className={cx("font-serif text-xl font-bold", titleClassName)}>
             {closing ? kept.title : title}

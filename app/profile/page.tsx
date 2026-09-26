@@ -125,7 +125,7 @@ export default function ProfilePage() {
       />
 
       <ListCard>
-        <NavRow label={tr("settings.title")} value={tr("settings.summary")} onClick={() => router.push("/settings")} />
+        <NavRow label={tr("settings.title")} onClick={() => router.push("/settings")} />
       </ListCard>
 
       <Group title={tr("profile.about")}>

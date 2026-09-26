@@ -18,5 +18,6 @@ describe("what's new", () => {
   it("caps the list and starts older accounts from the baseline", () => {
     expect(newSince(undefined, "1.19.0")).toHaveLength(6);
     expect(newSince(undefined, "1.19.0")[0].key).toBe("settings");
+    expect(newSince("1.19.0", "1.20.0").map((i) => i.key)).toEqual(["insightsTabs"]);
   });
 });
