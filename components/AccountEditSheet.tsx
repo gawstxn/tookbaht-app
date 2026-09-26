@@ -8,6 +8,7 @@ import { MONO_TONES } from "@/lib/constants";
 import { t } from "@/lib/i18n";
 import type { Account, AccountKind } from "@/lib/types";
 import { BahtInput } from "./BahtInput";
+import { ConfirmSheet } from "./ConfirmSheet";
 
 export type AccountDraft = Omit<Account, "id">;
 
@@ -44,11 +45,23 @@ export function AccountEditSheet({
   /** Existing accounts: open the "match the real balance" sheet. */
   onReconcile?: () => void;
 }) {
+  const [confirming, setConfirming] = useState(false);
+  if (!open && confirming) setConfirming(false);
   return (
-    <Sheet open={open} onClose={onClose} title={t(initial ? "accounts.edit" : "accounts.add")}>
-      {/* Remount per open so the form starts from `initial`. */}
-      {open ? <AccountFields initial={initial} onSave={onSave} onDelete={onDelete} deleteBlocked={deleteBlocked} onReconcile={onReconcile} /> : null}
-    </Sheet>
+    <>
+      <Sheet open={open && !confirming} onClose={onClose} title={t(initial ? "accounts.edit" : "accounts.add")}>
+        {/* Remount per open so the form starts from `initial`. */}
+        {open ? <AccountFields initial={initial} onSave={onSave} onDelete={onDelete ? () => setConfirming(true) : undefined} deleteBlocked={deleteBlocked} onReconcile={onReconcile} /> : null}
+      </Sheet>
+      <ConfirmSheet
+        open={open && confirming}
+        onClose={() => setConfirming(false)}
+        title={t("accounts.deleteTitle", { name: initial?.name ?? "" })}
+        lead={t("accounts.deleteLead")}
+        confirmLabel={t("accounts.delete")}
+        onConfirm={() => onDelete?.()}
+      />
+    </>
   );
 }
 
@@ -74,7 +87,6 @@ function AccountFields({
   const paysAbroad = kind === "credit" || kind === "bank";
   const [dueText, setDueText] = useState(initial?.dueDay ? String(initial.dueDay) : "");
   const dueDay = Math.min(31, parseInt(dueText, 10) || 0) || null;
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const { t: tr } = useTranslation();
   const canSave = name.trim().length > 0;
 
@@ -181,13 +193,9 @@ function AccountFields({
       {onDelete && deleteBlocked ? (
         <p className="text-center text-xs leading-relaxed text-muted">{deleteBlocked}</p>
       ) : onDelete ? (
-        confirmDelete ? (
-          <SecondaryButton tone="danger" onClick={onDelete}>
-            {tr("accounts.confirmDelete")}
-          </SecondaryButton>
-        ) : (
-          <SecondaryButton onClick={() => setConfirmDelete(true)}>{tr("accounts.delete")}</SecondaryButton>
-        )
+        <SecondaryButton tone="danger" onClick={onDelete}>
+          {tr("accounts.delete")}
+        </SecondaryButton>
       ) : null}
     </>
   );

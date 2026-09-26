@@ -9,6 +9,7 @@ import { endOfMonth, savingsProgress } from "@/lib/savings";
 import { useStore } from "@/lib/store";
 import type { SavingsGoal } from "@/lib/types";
 import { AmountInput } from "./AmountInput";
+import { ConfirmSheet } from "./ConfirmSheet";
 import { MonthSheet } from "./pickers";
 import { Icon } from "./ui/Icon";
 import { Bar, Card, Chip, PickerRow, PrimaryButton, SecondaryButton, Sheet, cx } from "./ui/primitives";
@@ -87,19 +88,35 @@ function statusText(t: T, goal: SavingsGoal, p: ReturnType<typeof savingsProgres
 
 /** A goal's detail: add to it (manual goals), edit or delete. */
 function GoalSheet({ goal, onClose, onEdit }: { goal: SavingsGoal | null; onClose: () => void; onEdit: (g: SavingsGoal) => void }) {
+  const { t } = useTranslation();
+  const deleteSavingsGoal = useStore((s) => s.deleteSavingsGoal);
   const [shown, setShown] = useState<SavingsGoal | null>(goal);
   if (goal && goal !== shown) setShown(goal);
+  const [confirming, setConfirming] = useState(false);
+  if (!goal && confirming) setConfirming(false);
   return (
-    <Sheet open={!!goal} onClose={onClose} title={shown?.name ?? ""}>
-      {shown ? <GoalDetail goal={shown} onClose={onClose} onEdit={onEdit} /> : null}
-    </Sheet>
+    <>
+      <Sheet open={!!goal && !confirming} onClose={onClose} title={shown?.name ?? ""}>
+        {shown ? <GoalDetail goal={shown} onDelete={() => setConfirming(true)} onEdit={onEdit} /> : null}
+      </Sheet>
+      <ConfirmSheet
+        open={!!goal && confirming}
+        onClose={() => setConfirming(false)}
+        title={t("savings.deleteTitle", { name: shown?.name ?? "" })}
+        lead={t("savings.deleteLead")}
+        confirmLabel={t("savings.delete")}
+        onConfirm={() => {
+          if (shown) deleteSavingsGoal(shown.id);
+          onClose();
+        }}
+      />
+    </>
   );
 }
 
-function GoalDetail({ goal, onClose, onEdit }: { goal: SavingsGoal; onClose: () => void; onEdit: (g: SavingsGoal) => void }) {
+function GoalDetail({ goal, onDelete, onEdit }: { goal: SavingsGoal; onDelete: () => void; onEdit: (g: SavingsGoal) => void }) {
   const { t } = useTranslation();
   const addToSavings = useStore((s) => s.addToSavings);
-  const deleteSavingsGoal = useStore((s) => s.deleteSavingsGoal);
   const { progress: p, account } = useProgress(goal);
   const [amount, setAmount] = useState("");
   const value = parseFloat(amount) || 0;
@@ -140,13 +157,7 @@ function GoalDetail({ goal, onClose, onEdit }: { goal: SavingsGoal; onClose: () 
         </>
       ) : null}
       <SecondaryButton onClick={() => onEdit(goal)}>{t("savings.edit")}</SecondaryButton>
-      <SecondaryButton
-        tone="danger"
-        onClick={() => {
-          deleteSavingsGoal(goal.id);
-          onClose();
-        }}
-      >
+      <SecondaryButton tone="danger" onClick={onDelete}>
         {t("savings.delete")}
       </SecondaryButton>
     </>

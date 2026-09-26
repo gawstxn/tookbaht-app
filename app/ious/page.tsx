@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PushScreen } from "@/components/app";
 import { AmountInput } from "@/components/AmountInput";
+import { ConfirmSheet } from "@/components/ConfirmSheet";
 import { PersonField, personTone } from "@/components/ious";
 import { Icon } from "@/components/ui/Icon";
 import { Chip, Empty, HeroCard, IconButton, ListCard, Monogram, PrimaryButton, PushHeader, SecondaryButton, Sheet } from "@/components/ui/primitives";
@@ -149,6 +150,8 @@ function IouSheet({ iou, onClose }: { iou: Iou | null; onClose: () => void }) {
   const updateIou = useStore((s) => s.updateIou);
   const deleteIou = useStore((s) => s.deleteIou);
   const [into, setInto] = useState("");
+  const [confirming, setConfirming] = useState(false);
+  if (!iou && confirming) setConfirming(false);
   const [shown, setShown] = useState<Iou | null>(iou);
   if (iou && iou !== shown) {
     setShown(iou);
@@ -157,7 +160,8 @@ function IouSheet({ iou, onClose }: { iou: Iou | null; onClose: () => void }) {
   const bill = iou?.transactionId ? transactions.find((x) => x.id === iou.transactionId) : undefined;
 
   return (
-    <Sheet open={!!iou} onClose={onClose} title={iou?.person ?? ""}>
+    <>
+    <Sheet open={!!iou && !confirming} onClose={onClose} title={iou?.person ?? ""}>
       {iou ? (
         <>
           <div className="flex flex-col items-center gap-0.5 py-1">
@@ -203,17 +207,23 @@ function IouSheet({ iou, onClose }: { iou: Iou | null; onClose: () => void }) {
               </PrimaryButton>
             </>
           )}
-          <SecondaryButton
-            tone="danger"
-            onClick={() => {
-              deleteIou(iou.id);
-              onClose();
-            }}
-          >
+          <SecondaryButton tone="danger" onClick={() => setConfirming(true)}>
             {t("ious.delete")}
           </SecondaryButton>
         </>
       ) : null}
     </Sheet>
+    <ConfirmSheet
+      open={!!iou && confirming}
+      onClose={() => setConfirming(false)}
+      title={t("ious.deleteTitle", { name: shown?.person ?? "" })}
+      lead={t("ious.deleteLead", { amount: baht2(shown?.amount ?? 0) })}
+      confirmLabel={t("ious.delete")}
+      onConfirm={() => {
+        if (shown) deleteIou(shown.id);
+        onClose();
+      }}
+    />
+    </>
   );
 }
