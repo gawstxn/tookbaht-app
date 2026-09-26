@@ -46,6 +46,8 @@ export interface Transaction {
   toId?: string;
   /** Set when the entry was logged automatically from a subscription. */
   subscriptionId?: string;
+  /** Trip or project the entry belongs to ("เที่ยวญี่ปุ่น"). */
+  tag?: string;
   /** Foreign charges: the original amount/currency and the THB rate used. */
   origAmount?: number;
   origCurrency?: Currency;
@@ -82,9 +84,14 @@ export interface Subscription {
   tone: string;
 }
 
-/** Money a friend owes the user, e.g. their share of a shared meal. */
+/** Who owes whom: a friend owes the user, or the user owes a friend. */
+export type IouDirection = "owed_to_me" | "i_owe";
+
+/** Money a friend owes the user (e.g. their share of a meal), or the user owes a friend. */
 export interface Iou {
   id: string;
+  /** "owed_to_me" when missing (debts saved before directions existed). */
+  direction?: IouDirection;
   /** The friend's name, as the user typed it. */
   person: string;
   amount: number;

@@ -106,7 +106,7 @@ export function TxRow({ t, onClick }: { t: Transaction; onClick?: () => void }) 
   const sub =
     t.type === "move"
       ? `${name(t.fromId)} → ${name(t.toId)}`
-      : [categoryLabel(t.category), name(t.accountId)].filter(Boolean).join(" · ");
+      : [categoryLabel(t.category), name(t.accountId), t.tag ? `#${t.tag}` : ""].filter(Boolean).join(" · ");
   const Tag = onClick ? "button" : "div";
   return (
     <Tag type={onClick ? "button" : undefined} onClick={onClick} className="flex min-h-[60px] w-full items-center gap-3 text-left">

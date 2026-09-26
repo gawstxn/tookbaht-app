@@ -94,8 +94,12 @@ interface Actions {
   /** Record what friends owe (one row per friend when splitting a bill). */
   addIous: (items: Omit<Iou, "id" | "createdAt">[]) => void;
   updateIou: (id: string, patch: Partial<Omit<Iou, "id" | "createdAt">>) => void;
-  /** Mark a debt paid back; with an account, the money is also logged as income there. */
-  settleIou: (id: string, intoAccountId?: string) => void;
+  /**
+   * Mark a debt paid back. With an account: money a friend paid back is logged
+   * there as a repayment (it lowers spending); money the user paid a friend is
+   * logged as an expense in `category` (the friend had paid for it).
+   */
+  settleIou: (id: string, accountId?: string, category?: string) => void;
   deleteIou: (id: string) => void;
 
   addSavingsGoal: (g: Omit<SavingsGoal, "id">) => string;
@@ -546,33 +550,36 @@ export const useStore = create<State & Actions>()((set, get) => {
       const rows: Iou[] = items.map((i, n) => ({ ...i, id: crypto.randomUUID(), createdAt: now + n }));
       void insertIous(rows);
       const total = rows.reduce((s, i) => s + i.amount, 0);
-      ok(rows.length === 1 ? t("toast.iouAdded", { name: rows[0].person, amount: baht(total) }) : t("toast.iousAdded", { count: rows.length, amount: baht(total) }));
+      const key = rows[0].direction === "i_owe" ? "toast.iouOwed" : "toast.iouAdded";
+      ok(rows.length === 1 ? t(key, { name: rows[0].person, amount: baht(total) }) : t("toast.iousAdded", { count: rows.length, amount: baht(total) }));
     },
     updateIou: (id, patch) => {
       void patchIou(id, patch);
       ok(t("toast.saved"));
     },
-    settleIou: (id, intoAccountId) => {
+    settleIou: (id, accountId, category) => {
       const iou = get().ious.find((x) => x.id === id);
       if (!iou) return;
       const today = todayISO();
       void patchIou(id, { settledOn: today });
       let txId: string | undefined;
-      if (intoAccountId) {
+      const iOwe = iou.direction === "i_owe";
+      if (accountId) {
         const tx: Transaction = {
           id: crypto.randomUUID(),
-          type: "in",
+          type: iOwe ? "out" : "in",
           amount: iou.amount,
           date: today,
-          title: t("ious.repaidTitle", { name: iou.person }),
-          category: "repay",
-          accountId: intoAccountId,
+          title: t(iOwe ? "ious.paidTitle" : "ious.repaidTitle", { name: iou.person }),
+          note: iou.note || undefined,
+          category: iOwe ? (category ?? "other") : "repay",
+          accountId,
           createdAt: Date.now(),
         };
         txId = tx.id;
         void insertTransaction(tx);
       }
-      ok(t("toast.iouSettled", { name: iou.person, amount: baht(iou.amount) }), {
+      ok(t(iOwe ? "toast.iouPaid" : "toast.iouSettled", { name: iou.person, amount: baht(iou.amount) }), {
         label: UNDO(),
         run: () => {
           void patchIou(id, { settledOn: null });

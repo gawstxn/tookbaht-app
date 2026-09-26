@@ -130,6 +130,8 @@ export interface TxFilter {
   /** Inclusive date range; either end may be open. */
   from?: string;
   to?: string;
+  /** Entries of one trip / project. */
+  tag?: string;
 }
 
 /** Transactions matching the list filters. A transfer matches an account on either side. */
@@ -138,6 +140,7 @@ export function filterTransactions(txs: Transaction[], f: TxFilter): Transaction
     (t) =>
       (!f.accountId || t.accountId === f.accountId || t.fromId === f.accountId || t.toId === f.accountId) &&
       (!f.category || t.category === f.category) &&
+      (!f.tag || t.tag === f.tag) &&
       (!f.from || t.date >= f.from) &&
       (!f.to || t.date <= f.to),
   );

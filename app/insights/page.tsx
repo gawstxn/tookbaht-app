@@ -108,6 +108,12 @@ export default function InsightsPage() {
 
       <NetWorthChart />
 
+      <Link href="/tags" className="flex min-h-[56px] items-center gap-3 rounded-2xl border border-line bg-card px-4">
+        <Icon name="tag" size={20} strokeWidth={2} />
+        <span className="grow text-[15px] font-semibold">{t("tags.title")}</span>
+        <Icon name="chevronRight" size={16} strokeWidth={2} className="text-faint" />
+      </Link>
+
       <Link href="/insights/year" className="flex min-h-[56px] items-center gap-3 rounded-2xl border border-line bg-card px-4">
         <Icon name="calendar" size={20} strokeWidth={2} />
         <span className="grow text-[15px] font-semibold">{t("year.open", { year: displayYear(Number(current.slice(0, 4))) })}</span>

@@ -12,6 +12,7 @@ import { filterTransactions, monthTransactions, summarize, type TxFilter } from 
 import { useTranslation } from "react-i18next";
 import { txTitle } from "@/lib/txTitle";
 import { useStore } from "@/lib/store";
+import { knownTags } from "@/lib/tags";
 import type { Transaction, TxType } from "@/lib/types";
 
 type Filter = "all" | TxType;
@@ -28,7 +29,7 @@ export default function TransactionsPage() {
   const today = todayISO();
   const accName = (id?: string) => accounts.find((a) => a.id === id)?.name ?? "—";
   // A date range replaces the month view; account and category narrow either.
-  const ranged = !!(scope.from || scope.to);
+  const ranged = !!(scope.from || scope.to || scope.tag);
 
   const month = useMemo(
     () => filterTransactions(ranged ? transactions : monthTransactions(transactions, viewMonth), scope),
@@ -38,6 +39,7 @@ export default function TransactionsPage() {
   const active = [
     scope.accountId ? { key: "accountId" as const, label: accName(scope.accountId) } : null,
     scope.category ? { key: "category" as const, label: categoryLabel(scope.category) } : null,
+    scope.tag ? { key: "tag" as const, label: `#${scope.tag}` } : null,
   ].filter((x) => x !== null);
 
   const groups = useMemo(() => {
@@ -169,6 +171,8 @@ function ActiveFilter({ label, onRemove }: { label: string; onRemove: () => void
 function FilterSheet({ open, value, onClose, onApply }: { open: boolean; value: TxFilter; onClose: () => void; onApply: (f: TxFilter) => void }) {
   const { t } = useTranslation();
   const accounts = useStore((s) => s.accounts);
+  const txs = useStore((s) => s.transactions);
+  const tags = useMemo(() => knownTags(txs, 20), [txs]);
   const [draft, setDraft] = useState(value);
   const [picking, setPicking] = useState<"" | "from" | "to">("");
   const [wasOpen, setWasOpen] = useState(open);
@@ -214,6 +218,21 @@ function FilterSheet({ open, value, onClose, onApply }: { open: boolean; value: 
             </div>
           ))}
         </section>
+        {tags.length ? (
+          <section className="flex flex-col gap-2">
+            <h3 className="text-[13px] font-semibold text-muted">{t("tags.label")}</h3>
+            <div className="flex flex-wrap gap-1.5">
+              <Chip size="sm" on={!draft.tag} onClick={() => set({ tag: undefined })}>
+                {t("tags.all")}
+              </Chip>
+              {tags.map((tag) => (
+                <Chip key={tag} size="sm" on={draft.tag === tag} onClick={() => set({ tag })}>
+                  #{tag}
+                </Chip>
+              ))}
+            </div>
+          </section>
+        ) : null}
         <section className="flex flex-col gap-2">
           <h3 className="text-[13px] font-semibold text-muted">{t("tx.dateRange")}</h3>
           <ListCard>

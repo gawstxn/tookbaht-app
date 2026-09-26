@@ -58,6 +58,7 @@ export function TxDetailSheet({ tx: open, onClose }: { tx: Transaction | null; o
               </>
             )}
             {tx.note ? <Detail label={tr("common.note")} value={tx.note} /> : null}
+            {tx.tag ? <Detail label={tr("tags.label")} value={tx.tag} /> : null}
             {tx.subscriptionId ? <Detail label={tr("common.source")} value={tr("tx.fromSub")} /> : null}
             {tx.origAmount && tx.fxRate ? (
               <Detail

@@ -22,6 +22,7 @@ import type { Transaction } from "@/lib/types";
 export default function OverviewPage() {
   const { transactions, subscriptions, goals, viewMonth, ious } = useStore();
   const owed = useMemo(() => debtsByPerson(ious), [ious]);
+  const owing = useMemo(() => debtsByPerson(ious, "i_owe"), [ious]);
   const [selected, setSelected] = useState<Transaction | null>(null);
   const { t: tr } = useTranslation();
   const today = todayISO();
@@ -100,6 +101,19 @@ export default function OverviewPage() {
           <span className="flex min-w-0 grow flex-col">
             <span className="text-[15px] font-semibold">{tr("ious.homeTitle", { amount: baht(owed.reduce((s, p) => s + p.total, 0)) })}</span>
             <span className="truncate text-xs text-muted">{owed.map((p) => p.person).join(", ")}</span>
+          </span>
+          <Icon name="chevronRight" size={16} strokeWidth={2} className="text-faint" />
+        </Link>
+      ) : null}
+
+      {owing.length ? (
+        <Link href="/ious" className="flex min-h-[60px] items-center gap-3 rounded-2xl border border-line bg-card px-4 py-2.5">
+          <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-expense-tint text-expense">
+            <Icon name="users" size={18} strokeWidth={2} />
+          </span>
+          <span className="flex min-w-0 grow flex-col">
+            <span className="text-[15px] font-semibold">{tr("ious.homeIOwe", { amount: baht(owing.reduce((s, p) => s + p.total, 0)) })}</span>
+            <span className="truncate text-xs text-muted">{owing.map((p) => p.person).join(", ")}</span>
           </span>
           <Icon name="chevronRight" size={16} strokeWidth={2} className="text-faint" />
         </Link>
