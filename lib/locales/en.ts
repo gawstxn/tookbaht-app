@@ -624,6 +624,7 @@ const en: Messages = {
     sending: "Sending…",
     sent: "Sent. Thank you!",
     failed: "Couldn't send. Try again.",
+    limit: "You've sent 20 reports today. Try again tomorrow.",
   },
   offline: {
     label: "Offline",

@@ -55,6 +55,12 @@ interface Actions {
   flush: () => Promise<void>;
   /** Send offline changes, then refresh from the server in the background. */
   sync: (refetch?: boolean) => Promise<void>;
+  /**
+   * Signed out without using the button (session expired or revoked elsewhere):
+   * drop this account's data copy from the device. Unsynced changes stay, so
+   * they are sent if the same user signs back in.
+   */
+  signedOut: () => void;
   /** Clear in-memory data (after sign-out). */
   reset: () => void;
   signOut: () => Promise<void>;
@@ -314,6 +320,11 @@ export const useStore = create<State & Actions>()((set, get) => {
         console.error(e);
       }
     },
+    signedOut: () => {
+      const userId = get().userId;
+      if (userId) snapshot(userId).clear();
+      get().reset();
+    },
     reset: () => set({ ...initial, viewMonth: todayISO().slice(0, 7) }),
     signOut: async () => {
       const userId = get().userId;
@@ -333,6 +344,11 @@ export const useStore = create<State & Actions>()((set, get) => {
         return null;
       }
       await sb().auth.signOut({ scope: "local" });
+      const userId = get().userId;
+      if (userId) {
+        snapshot(userId).clear();
+        outbox(userId).clear();
+      }
       get().reset();
       // The purge date in this device's calendar (the server returns a UTC timestamp).
       return toISO(new Date(String(data)));
@@ -597,7 +613,7 @@ export const useStore = create<State & Actions>()((set, get) => {
         });
       if (error) {
         console.error(error);
-        get().notify(t("feedback.failed"), { tone: "error" });
+        get().notify(t(error.hint === "feedback_limit" ? "feedback.limit" : "feedback.failed"), { tone: "error" });
         return false;
       }
       ok(t("feedback.sent"));
