@@ -91,7 +91,7 @@ After pulling new migrations run `npx supabase migration up`; to start over, `np
 | `SUPABASE_SECRET_KEY` | Server only: cron jobs, exchange rates |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web Push (`npx web-push generate-vapid-keys`) |
 | `CRON_SECRET` | Vercel Cron authorization |
-| `NEXT_PUBLIC_CONTACT_EMAIL` | Contact on the privacy and terms pages (set in `.env.production`) |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | Contact on the privacy and terms pages (optional) |
 | `NEXT_PUBLIC_DEV_LOGIN` | Local one-tap sign-in. **Never set in production.** |
 
 ## Commands and tests
