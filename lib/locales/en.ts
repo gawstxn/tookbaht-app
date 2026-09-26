@@ -350,6 +350,8 @@ const en: Messages = {
     month: "Month",
     byCategory: "Spending by category · {{month}}",
     noSpend: "No spending this month yet",
+    tabMonth: "Monthly",
+    tabOverview: "Overview",
 
     calendar: "Spending calendar · {{month}}",
     noSpendDay: "no spending",
@@ -740,10 +742,10 @@ const en: Messages = {
   },
   settings: {
     title: "Settings",
-    summary: "Language, theme, lock, notifications",
   },
   whatsNew: {
     title: "What's new in v{{version}}",
+    insightsTabs: { title: "Insights in two tabs", body: "Monthly: charts, categories and the calendar · Overview: net worth, the year and trips." },
     settings: { title: "Settings screen", body: "Language, theme, app lock and notifications moved to Profile → Settings." },
     slip: { title: "Read a slip", body: "On the add screen, tap \"Read a slip\" and pick a photo: amount, date and memo are filled in. Read on your device only." },
     tags: { title: "Trip tags", body: "Tag entries (e.g. Japan trip) and see the whole trip's total in Insights → Trips & projects." },

@@ -6,11 +6,23 @@ import Link from "next/link";
 import { PushScreen } from "@/components/app";
 import { NetWorthChart, SpendCalendar } from "@/components/insightCharts";
 import { Icon } from "@/components/ui/Icon";
-import { Card, Empty, PushHeader } from "@/components/ui/primitives";
+import { Card, Empty, PushHeader, Segmented } from "@/components/ui/primitives";
 import { categoryLabel } from "@/lib/constants";
 import { baht, displayYear, monthKey, monthLabel, monthNamesShort, todayISO } from "@/lib/format";
-import { categoryBreakdown, compact, monthlySeries, niceTicks } from "@/lib/insights";
+import { categoryBreakdown, compact, monthlySeries, niceTicks, yearSummary } from "@/lib/insights";
+import { tagSummaries } from "@/lib/tags";
 import { useStore } from "@/lib/store";
+
+type Tab = "month" | "overview";
+const TAB_KEY = "tookbaht-insights-tab";
+/** The tab last used on this device (a per-device convenience). */
+const readTab = (): Tab => {
+  try {
+    return localStorage.getItem(TAB_KEY) === "overview" ? "overview" : "month";
+  } catch {
+    return "month";
+  }
+};
 
 /* Chart geometry (SVG units; the SVG scales to the card width). */
 const W = 340;
@@ -28,6 +40,18 @@ export default function InsightsPage() {
   const current = monthKey(todayISO());
   const series = useMemo(() => monthlySeries(transactions, current), [transactions, current]);
   const [selected, setSelected] = useState(current);
+  const [tab, setTab] = useState<Tab>(readTab);
+  const pickTab = (next: Tab) => {
+    setTab(next);
+    try {
+      localStorage.setItem(TAB_KEY, next);
+    } catch {
+      // Not remembered; fine.
+    }
+  };
+  const year = Number(current.slice(0, 4));
+  const thisYear = useMemo(() => yearSummary(transactions, year), [transactions, year]);
+  const tags = useMemo(() => tagSummaries(transactions).slice(0, 3), [transactions]);
   const sel = series.find((m) => m.month === selected) ?? series[series.length - 1];
   const cats = useMemo(() => categoryBreakdown(transactions, sel.month), [transactions, sel.month]);
   const net = sel.income - sel.expense;
@@ -35,6 +59,19 @@ export default function InsightsPage() {
   return (
     <PushScreen>
       <PushHeader title={t("insights.title")} backHref="/transactions" />
+
+      <Segmented
+        label={t("insights.title")}
+        value={tab}
+        onChange={pickTab}
+        options={[
+          { value: "month", label: t("insights.tabMonth") },
+          { value: "overview", label: t("insights.tabOverview") },
+        ]}
+      />
+
+      {tab === "month" ? (
+        <>
 
       <section className="flex flex-col gap-0.5">
         <span className="text-[13px] text-muted">{t("insights.netIn", { month: monthLabel(sel.month) })}</span>
@@ -105,20 +142,51 @@ export default function InsightsPage() {
       </section>
 
       <SpendCalendar month={sel.month} />
+        </>
+      ) : (
+        <>
+          <NetWorthChart />
 
-      <NetWorthChart />
+          <Link href="/insights/year" className="block">
+            <Card className="flex flex-col gap-2 px-4 py-3.5">
+              <div className="flex items-center justify-between">
+                <h2 className="text-[15px] font-semibold">{t("year.open", { year: displayYear(year) })}</h2>
+                <Icon name="chevronRight" size={16} strokeWidth={2} className="text-faint" />
+              </div>
+              {thisYear.entries ? (
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <Figure label={t("type.in")} value={`+${baht(thisYear.income)}`} color="var(--color-chart-in)" />
+                  <Figure label={t("type.out")} value={`−${baht(thisYear.expense)}`} color="var(--color-chart-out)" />
+                  <Figure label={t(thisYear.net >= 0 ? "year.saved" : "year.short")} value={baht(Math.abs(thisYear.net))} />
+                </div>
+              ) : (
+                <span className="text-sm text-muted">{t("year.empty")}</span>
+              )}
+            </Card>
+          </Link>
 
-      <Link href="/tags" className="flex min-h-[56px] items-center gap-3 rounded-2xl border border-line bg-card px-4">
-        <Icon name="tag" size={20} strokeWidth={2} />
-        <span className="grow text-[15px] font-semibold">{t("tags.title")}</span>
-        <Icon name="chevronRight" size={16} strokeWidth={2} className="text-faint" />
-      </Link>
-
-      <Link href="/insights/year" className="flex min-h-[56px] items-center gap-3 rounded-2xl border border-line bg-card px-4">
-        <Icon name="calendar" size={20} strokeWidth={2} />
-        <span className="grow text-[15px] font-semibold">{t("year.open", { year: displayYear(Number(current.slice(0, 4))) })}</span>
-        <Icon name="chevronRight" size={16} strokeWidth={2} className="text-faint" />
-      </Link>
+          <Link href="/tags" className="block">
+            <Card className="flex flex-col gap-2 px-4 py-3.5">
+              <div className="flex items-center justify-between">
+                <h2 className="text-[15px] font-semibold">{t("tags.title")}</h2>
+                <Icon name="chevronRight" size={16} strokeWidth={2} className="text-faint" />
+              </div>
+              {tags.length ? (
+                <div className="flex flex-col">
+                  {tags.map((g) => (
+                    <div key={g.tag} className="flex min-h-9 items-center justify-between gap-3 text-sm">
+                      <span className="truncate">#{g.tag}</span>
+                      <span className="font-mono font-semibold">{baht(g.spent)}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-sm text-muted">{t("tags.empty")}</span>
+              )}
+            </Card>
+          </Link>
+        </>
+      )}
     </PushScreen>
   );
 }

@@ -9,7 +9,7 @@ import { PrimaryButton, Sheet } from "./ui/primitives";
 
 const VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0";
 
-/** "มีอะไรใหม่": after an update, a drawer with the highlights since the version this account last saw. Once per version. */
+/** "มีอะไรใหม่": after an update, a centred dialog with the highlights since the version this account last saw. Once per version. */
 export function WhatsNew() {
   const { t } = useTranslation();
   const lastSeen = useStore((s) => s.settings.lastSeenVersion);
@@ -24,7 +24,7 @@ export function WhatsNew() {
   if (!items.length) return null;
 
   return (
-    <Sheet open={open} onClose={close} title={t("whatsNew.title", { version: VERSION })}>
+    <Sheet variant="modal" open={open} onClose={close} title={t("whatsNew.title", { version: VERSION })}>
       <ul className="flex flex-col gap-3">
         {items.map((item) => (
           <li key={item.key} className="flex items-start gap-3">
