@@ -5,122 +5,149 @@
 <h1 align="center">Tookbaht · ทุกบาท</h1>
 
 <p align="center">
-  แอปบันทึกรายรับรายจ่ายบนมือถือ ติดตั้งลงหน้าจอหลักแล้วใช้งานเหมือนแอปจริง<br />
-  รายรับ รายจ่าย การโอน รายการประจำ ค่าผ่อน subscriptions และงบประมาณ ครบในที่เดียว
+  A personal finance app for your phone. Install it to the home screen and it works like a native app.<br />
+  Income, spending, transfers, subscriptions, installments, budgets and savings goals in one place, Thai-first with English.
 </p>
 
 <p align="center">
-  <a href="https://tookbaht.vercel.app">tookbaht.vercel.app</a>
+  <a href="https://tookbaht.gawstxn.dev"><b>tookbaht.gawstxn.dev</b></a>
 </p>
 
 ---
 
-**Stack:** Next.js 16 (App Router, React 19) · TypeScript · Tailwind CSS v4 · Zustand · i18next (ไทย / English) · Supabase (Postgres, Auth, pg_cron) · Web Push · Vercel · Vitest + PGlite
+**Stack:** Next.js 16 (App Router, React 19) · TypeScript · Tailwind CSS v4 · Zustand · i18next · Supabase (Postgres, Auth, pg_cron) · Web Push · tesseract.js · Vercel · Vitest + PGlite
 
-## ฟีเจอร์
+- [Features](#features)
+- [How it works](#how-it-works)
+- [Getting started](#getting-started)
+- [Commands and tests](#commands-and-tests)
+- [Project structure](#project-structure)
+- [Deploying](#deploying)
+- [Scheduled jobs](#scheduled-jobs)
+- [Credits](#credits)
 
-**บันทึกเงินประจำวัน**
-- รายรับ / รายจ่าย / โอนระหว่างบัญชี ด้วยแป้นตัวเลขที่คิดเลขได้ (`120+85`) แก้ไขและลบได้ พร้อมปุ่มเลิกทำ
-- ใช้ได้ตอนไม่มีเน็ต: เปิดแอปจากข้อมูลล่าสุดในเครื่อง จดรายการไว้ก่อน แล้วซิงก์ให้เองเมื่อกลับมาออนไลน์ (`lib/offline.ts`, `public/sw.js`)
-- อ่านสลิปโอนเงินบนเครื่อง (tesseract.js ภาษาไทย ไม่ส่งรูปออกนอกเครื่อง): เติมยอด วันที่ และบันทึกช่วยจำให้ในหน้าเพิ่มรายการ ไฟล์ engine ถูก copy เข้า `public/ocr` ตอน `npm install`
-- จดด่วน: แตะครั้งเดียวบันทึกรายการที่จดซ้ำบ่อย (แอปเสนอจากประวัติ) และหน้าเพิ่มรายการเลือกหมวดกับบัญชีที่ใช้บ่อยไว้ให้
-- หน้ารายการ: ค้นหา, กรองตามประเภท บัญชี หมวด และช่วงวันที่, จัดกลุ่มตามวัน
-- ปรับยอดบัญชีให้ตรงกับยอดจริงในแอปธนาคาร แอปบันทึกส่วนต่างให้
+## Features
 
-**รายเดือน**
-- Subscriptions: โลโก้บริการยอดนิยม, ราคาเป็นบาทหรือ USD (แปลงตามอัตราวันนั้น + ค่าธรรมเนียมบัตร), toggle +VAT 7%
-- รายการประจำ: เงินเดือน ค่าเช่า เงินออมรายเดือน ฐานข้อมูลบันทึกให้เองทุกรอบ แม้ไม่ได้เปิดแอป
-- ผ่อนเป็นงวด: นับเข้างบในเดือนที่จ่ายแต่ละงวด และหยุดเองเมื่อผ่อนครบ
+### Logging money
+- Income, expenses and transfers on a number pad that also adds up (`120+85` saves 205). Edit, delete, undo.
+- **Quick add:** one tap to log an entry you make again and again (suggested from your history); new entries preselect the category and account you use most.
+- **Read a slip:** pick a bank transfer slip photo and the amount, date and memo are filled in. Read on the device with tesseract.js (Thai); the photo never leaves the phone.
+- **Works offline:** opens from the copy on the device, queues what you log, and syncs when the connection is back.
+- Trip / project tags, a double-save check, and "balance doesn't match" reconciling against your bank app.
+- Activity list with search and filters (type, account, category, tag, date range).
 
-**บัตรเครดิต / PayLater (เช่น SPayLater)**
-- วงเงินคงเหลือจริง: ลดเต็มราคาตั้งแต่วันซื้อ แล้วคืนทีละงวด
-- ซื้อแบบผ่อน: ใส่ราคา จำนวนเดือน และยอดต่องวดตามที่แอปที่ซื้อแสดง แอปคำนวณดอกเบี้ยให้
-- วันครบกำหนดชำระ, ยอดที่ต้องจ่ายรอบนี้, ปุ่ม "จ่ายบิลแล้ว"
+### Every month
+- **Subscriptions** with service logos, priced in baht or USD (converted at that day's rate plus the card's fee, optional +7% VAT).
+- **Recurring entries** (salary, rent, monthly saving) logged by the database on schedule, even when the app is closed.
+- **Installments** counted in the month each one is paid, stopping after the last.
 
-**ภาพรวมและเป้าหมาย**
-- ภาพรวมรายเดือน, เป้ารายรับ, งบรวมและงบแยกหมวด พร้อมเส้น "ควรใช้ถึงวันนี้"
-- เป้าหมายเก็บเงินเป็นก้อน (ใส่ยอดเองหรือผูกกับบัญชีออม) บอกว่าต้องเก็บเดือนละเท่าไหร่ให้ทันกำหนด
-- ติดเงินกับเพื่อน (สองทิศทาง): หารบิลจากรายการรายจ่าย หรือจดเอง แล้วกด "คืนแล้ว" (เลือกบัญชีที่เงินเข้าได้ ยอดคืนจะหักออกจากรายจ่ายของเดือน ไม่นับเป็นรายรับ)
-- สถิติ: กราฟรายรับ–รายจ่าย 6 เดือน, รายจ่ายตามหมวด, ปฏิทินรายจ่าย, ความมั่งคั่งสุทธิ 12 เดือน และสรุปปี
-- แท็กทริป/โปรเจกต์ ดูยอดรวมของแต่ละทริปข้ามเดือนได้; ยกงบที่เหลือไปเดือนหน้าได้รายหมวด
-- ศูนย์แจ้งเตือนในแอป และ Web Push: ก่อนตัดบัญชี ก่อนครบกำหนดชำระ เมื่องบถึง 80% หรือเกิน และสรุปสิ้นเดือน
-- แจ้งปัญหาจากหน้าโปรไฟล์ (เก็บในตาราง `feedback` พร้อมเวอร์ชันแอปและหน้าที่เปิดล่าสุด อ่านได้ใน Supabase dashboard)
+### Cards and pay-later (e.g. SPayLater)
+- Real remaining limit (the full price comes off on purchase, then back one installment at a time).
+- Buy in installments: enter the price, months and the per-installment amount the shop shows; interest is worked out.
+- Due day, what's due this cycle, and a "bill paid" transfer.
 
-**ความเป็นส่วนตัวและการตั้งค่า**
-- เข้าสู่ระบบด้วย Google, Row Level Security ทุกตาราง
-- ล็อกแอปด้วย PIN 6 หลัก / Face ID บนเครื่อง
-- สำรองและกู้คืนข้อมูลเป็น JSON, ส่งออก CSV
-- ธีมสว่าง / มืด / ตามระบบ, ภาษาไทย / English
+### Budgets, goals and insights
+- Monthly income target, overall and per-category budgets with a "spent by today" pace line, and what's left to spend today.
+- Budget rollover per category, savings goals with the amount to put aside each month.
+- Money owed with friends in both directions: split a bill, mark it paid back (repayments lower your spending rather than count as income).
+- Insights: 6-month income vs spending, spending by category, a spending calendar, net worth over 12 months, trips, and a year in review.
+- In-app notification center and Web Push: charges due tomorrow, payment due dates, budgets at 80% / over, price rises, the monthly summary, and an optional 8 pm "anything to log?" nudge.
 
-## เริ่มพัฒนาบนเครื่อง
+### Your data
+- Google sign-in, row-level security on every table, app lock with a 6-digit PIN or Face ID (passkey).
+- JSON backup and restore, CSV export, account deletion with a 30-day grace period.
+- Light / dark / system theme, Thai / English, and a "what's new" dialog after each update.
 
-ต้องมี Node 22 และ Docker Desktop (สำหรับ Supabase บนเครื่อง)
+## How it works
+
+- **Screens read an in-memory store** (`lib/store.ts`, Zustand). A change shows immediately, then is written to Supabase; if the write is refused the change is rolled back with a toast.
+- **Offline:** every write is described as an operation (`lib/offline.ts`). Without a connection it waits in a per-user outbox and is replayed in order later. The last loaded data is kept on the device so the app opens instantly and offline; both are cleared on sign-out.
+- **Service worker** (`public/sw.js`) keeps build files, screens and navigation data for offline use; app data never goes through it.
+- **The database does the scheduled work:** SQL functions log due entries (pg_cron) and decide which reminders are due; Vercel Cron only delivers the pushes.
+- **Security:** RLS on every table with composite `(id, user_id)` foreign keys, explicit table grants (no default API access, no TRUNCATE), per-user row caps, a static CSP (`'wasm-unsafe-eval'` only for the slip reader), and push only to known push services.
+
+## Getting started
+
+You need Node 22 and Docker Desktop (for the local Supabase).
 
 ```bash
-npm install
-npx supabase start      # Postgres + Auth บนเครื่อง (พอร์ต 553xx) และรัน migrations ทั้งหมด
-npx supabase status     # คัดลอก API_URL / PUBLISHABLE_KEY / SECRET_KEY ไปใส่ .env.local ตาม .env.example
+npm install             # also copies the OCR engine into public/ocr
+npx supabase start      # local Postgres + Auth on ports 553xx, applies every migration
+npx supabase status     # copy API_URL / PUBLISHABLE_KEY / SECRET_KEY into .env.local (see .env.example)
 npm run dev
 ```
 
-เปิด http://localhost:3000 บนมือถือ หรือใช้โหมดมือถือใน DevTools (ออกแบบไว้ที่ 390–430px)
+Open http://localhost:3000 on your phone, or use a mobile viewport in DevTools (the app is designed for 390–430 px).
 
-**เข้าสู่ระบบบนเครื่องได้ในคลิกเดียว:** ใส่ `NEXT_PUBLIC_DEV_LOGIN=true` ใน `.env.local` หน้า login จะมีปุ่ม "เข้าสู่ระบบทันที" (ผู้ใช้ `dev@tookbaht.local`) ปุ่มนี้แสดงเฉพาะตอนต่อ Supabase บนเครื่อง จากนั้นหน้า onboarding มีปุ่ม "ลองด้วยข้อมูลตัวอย่าง"
+**One-tap local sign-in:** set `NEXT_PUBLIC_DEV_LOGIN=true` in `.env.local` and the login screen shows a "sign in now" button for `dev@tookbaht.local`. It only appears against a local Supabase. Onboarding then offers sample data.
 
-อัปเดตฐานข้อมูลบนเครื่องหลังดึง migration ใหม่: `npx supabase migration up` · รีเซ็ตทั้งหมด: `npx supabase db reset`
+After pulling new migrations run `npx supabase migration up`; to start over, `npx supabase db reset`.
 
-### คำสั่ง
+### Environment variables
 
-| คำสั่ง | ทำอะไร |
+| Variable | Where it's used |
 |---|---|
-| `npm run dev` | dev server |
-| `npm test` | Vitest: unit tests (`tests/unit`) และ database tests (`tests/db`) ที่รัน migrations ทั้งหมดบน Postgres ในหน่วยความจำ (PGlite) ไม่ต้องใช้ Docker |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser and server |
+| `SUPABASE_SECRET_KEY` | Server only: cron jobs, exchange rates |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web Push (`npx web-push generate-vapid-keys`) |
+| `CRON_SECRET` | Vercel Cron authorization |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | Contact on the privacy and terms pages (set in `.env.production`) |
+| `NEXT_PUBLIC_DEV_LOGIN` | Local one-tap sign-in. **Never set in production.** |
+
+## Commands and tests
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Dev server |
+| `npm test` | Vitest: unit tests (`tests/unit`) and database tests (`tests/db`) that apply every migration to an in-memory Postgres (PGlite), starting from Supabase's default privileges. No Docker needed. |
 | `npm run lint` | ESLint |
-| `npm run build` | production build (type-check ด้วย) |
-| `npm run start` | รัน production build (ใช้ทดสอบ service worker, push และความลื่นของแอนิเมชัน) |
+| `npm run build` | Production build (also type-checks) |
+| `npm run start` | Serve the production build: use it to check the service worker, push and animation smoothness |
 
-CI (GitHub Actions) รัน lint, test และ build ทุก PR
+CI (GitHub Actions) runs lint, tests and a build on every pull request. Conventions for contributors (and coding agents) are in [AGENTS.md](AGENTS.md).
 
-## โครงสร้าง
+## Project structure
 
 ```
-app/                       หน้าต่างๆ (App Router)
-  page.tsx                 ภาพรวม
-  add/ transactions/ insights/ goals/ notifications/ profile/ onboarding/ login/
-  accounts/ [id]/ [id]/buy/        บัญชี, หน้าบัตร/PayLater, ซื้อแบบผ่อน
-  subscriptions/ recurring/new/    subscriptions และรายการประจำ
-  api/cron/reminders/      Vercel Cron รายวัน: push แจ้งเตือน + อัปเดตอัตราแลกเปลี่ยน
+app/                         Screens (App Router)
+  page.tsx                   Home
+  add/ transactions/ insights/ insights/year/ tags/ goals/ ious/ notifications/
+  profile/ settings/ onboarding/ login/ privacy/ terms/
+  accounts/ [id]/ [id]/buy/  Accounts, card / pay-later page, buy in installments
+  subscriptions/ recurring/  Subscriptions and recurring entries
+  api/cron/                  reminders (09:00) and evening (20:00) push jobs
 components/
-  ui/primitives.tsx        Card, HeroCard, Sheet, Switch, Segmented, Chip, ปุ่ม
-  AppShell.tsx             session, โหลดข้อมูล, page transitions, toast, ล็อกแอป
-  app.tsx                  BottomNav, TabScreen, PushScreen, TxRow, TxIcon
-  pickers.tsx              ปฏิทิน, เลือกบัญชี/หมวด/เดือน
+  ui/primitives.tsx          Card, HeroCard, Sheet (drawer or modal), Switch, Segmented, Chip, buttons
+  AppShell.tsx               Session, loading, page transitions, sync, toasts, app lock
+  app.tsx                    Bottom nav, screen scaffolds, transaction rows
+  pickers.tsx                Calendar, month, account and category pickers
 lib/
-  store.ts                 Zustand store: อัปเดตหน้าจอทันที แล้วบันทึกลง Supabase (ย้อนกลับถ้าล้มเหลว)
-  db.ts                    แปลงแถวในฐานข้อมูล ↔ types, โหลดข้อมูลทั้งหมด
-  selectors.ts             ยอดรวม ยอดบัญชี วงเงิน วันครบกำหนด งวดผ่อน ตัวกรอง (pure functions, มี tests)
-  format.ts money.ts fx.ts วันที่ พ.ศ., รอบตัดบัญชี, เงินบาท/USD
-  locales/th.ts en.ts      ข้อความทุกภาษา
-  theme.ts appLock.ts nav.ts  ธีม, ล็อกแอป, การย้อนกลับพร้อมแอนิเมชัน
-supabase/migrations/       schema, RLS, auto-log (pg_cron), push, รายการประจำ, PayLater
-tests/                     unit และ database tests
+  store.ts db.ts offline.ts  Store, database mapping, offline outbox and device copy
+  selectors.ts budget.ts insights.ts savings.ts ious.ts tags.ts quick.ts calc.ts slip.ts
+                             Money maths, dates, schedules and filters: pure functions with tests
+  locales/                   Thai and English strings
+  push.ts pushText.ts        Push delivery and push copy (server)
+supabase/migrations/         Schema, RLS, grants, scheduled logging, reminders
+tests/unit tests/db          Unit and database tests
+public/sw.js public/ocr/     Service worker; slip reader data
 ```
 
-## Deploy (production)
+## Deploying
 
-- Vercel deploy `main` อัตโนมัติ
-- migration ใหม่: รัน `npx supabase db push` พร้อมกับตอน merge (โปรเจกต์ link ไว้แล้ว)
-- ตั้งค่าครั้งแรก: สร้างโปรเจกต์ Supabase (Singapore), เปิด Google provider (redirect URI `https://<ref>.supabase.co/auth/v1/callback`), ตั้ง Site URL / Redirect URLs เป็นโดเมนของแอป และใส่ environment variables ตาม `.env.example` ใน Vercel
-- **ห้ามตั้ง `NEXT_PUBLIC_DEV_LOGIN` บน production** และปิด Email provider ให้เหลือแค่ Google
+- Vercel deploys `main` automatically; every merge goes to production.
+- A new migration goes out with `npx supabase db push` when its pull request is merged (the CLI is linked to the project).
+- First-time setup: create a Supabase project (Singapore), enable the Google provider (redirect URI `https://<ref>.supabase.co/auth/v1/callback`), set the Site URL and Redirect URLs to the app's domain (`https://<domain>/**`), and add the environment variables above to Vercel.
+- Keep the Email provider disabled so Google is the only way in.
 
-## งานอัตโนมัติ
+## Scheduled jobs
 
-- **Auto-log** (pg_cron ทุกชั่วโมง): บันทึก subscriptions รายการประจำ และงวดผ่อนที่ถึงกำหนดตามเขตเวลาของผู้ใช้ ไม่บันทึกย้อนหลัง และไม่บันทึกซ้ำ
-- **Push** (Vercel Cron 09:00 น.): ตัดบัญชีพรุ่งนี้, ครบกำหนดชำระพรุ่งนี้, งบถึง 80% / เกินงบ, สรุปเดือนที่แล้ว (วันที่ 1–3 ของเดือน ปิดได้ที่โปรไฟล์) แต่ละเรื่องส่งครั้งเดียว
-- **Push ตอนค่ำ** (Vercel Cron 20:00 น.): เตือนให้จดถ้าวันนั้นยังไม่ได้จดเอง (เปิดได้ที่โปรไฟล์ ค่าเริ่มต้นปิด)
-- Push ใช้ได้เฉพาะ production build และบน iPhone ต้องติดตั้งแอปลงหน้าจอหลักก่อน (iOS 16.4+)
+- **Auto-log** (pg_cron, hourly): logs due subscriptions, recurring entries and installments in each user's time zone; never back-fills and never logs twice.
+- **Daily push** (Vercel Cron, 09:00 Bangkok): charges due tomorrow, payments due tomorrow, budgets at 80% / over, last month's summary on the 1st–3rd. Each is sent once.
+- **Evening push** (Vercel Cron, 20:00 Bangkok): a nudge to log, only for users who turned it on and logged nothing that day.
+- Push works on production builds only; on iPhone the app must be installed to the home screen (iOS 16.4+).
 
-## เครดิต
+## Credits
 
-- โลโก้บริการ subscription จาก [Simple Icons](https://simpleicons.org) (CC0) ชื่อและโลโก้เป็นเครื่องหมายการค้าของเจ้าของ ใช้เพื่อบอกว่าเป็นบริการไหนเท่านั้น
-- ฟอนต์ IBM Plex Sans Thai, IBM Plex Mono, Noto Serif Thai
+- Service logos from [Simple Icons](https://simpleicons.org) (CC0). Names and logos are trademarks of their owners, shown only to identify each service.
+- Slip reading by [tesseract.js](https://github.com/naptha/tesseract.js) (Apache-2.0) with the Thai model from [tessdata_fast](https://github.com/tesseract-ocr/tessdata_fast) (Apache-2.0).
+- Fonts: IBM Plex Sans Thai, IBM Plex Mono, Noto Serif Thai.
