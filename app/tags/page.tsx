@@ -1,11 +1,12 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PushScreen, TxRow } from "@/components/app";
 import { TxDetailSheet } from "@/components/TxDetailSheet";
 import { Icon } from "@/components/ui/Icon";
-import { Card, Empty, ListCard, PushHeader, Sheet } from "@/components/ui/primitives";
+import { Card, Empty, ListCard, PrimaryButton, PushHeader, Sheet } from "@/components/ui/primitives";
 import { categoryLabel } from "@/lib/constants";
 import { baht, shortDate } from "@/lib/format";
 import { useGoBack } from "@/lib/nav";
@@ -17,6 +18,7 @@ import type { Transaction } from "@/lib/types";
 /** Trips and projects: what each tag cost, over whatever months it spans. */
 export default function TagsPage() {
   const { t } = useTranslation();
+  const router = useRouter();
   const goBack = useGoBack("/insights");
   const transactions = useStore((s) => s.transactions);
   const tags = useMemo(() => tagSummaries(transactions), [transactions]);
@@ -69,6 +71,12 @@ export default function TagsPage() {
                 ))}
               </div>
             ) : null}
+            <PrimaryButton onClick={() => router.push(`/tags/split?tag=${encodeURIComponent(shown.tag)}`)}>
+              <span className="flex items-center justify-center gap-2">
+                <Icon name="users" size={18} strokeWidth={2} />
+                {t("trip.open")}
+              </span>
+            </PrimaryButton>
             <ListCard>
               {entries.map((x) => (
                 <TxRow key={x.id} t={x} onClick={() => setSelected(x)} />

@@ -7,6 +7,7 @@ import { applyLang, currentLang, t, type Lang } from "./i18n";
 import { TERMS_VERSION } from "./legal";
 import { baht, toISO, todayISO } from "./format";
 import { impliedFeePct, type UsdRate } from "./fx";
+import { clearTripDrafts } from "./tripSplit";
 import { isDuplicate, isNetworkError, online, outbox, runOp, snapshot, type Op } from "./offline";
 import { getSupabase } from "./supabase/client";
 import type { Account, Goals, Iou, SavingsGoal, Settings, Subscription, Transaction, User } from "./types";
@@ -358,6 +359,7 @@ export const useStore = create<State & Actions>()((set, get) => {
         snapshot(userId).clear();
         outbox(userId).clear();
       }
+      clearTripDrafts();
       get().reset();
     },
     deleteAccount: async () => {
@@ -373,6 +375,7 @@ export const useStore = create<State & Actions>()((set, get) => {
         snapshot(userId).clear();
         outbox(userId).clear();
       }
+      clearTripDrafts();
       get().reset();
       // The purge date in this device's calendar (the server returns a UTC timestamp).
       return toISO(new Date(String(data)));

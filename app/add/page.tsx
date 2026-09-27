@@ -15,6 +15,7 @@ import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, TYPE_META, expenseCategories, in
 import { evaluate, formatExpr, hasOperator, pressKey, type CalcKey } from "@/lib/calc";
 import { addDays, baht2, shortDate, todayISO } from "@/lib/format";
 import { entryDefaults, recentDuplicate } from "@/lib/quick";
+import { parseQuickText } from "@/lib/quickText";
 import { accountBalance } from "@/lib/selectors";
 import { useTranslation } from "react-i18next";
 import { formatMoney } from "@/lib/fx";
@@ -77,6 +78,8 @@ function AddForm() {
   const [split, setSplit] = useState(false);
   const [slips, setSlips] = useState<SlipFields[] | null>(null);
   const [newCat, setNewCat] = useState<CategoryDraft | null>(null);
+  // One typed line ("ข้าวมันไก่ 50 เมื่อวาน") that fills the form below.
+  const [line, setLine] = useState("");
 
   // "Subscriptions" is for auto-logged charges; offer it only when editing one.
   const cats = type === "in" ? incomeCategories() : expenseCategories().filter((c) => c.key !== "sub" || cat === "sub");
@@ -107,6 +110,20 @@ function AddForm() {
       setCat(d.category);
       setAcc(d.accountId);
     }
+  };
+
+  const typeLine = (text: string) => {
+    setLine(text);
+    if (!text.trim()) return;
+    const q = parseQuickText(text, today, txs);
+    if (q.type !== type) changeType(q.type);
+    const d = defaultsFor(q.type);
+    const known = (q.type === "in" ? incomeCategories() : expenseCategories()).some((c) => c.key === q.category);
+    setCat(known ? q.category! : d.category);
+    setAcc(q.accountId && accounts.some((a) => a.id === q.accountId) ? q.accountId : d.accountId);
+    setAmount(q.amount ? String(q.amount) : "");
+    setNote(q.title);
+    setDate(q.date);
   };
 
   const press = (k: CalcKey) => setAmount((a) => pressKey(a, k));
@@ -189,6 +206,27 @@ function AddForm() {
         ]}
         colorFor={(v) => TYPE_META[v].color}
       />
+
+      {!editing ? (
+        <label className="flex min-h-11 items-center gap-2 rounded-xl border border-line bg-card px-3">
+          <Icon name="pencil" size={16} strokeWidth={2} className="shrink-0 text-muted" />
+          <input
+            value={line}
+            onChange={(e) => typeLine(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                save();
+              }
+            }}
+            enterKeyHint="done"
+            maxLength={80}
+            placeholder={t("quickText.placeholder")}
+            aria-label={t("quickText.label")}
+            className="min-w-0 grow bg-transparent text-[15px] outline-none"
+          />
+        </label>
+      ) : null}
 
       <output aria-live="polite" className="flex flex-col items-center gap-0.5 py-2">
         <span className="max-w-full truncate text-[13px] text-muted">{summing ? <span className="font-mono">{formatExpr(amount)} =</span> : copy.amountLabel}</span>
