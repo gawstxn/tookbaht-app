@@ -8,11 +8,13 @@ import { startReauth } from "@/lib/reauth";
 import { useTranslation } from "react-i18next";
 import { ListCard, PrimaryButton, SecondaryButton, Sheet, TabHeader } from "@/components/ui/primitives";
 import { FeedbackSheet } from "@/components/FeedbackSheet";
+import { PromptPayForm } from "@/components/PromptPayForm";
 import { Group, NavRow } from "@/components/settingsUi";
 import { BackupError, backupFileName, makeBackup, parseBackup, type BackupData } from "@/lib/backup";
 import { TYPE_META, categoryLabel } from "@/lib/constants";
 import { shortDate } from "@/lib/format";
 import { debtsByPerson } from "@/lib/ious";
+import { formatPromptPayId } from "@/lib/promptpay";
 import { replaceAllData } from "@/lib/legacyImport";
 import { useStore } from "@/lib/store";
 
@@ -20,8 +22,9 @@ export default function ProfilePage() {
   const router = useRouter();
   const { user, userId, accounts, transactions, subscriptions, ious, savingsGoals, goals, settings, usdRate, pending, signOut, load, notify } = useStore();
   const owedCount = useMemo(() => debtsByPerson(ious).length, [ious]);
+  const myCategories = (settings.customCategories ?? []).filter((c) => !c.hidden).length;
   const { t: tr } = useTranslation();
-  const [sheet, setSheet] = useState<"" | "logout" | "delete" | "restore" | "currency" | "feedback" | "data" | "account">("");
+  const [sheet, setSheet] = useState<"" | "logout" | "delete" | "restore" | "currency" | "feedback" | "data" | "account" | "promptpay">("");
   const [restoring, setRestoring] = useState<BackupData | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -108,6 +111,12 @@ export default function ProfilePage() {
 
       <Group title={tr("profile.finance")}>
         <NavRow label={tr("profile.myAccounts")} value={tr("common.accounts", { count: accounts.length })} onClick={() => router.push("/accounts")} />
+        <NavRow label={tr("cats.title")} value={myCategories ? tr("cats.count", { count: myCategories }) : undefined} onClick={() => router.push("/categories")} />
+        <NavRow
+          label={tr("promptpay.row")}
+          value={settings.promptPayId ? formatPromptPayId(settings.promptPayId) : tr("promptpay.notSet")}
+          onClick={() => setSheet("promptpay")}
+        />
         <NavRow label={tr("profile.currency")} value={tr("profile.currencyValue")} onClick={() => setSheet("currency")} />
         <NavRow label={tr("ious.title")} value={owedCount ? tr("ious.people", { count: owedCount }) : undefined} onClick={() => router.push("/ious")} />
         <NavRow label={tr("savings.title")} value={savingsGoals.length ? String(savingsGoals.length) : undefined} onClick={() => router.push("/goals")} />
@@ -163,6 +172,10 @@ export default function ProfilePage() {
       </Sheet>
 
 
+      <Sheet open={sheet === "promptpay"} onClose={() => setSheet("")} title={tr("promptpay.row")}>
+        <p className="text-sm text-muted">{tr("promptpay.lead")}</p>
+        <PromptPayForm onSaved={() => setSheet("")} />
+      </Sheet>
       <Sheet open={sheet === "currency"} onClose={() => setSheet("")} title={tr("profile.currency")}>
         <p className="text-sm text-muted">{tr("profile.currencyLead")}</p>
         <ListCard>

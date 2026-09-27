@@ -4,6 +4,8 @@
  * characters, so every field is a best guess the user checks before saving.
  */
 
+import type { Transaction } from "./types";
+
 export interface SlipFields {
   amount?: number;
   /** YYYY-MM-DD */
@@ -145,4 +147,9 @@ export function parseSlip(raw: string, today: string): SlipFields {
     receiver: findReceiver(text),
     memo: findMemo(text),
   };
+}
+
+/** An expense with the slip's amount on the slip's date is already logged (the slip was likely entered before). */
+export function slipLogged(txs: Pick<Transaction, "type" | "amount" | "date">[], slip: SlipFields): boolean {
+  return !!slip.amount && !!slip.date && txs.some((t) => t.type === "out" && t.amount === slip.amount && t.date === slip.date);
 }

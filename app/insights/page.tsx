@@ -10,6 +10,7 @@ import { Card, Empty, PushHeader, Segmented } from "@/components/ui/primitives";
 import { categoryLabel } from "@/lib/constants";
 import { baht, displayYear, monthKey, monthLabel, monthNamesShort, todayISO } from "@/lib/format";
 import { categoryBreakdown, compact, monthlySeries, niceTicks, yearSummary } from "@/lib/insights";
+import { runway, unusualCategories } from "@/lib/habits";
 import { tagSummaries } from "@/lib/tags";
 import { useStore } from "@/lib/store";
 
@@ -37,6 +38,8 @@ const GAP = 2; // surface gap between a month's two columns
 export default function InsightsPage() {
   const { t } = useTranslation();
   const transactions = useStore((s) => s.transactions);
+  const accounts = useStore((s) => s.accounts);
+  const today = todayISO();
   const current = monthKey(todayISO());
   const series = useMemo(() => monthlySeries(transactions, current), [transactions, current]);
   const [selected, setSelected] = useState(current);
@@ -55,6 +58,8 @@ export default function InsightsPage() {
   const sel = series.find((m) => m.month === selected) ?? series[series.length - 1];
   const cats = useMemo(() => categoryBreakdown(transactions, sel.month), [transactions, sel.month]);
   const net = sel.income - sel.expense;
+  const unusual = useMemo(() => unusualCategories(transactions, sel.month, today), [transactions, sel.month, today]);
+  const cushion = useMemo(() => runway(accounts, transactions, today), [accounts, transactions, today]);
 
   return (
     <PushScreen>
@@ -116,6 +121,26 @@ export default function InsightsPage() {
         </table>
       </Card>
 
+      {unusual.length ? (
+        <Card className="flex flex-col gap-2 px-4 py-3.5">
+          <div className="flex items-center gap-2">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-warn-tint" style={{ color: "var(--color-warn-ink)" }}>
+              <Icon name="gauge" size={15} strokeWidth={2.2} />
+            </span>
+            <h2 className="text-[15px] font-semibold">{t("unusual.title")}</h2>
+          </div>
+          {unusual.slice(0, 3).map((u) => (
+            <div key={u.key} className="flex items-baseline justify-between gap-3 text-sm">
+              <span className="min-w-0 truncate">
+                {categoryLabel(u.key)} <span className="font-semibold text-warn">{t("unusual.more", { pct: Math.round(u.over * 100) })}</span>
+              </span>
+              <span className="shrink-0 font-mono text-xs text-muted">{t("unusual.vs", { spent: baht(u.spent), usual: baht(u.usual) })}</span>
+            </div>
+          ))}
+          <span className="text-xs text-muted">{t(sel.month === current ? "unusual.hintNow" : "unusual.hintPast")}</span>
+        </Card>
+      ) : null}
+
       <section className="flex flex-col gap-2">
         <h2 className="text-base font-semibold">{t("insights.byCategory", { month: monthLabel(sel.month) })}</h2>
         {cats.length ? (
@@ -146,6 +171,21 @@ export default function InsightsPage() {
       ) : (
         <>
           <NetWorthChart />
+
+          {cushion ? (
+            <Card className="flex flex-col gap-2 px-4 py-3.5">
+              <h2 className="text-[15px] font-semibold">{t("runway.title")}</h2>
+              <span className="font-mono text-[28px] font-semibold leading-tight">{t("runway.months", { count: cushion.months })}</span>
+              <div className="h-1.5 overflow-hidden rounded-full bg-divider">
+                {/* Six months is the usual emergency-fund target. */}
+                <div className="h-full rounded-full" style={{ width: `${Math.min(1, cushion.months / 6) * 100}%`, background: cushion.months >= 6 ? "var(--color-income)" : cushion.months >= 3 ? "var(--color-warn-ink)" : "var(--color-expense)" }} />
+              </div>
+              <span className="text-xs leading-relaxed text-muted">
+                {t("runway.detail", { cash: baht(cushion.cash), monthly: baht(cushion.monthly), count: cushion.basis })}
+              </span>
+              <span className="text-xs leading-relaxed text-muted">{t(cushion.months >= 6 ? "runway.good" : "runway.target")}</span>
+            </Card>
+          ) : null}
 
           <Link href="/insights/year" className="block">
             <Card className="flex flex-col gap-2 px-4 py-3.5">

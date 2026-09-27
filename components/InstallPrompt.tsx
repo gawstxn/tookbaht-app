@@ -2,60 +2,42 @@
 
 import { useState, useSyncExternalStore } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { Icon } from "./ui/Icon";
+import { currentInstallMode, isLineApp, promptInstall, subscribeInstall, type InstallMode } from "@/lib/install";
+import { Icon, type IconName } from "./ui/Icon";
 import { PrimaryButton, Sheet } from "./ui/primitives";
 
-/** Chrome/Edge/Android fire this when the app can be installed. */
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
-
-let deferred: BeforeInstallPromptEvent | null = null;
-const listeners = new Set<() => void>();
-if (typeof window !== "undefined") {
-  window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    deferred = e as BeforeInstallPromptEvent;
-    listeners.forEach((l) => l());
-  });
-  window.addEventListener("appinstalled", () => {
-    deferred = null;
-    listeners.forEach((l) => l());
-  });
-}
-const subscribe = (cb: () => void) => {
-  listeners.add(cb);
-  return () => listeners.delete(cb);
+const STEPS: Record<"ios" | "android" | "inApp", [IconName, IconName, IconName]> = {
+  ios: ["share", "addSquare", "check"],
+  android: ["dots", "addSquare", "check"],
+  inApp: ["dots", "share", "addSquare"],
 };
-
-type Mode = "hidden" | "native" | "ios";
-function currentMode(): Mode {
-  const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true;
-  if (standalone) return "hidden";
-  if (deferred) return "native";
-  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.userAgent.includes("Macintosh") && navigator.maxTouchPoints > 1);
-  return ios ? "ios" : "hidden";
-}
 
 /**
  * "Add to home screen" for visitors using the browser: the native prompt where
- * the browser offers one, step-by-step instructions on iPhone/iPad (Safari
- * can't be prompted from a page). Hidden once installed.
+ * the browser offers one, step-by-step instructions otherwise (Safari, Android
+ * browsers that don't prompt, in-app browsers that must hand off to a real one).
+ * Hidden once installed.
  */
 export function InstallPrompt() {
-  const mode = useSyncExternalStore(subscribe, currentMode, () => "hidden" as Mode);
-  const [help, setHelp] = useState(false);
+  const mode = useSyncExternalStore(subscribeInstall, currentInstallMode, () => "hidden" as InstallMode);
+  const [help, setHelp] = useState<Exclude<InstallMode, "hidden" | "native"> | null>(null);
   const { t: tr } = useTranslation();
   if (mode === "hidden") return null;
 
   const install = async () => {
-    if (mode === "ios") return setHelp(true);
-    await deferred?.prompt();
-    deferred = null;
-    listeners.forEach((l) => l());
+    if (mode !== "native") return setHelp(mode);
+    // The prompt can be used only once; if it's gone, fall back to the menu steps.
+    if (!(await promptInstall())) setHelp("android");
   };
 
+  const openInBrowser = () => {
+    // LINE opens links carrying this parameter in the phone's default browser.
+    const url = new URL(window.location.href);
+    url.searchParams.set("openExternalBrowser", "1");
+    window.location.href = url.toString();
+  };
+
+  const steps = help ? STEPS[help] : null;
   return (
     <>
       <button
@@ -66,26 +48,28 @@ export function InstallPrompt() {
         <Icon name="addSquare" size={18} strokeWidth={2} />
         {tr("install.button")}
       </button>
-      <Sheet open={help} onClose={() => setHelp(false)} title={tr("install.title")}>
-        <p className="text-sm text-muted">{tr("install.lead")}</p>
-        <ol className="flex flex-col gap-3">
-          <Step n={1} icon="share">
-            <Trans i18nKey="install.step1" components={{ b: <b /> }} />
-          </Step>
-          <Step n={2} icon="addSquare">
-            <Trans i18nKey="install.step2" components={{ b: <b /> }} />
-          </Step>
-          <Step n={3} icon="check">
-            <Trans i18nKey="install.step3" components={{ b: <b /> }} />
-          </Step>
-        </ol>
-        <PrimaryButton onClick={() => setHelp(false)}>{tr("common.gotIt")}</PrimaryButton>
+      <Sheet open={help !== null} onClose={() => setHelp(null)} title={tr(help === "inApp" ? "install.inAppTitle" : "install.title")}>
+        <p className="text-sm text-muted">{tr(help === "inApp" ? "install.inAppLead" : "install.lead")}</p>
+        {help && steps ? (
+          <ol className="flex flex-col gap-3">
+            {steps.map((icon, i) => (
+              <Step key={i} n={i + 1} icon={icon}>
+                <Trans i18nKey={`install.${help}.step${i + 1}`} components={{ b: <b /> }} />
+              </Step>
+            ))}
+          </ol>
+        ) : null}
+        {help === "inApp" && isLineApp(navigator.userAgent) ? (
+          <PrimaryButton onClick={openInBrowser}>{tr("install.openInBrowser")}</PrimaryButton>
+        ) : (
+          <PrimaryButton onClick={() => setHelp(null)}>{tr("common.gotIt")}</PrimaryButton>
+        )}
       </Sheet>
     </>
   );
 }
 
-function Step({ n, icon, children }: { n: number; icon: "share" | "addSquare" | "check"; children: React.ReactNode }) {
+function Step({ n, icon, children }: { n: number; icon: IconName; children: React.ReactNode }) {
   return (
     <li className="flex items-center gap-3 rounded-2xl border border-line bg-card p-3 text-sm">
       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-bold text-on-ink">{n}</span>

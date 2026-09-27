@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
+// Side effect: listens for beforeinstallprompt from the first page load (see lib/install.ts).
+import "@/lib/install";
 
 /** Registers /sw.js in production builds (dev assets aren't content-hashed). */
 export function ServiceWorkerRegister() {

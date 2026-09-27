@@ -145,4 +145,19 @@ export interface Settings {
   dailyReminder?: boolean;
   /** Last app version whose "what's new" this account has seen. */
   lastSeenVersion?: string;
+  /** Categories the user made; deleted ones stay (hidden) so old entries keep their name. */
+  customCategories?: CustomCategory[];
+  /** The user's PromptPay ID (phone, national ID or e-wallet) for "pay me" QR codes. */
+  promptPayId?: string;
+  /** Monthly-bill suggestions the user said aren't bills (lib/habits.ts keys). */
+  dismissedRecurring?: string[];
+}
+
+export interface CustomCategory {
+  /** "c-" + random id; stored on transactions like the built-in keys. */
+  key: string;
+  type: "in" | "out";
+  label: string;
+  icon: string;
+  hidden?: boolean;
 }

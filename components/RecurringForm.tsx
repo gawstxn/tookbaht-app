@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { PushScreen } from "@/components/app";
 import { AccountSheet, CategorySheet, DateSheet } from "@/components/pickers";
 import { Card, ListCard, PickerRow, PrimaryButton, PushHeader, Segmented, SwitchRow } from "@/components/ui/primitives";
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, MONO_TONES, categoryLabel } from "@/lib/constants";
+import { MONO_TONES, categoryLabel, expenseCategories, incomeCategories } from "@/lib/constants";
 import { baht2, shortDate, stepCycle, todayISO } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { Cycle, Subscription, TxType } from "@/lib/types";
@@ -45,7 +45,7 @@ export function RecurringForm({ title, saveLabel, initial, onSave, onBack }: { t
 
   const type = d.entryType;
   const plan = type === "out" && !!d.installments;
-  const categories = type === "in" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+  const categories = type === "in" ? incomeCategories() : expenseCategories();
   const lastDate = d.installments ? stepCycle(d.startDate, d.cycle, d.installments - 1) : null;
   const canSave =
     d.name.trim().length > 0 && d.amount > 0 && !!d.accountId && (type !== "move" || (!!d.toAccountId && d.toAccountId !== d.accountId)) && (!plan || (d.installments ?? 0) >= 1);

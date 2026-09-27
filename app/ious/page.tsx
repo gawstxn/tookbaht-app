@@ -6,9 +6,10 @@ import { PushScreen } from "@/components/app";
 import { AmountInput } from "@/components/AmountInput";
 import { ConfirmSheet } from "@/components/ConfirmSheet";
 import { PersonField, personTone } from "@/components/ious";
+import { PayMeSheet } from "@/components/PayMeSheet";
 import { Icon } from "@/components/ui/Icon";
 import { Chip, Empty, HeroCard, IconButton, ListCard, Monogram, PrimaryButton, PushHeader, SecondaryButton, Segmented, Sheet } from "@/components/ui/primitives";
-import { EXPENSE_CATEGORIES } from "@/lib/constants";
+import { expenseCategories } from "@/lib/constants";
 import { baht, baht2, shortDate, todayISO } from "@/lib/format";
 import { debtsByPerson, knownPeople, owedTotal } from "@/lib/ious";
 import { useGoBack } from "@/lib/nav";
@@ -23,6 +24,8 @@ export default function IousPage() {
   const [dir, setDir] = useState<IouDirection>("owed_to_me");
   const [adding, setAdding] = useState(false);
   const [selected, setSelected] = useState<Iou | null>(null);
+  // Kept after closing so the sheet doesn't change while it slides away.
+  const [payMe, setPayMe] = useState<{ person: string; amount: number; open: boolean }>({ person: "", amount: 0, open: false });
   const iOwe = dir === "i_owe";
   const people = useMemo(() => debtsByPerson(ious, dir), [ious, dir]);
   const total = useMemo(() => owedTotal(ious, dir), [ious, dir]);
@@ -71,6 +74,17 @@ export default function IousPage() {
               <Monogram text={(p.person[0] ?? "?").toUpperCase()} tone={personTone(p.person)} size={30} />
               <h2 className="grow text-base font-semibold">{p.person}</h2>
               <span className={iOwe ? "font-mono text-[15px] font-semibold text-expense" : "font-mono text-[15px] font-semibold text-income"}>{baht2(p.total)}</span>
+              {!iOwe ? (
+                <button
+                  type="button"
+                  aria-label={t("promptpay.open", { name: p.person })}
+                  onClick={() => setPayMe({ person: p.person, amount: p.total, open: true })}
+                  className="flex h-9 shrink-0 items-center gap-1 rounded-full border border-line bg-card px-3 text-xs font-semibold"
+                >
+                  <Icon name="qr" size={16} strokeWidth={2} />
+                  QR
+                </button>
+              ) : null}
             </div>
             <ListCard>
               {p.items.map((i) => (
@@ -96,6 +110,7 @@ export default function IousPage() {
 
       <AddIouSheet open={adding} direction={dir} onClose={() => setAdding(false)} />
       <IouSheet iou={selected} onClose={() => setSelected(null)} />
+      <PayMeSheet open={payMe.open} person={payMe.person} amount={payMe.amount} onClose={() => setPayMe((x) => ({ ...x, open: false }))} />
     </PushScreen>
   );
 }
@@ -219,7 +234,7 @@ function IouSheet({ iou, onClose }: { iou: Iou | null; onClose: () => void }) {
                 </div>
                 {iOwe && into ? (
                   <div className="flex flex-wrap gap-1.5">
-                    {EXPENSE_CATEGORIES.filter((c) => c.key !== "sub").map((c) => (
+                    {expenseCategories().filter((c) => c.key !== "sub").map((c) => (
                       <Chip key={c.key} size="sm" on={category === c.key} onClick={() => setCategory(c.key)}>
                         {c.label}
                       </Chip>

@@ -13,7 +13,9 @@ export type Op =
   | { table: string; kind: "insert"; rows: Row | Row[] }
   | { table: string; kind: "upsert"; rows: Row }
   | { table: string; kind: "update"; values: Row; match: Match }
-  | { table: string; kind: "delete"; match: Match };
+  | { table: string; kind: "delete"; match: Match }
+  /** A database function, e.g. merge_settings (changes only the keys it's given). */
+  | { kind: "rpc"; fn: string; args: Row };
 
 export interface OpResult {
   error: { message?: string; code?: string; hint?: string } | null;
@@ -22,6 +24,7 @@ export interface OpResult {
 
 /** Run one write against the database. */
 export function runOp(sb: SupabaseClient, op: Op): PromiseLike<OpResult> {
+  if (op.kind === "rpc") return sb.rpc(op.fn, op.args);
   const from = sb.from(op.table);
   if (op.kind === "insert") return from.insert(op.rows);
   if (op.kind === "upsert") return from.upsert(op.rows);
