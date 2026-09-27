@@ -82,6 +82,8 @@ export interface Subscription {
   autoLog: boolean;
   paused: boolean;
   tone: string;
+  /** Friends who share it: each logged charge records what they owe (split evenly with the user). */
+  splitWith?: string[];
 }
 
 /** Who owes whom: a friend owes the user, or the user owes a friend. */

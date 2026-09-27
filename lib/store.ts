@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { TYPE_META, registerCustomCategories } from "./constants";
-import { fetchAll, fromRow, toRow, type TransactionRow } from "./db";
+import { fetchAll, fromRow, toRow, type IouRow, type TransactionRow } from "./db";
 import { applyLang, currentLang, t, type Lang } from "./i18n";
 import { TERMS_VERSION } from "./legal";
 import { baht, toISO, todayISO } from "./format";
@@ -562,6 +562,14 @@ export const useStore = create<State & Actions>()((set, get) => {
       const added = (data as TransactionRow[]).map(fromRow.transaction);
       const known = new Set(get().transactions.map((t) => t.id));
       set((s) => ({ transactions: [...s.transactions, ...added.filter((t) => !known.has(t.id))] }));
+      // Charges of shared subscriptions come with what friends owe (added by the database).
+      const shared = new Set(get().subscriptions.filter((s) => s.splitWith?.length).map((s) => s.id));
+      const ids = added.filter((t) => t.subscriptionId && shared.has(t.subscriptionId)).map((t) => t.id);
+      if (!ids.length) return;
+      const { data: owed, error: owedError } = await sb().from("ious").select("*").in("transaction_id", ids).returns<IouRow[]>();
+      if (owedError) return console.error(owedError);
+      const have = new Set(get().ious.map((i) => i.id));
+      set((s) => ({ ious: [...s.ious, ...owed.map(fromRow.iou).filter((i) => !have.has(i.id))] }));
     },
 
     addIous: (items) => {

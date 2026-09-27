@@ -6,6 +6,7 @@ import { PushScreen } from "@/components/app";
 import { AccountSheet, CategorySheet, DateSheet } from "@/components/pickers";
 import { Card, ListCard, PickerRow, PrimaryButton, PushHeader, Segmented, SwitchRow } from "@/components/ui/primitives";
 import { MONO_TONES, categoryLabel, expenseCategories, incomeCategories } from "@/lib/constants";
+import { SplitWithField } from "./SplitWithField";
 import { baht2, shortDate, stepCycle, todayISO } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { Cycle, Subscription, TxType } from "@/lib/types";
@@ -57,6 +58,8 @@ export function RecurringForm({ title, saveLabel, initial, onSave, onBack }: { t
       installments: entryType === "out" ? d.installments : null,
       toAccountId: entryType === "move" ? (d.toAccountId ?? accounts.find((a) => a.id !== d.accountId)?.id ?? null) : null,
       remind: entryType === "in" ? false : d.remind,
+      // Only expenses are shared with friends.
+      splitWith: entryType === "out" ? d.splitWith : [],
     });
   const setCount = (text: string) => {
     const clean = text.replace(/[^0-9]/g, "").slice(0, 2);
@@ -161,6 +164,8 @@ export function RecurringForm({ title, saveLabel, initial, onSave, onBack }: { t
           onChange={(autoLog) => set({ autoLog })}
         />
       </ListCard>
+
+      {type === "out" && !plan ? <SplitWithField names={d.splitWith ?? []} onChange={(splitWith) => set({ splitWith })} perCharge={d.amount || null} autoLog={d.autoLog} /> : null}
 
       <div className="mt-auto">
         <PrimaryButton once disabled={!canSave} onClick={() => onSave({ ...d, name: d.name.trim(), installments: plan ? d.installments : null })}>

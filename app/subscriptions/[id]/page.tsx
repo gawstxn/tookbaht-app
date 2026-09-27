@@ -105,6 +105,7 @@ export default function SubscriptionDetailPage() {
           <>
             <Row label={tr(sub.entryType === "in" ? "rec.intoAccount" : "subs.payFrom")} value={accName(sub.accountId)} />
             <Row label={tr("common.category")} value={recurring ? categoryLabel(sub.category) : (SUB_CATEGORIES.find((c) => c.key === sub.category)?.label ?? "—")} />
+            {sub.splitWith?.length && sub.entryType === "out" ? <Row label={tr("shareSub.row")} value={sub.splitWith.join(", ")} /> : null}
           </>
         )}
       </ListCard>
