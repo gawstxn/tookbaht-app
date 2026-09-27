@@ -172,7 +172,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
 /**
  * Animates route changes (styles in globals.css): deeper screens slide in from
- * the right, going up slides back, tab switches are instant. Navigations are
+ * the right (also sideways moves between screens at the same depth), going up
+ * slides back, tab switches are instant. Navigations are
  * transitions, so keying by path makes React run a view transition.
  */
 function PageTransition({ path, children }: { path: string; children: React.ReactNode }) {
@@ -185,7 +186,9 @@ function PageTransition({ path, children }: { path: string; children: React.Reac
     if (from === path) return;
     const [a, b] = [depth(from), depth(path)];
     // A history pop (goBack) runs its own whole-page transition, styled as "pop".
-    document.documentElement.dataset.nav = isManualBack() ? "pop" : b > a ? "forward" : b < a ? "back" : "tab";
+    // Between two screens at the same depth (Insights → Trips or Tax), opening one slides in too;
+    // only switching between tab roots is instant.
+    document.documentElement.dataset.nav = isManualBack() ? "pop" : b > a || (b === a && b > 0) ? "forward" : b < a ? "back" : "tab";
     notifyPathCommitted();
   }, [path]);
   return (
