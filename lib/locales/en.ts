@@ -883,8 +883,18 @@ const en: Messages = {
     copied: "Summary copied",
     shareFailed: "Couldn't share. Try again.",
   },
+  shareSub: {
+    title: "Share with friends",
+    hint: "Share the cost with friends, like a Netflix family plan. Each charge records what every friend owes you.",
+    needsAutoLog: "Turn on logging the expense automatically, so each charge records what friends owe.",
+    each_one: "Each charge: {{count}} friend owes you {{amount}}",
+    each_other: "Each charge: {{count}} friends owe you {{amount}} each",
+    eachLater: "Each charge is split at the amount actually charged",
+    row: "Shared with",
+  },
   whatsNew: {
     title: "What's new in v{{version}}",
+    sharedSubs: { title: "Share subscriptions with friends", body: "Add the friends who share a subscription or recurring bill. Each charge records what they owe, ready for a PromptPay QR." },
     promptpaySafe: { title: "PromptPay ID protected", body: "Changing or removing your PromptPay ID now asks Google first, and the number is partly hidden on screen." },
     trip: { title: "Split a trip with friends", body: "Insights → Trips, pick a trip and tap Split this trip. Every bill is added up into the fewest transfers." },
     splitMore: { title: "Split by amount", body: "Type what each friend owes when shares aren't even, or tap \"Split with friends\" while adding an expense." },

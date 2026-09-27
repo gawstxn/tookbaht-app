@@ -52,8 +52,9 @@ interface SubscriptionRow {
   auto_log: boolean;
   paused: boolean;
   tone: string;
+  split_with: string[] | null;
 }
-interface IouRow {
+export interface IouRow {
   id: string;
   direction: Iou["direction"] | null;
   person: string;
@@ -137,6 +138,7 @@ export const fromRow = {
     autoLog: r.auto_log,
     paused: r.paused,
     tone: r.tone,
+    splitWith: r.split_with ?? [],
   }),
   iou: (r: IouRow): Iou => ({
     id: r.id,
@@ -219,6 +221,7 @@ export const toRow = {
       auto_log: s.autoLog,
       paused: s.paused,
       tone: s.tone,
+      split_with: s.splitWith,
     }),
   iou: (i: Partial<Iou>) =>
     strip({

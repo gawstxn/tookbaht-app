@@ -7,6 +7,7 @@ import { Card, Chip, Empty, ListCard, PickerRow, PrimaryButton, PushHeader, Segm
 import { BrandMark, PushScreen, SubMono } from "@/components/app";
 import { findBrand, normalizeName, suggestCategory } from "@/lib/brands";
 import { MONO_TONES, POPULAR_SUBS, SUB_CATALOG, SUB_CATEGORIES } from "@/lib/constants";
+import { SplitWithField } from "./SplitWithField";
 import { useTranslation } from "react-i18next";
 import { baht, cyclePer, fromISO, monthlyEquivalent, shortDate, todayISO } from "@/lib/format";
 import { useStore } from "@/lib/store";
@@ -235,6 +236,8 @@ export function SubscriptionForm({
         <SwitchRow label={t("subs.remindForm")} checked={d.remind} onChange={(remind) => set({ remind })} />
         <SwitchRow label={t("subs.autoLog")} checked={d.autoLog} onChange={(autoLog) => set({ autoLog })} />
       </ListCard>
+
+      <SplitWithField names={d.splitWith ?? []} onChange={(splitWith) => set({ splitWith })} perCharge={thb} autoLog={d.autoLog} />
 
       <div className="mt-auto flex flex-col gap-2.5">
         <p className="flex justify-center gap-1.5 text-[13px] text-muted">
