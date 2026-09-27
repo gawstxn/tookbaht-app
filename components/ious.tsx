@@ -25,7 +25,8 @@ export function PersonField({ value, onChange, names, label, trailing }: { value
       onChange={(e) => onChange(e.target.value)}
       placeholder={t("ious.personPlaceholder")}
       aria-label={label ?? t("ious.person")}
-      className={trailing ? "min-h-11 w-0 min-w-0 grow bg-transparent text-[15px] outline-none" : "min-h-11 w-full rounded-xl border border-line bg-card px-3 text-[15px] outline-none"}
+      // Inside the bordered row the row sets the height, so it matches a plain field (44px).
+      className={trailing ? "h-10 w-0 min-w-0 grow bg-transparent text-[15px] outline-none" : "min-h-11 w-full rounded-xl border border-line bg-card px-3 text-[15px] outline-none"}
     />
   );
   return (
