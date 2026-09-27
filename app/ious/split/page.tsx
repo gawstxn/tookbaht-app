@@ -135,20 +135,21 @@ function SplitForm() {
               label={t("split.friendN", { n: i + 1 })}
               // Offer each name once across the form.
               names={names.filter((n) => n === f.trim() || !friends.some((x) => x.trim() === n))}
+              trailing={
+                mode === "custom" ? (
+                  <span className="flex shrink-0 items-center gap-1 text-[15px]">
+                    <span className="font-mono text-muted">฿</span>
+                    <BahtInput
+                      value={amounts[i] ?? ""}
+                      onChange={(e) => setAmount(i, e.target.value)}
+                      placeholder="0"
+                      aria-label={f.trim() ? t("split.owes", { name: f.trim() }) : t("split.amountN", { n: i + 1 })}
+                      className="w-24 min-w-0 bg-transparent text-right font-mono outline-none"
+                    />
+                  </span>
+                ) : undefined
+              }
             />
-            {mode === "custom" ? (
-              <label className="flex min-h-11 items-center gap-2 rounded-xl border border-line bg-card px-3 text-[15px]">
-                <span className="grow text-sm text-muted">{f.trim() ? t("split.owes", { name: f.trim() }) : t("split.amountN", { n: i + 1 })}</span>
-                <span className="font-mono text-muted">฿</span>
-                <BahtInput
-                  value={amounts[i] ?? ""}
-                  onChange={(e) => setAmount(i, e.target.value)}
-                  placeholder="0"
-                  aria-label={t("split.amountN", { n: i + 1 })}
-                  className="w-28 min-w-0 bg-transparent text-right font-mono outline-none"
-                />
-              </label>
-            ) : null}
           </div>
         ))}
       </div>
