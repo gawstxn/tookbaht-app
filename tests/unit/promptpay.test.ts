@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { crc16, formatPromptPayId, promptPayKind, promptPayPayload } from "@/lib/promptpay";
+import { crc16, formatPromptPayId, maskPromptPayId, promptPayKind, promptPayPayload } from "@/lib/promptpay";
 import { encodeQr } from "@/lib/qr";
 
 describe("PromptPay payload", () => {
@@ -28,6 +28,15 @@ describe("PromptPay payload", () => {
     expect(promptPayPayload("12345")).toBeNull();
     expect(formatPromptPayId("0812345678")).toBe("081-234-5678");
     expect(formatPromptPayId("1234567890123")).toBe("1-2345-67890-12-3");
+  });
+});
+
+describe("masking the ID for display", () => {
+  it("keeps only the start and the last digits", () => {
+    expect(maskPromptPayId("0987654321")).toBe("098-•••-4321");
+    expect(maskPromptPayId("+66 98 765 4321")).toBe("098-•••-4321");
+    expect(maskPromptPayId("1234567890123")).toBe("1-••••-•••••-12-3");
+    expect(maskPromptPayId("123456789012345")).toBe("123•••2345");
   });
 });
 

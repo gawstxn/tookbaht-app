@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { baht2 } from "@/lib/format";
-import { formatPromptPayId, promptPayPayload } from "@/lib/promptpay";
+import { maskPromptPayId, promptPayPayload } from "@/lib/promptpay";
 import { encodeQr } from "@/lib/qr";
 import { useStore } from "@/lib/store";
 import { Icon } from "./ui/Icon";
@@ -48,7 +48,7 @@ export function PayMeSheet({ open, person, amount, onClose }: { open: boolean; p
             {/* Always dark-on-white: scanners need the contrast, whatever the theme. */}
             <QrSvg grid={grid} />
             <span className="text-center text-xs text-black/60">
-              {t("promptpay.to")} <span className="font-mono">{formatPromptPayId(id!)}</span>
+              {t("promptpay.to")} <span className="font-mono">{maskPromptPayId(id!)}</span>
             </span>
           </div>
           <div className="flex items-baseline justify-between px-1">

@@ -32,7 +32,6 @@
 
 ### Logging money
 - Income, expenses and transfers on a number pad that also adds up (`120+85` saves 205). Edit, delete, undo.
-- **Type it in one line:** "ข้าวมันไก่ 50 เมื่อวาน" fills the amount, category (from your own past entries or common words) and day; Enter saves.
 - New entries preselect the category and account you use most.
 - **Read a slip:** pick a bank transfer slip photo and the amount, date and memo are filled in, or pick up to 10 and save them together after a check. Read on the device with tesseract.js (Thai); the photos never leave the phone.
 - Your own expense and income categories next to the built-in ones.

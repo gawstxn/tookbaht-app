@@ -813,6 +813,8 @@ const en: Messages = {
     shareFailed: "Couldn't share. Try again.",
     setupLead: "Enter the mobile number or national ID linked to your PromptPay and the QR appears right away. Change it later in Profile → My PromptPay.",
     setupSave: "Save and show QR",
+    current: "Current",
+    lockedLead: "Confirm with Google before changing or removing it, so someone holding your phone can't swap in their own number.",
   },
   unusual: {
     title: "Above usual",
@@ -881,14 +883,10 @@ const en: Messages = {
     copied: "Summary copied",
     shareFailed: "Couldn't share. Try again.",
   },
-  quickText: {
-    label: "Type an entry in one line",
-    placeholder: "Quick type, e.g. Lunch 120 yesterday",
-  },
   whatsNew: {
     title: "What's new in v{{version}}",
+    promptpaySafe: { title: "PromptPay ID protected", body: "Changing or removing your PromptPay ID now asks Google first, and the number is partly hidden on screen." },
     trip: { title: "Split a trip with friends", body: "Insights → Trips, pick a trip and tap Split this trip. Every bill is added up into the fewest transfers." },
-    quickText: { title: "Log in one line", body: "On the add screen, type e.g. Lunch 120 yesterday: the amount, category and day are filled in. Press Enter to save." },
     splitMore: { title: "Split by amount", body: "Type what each friend owes when shares aren't even, or tap \"Split with friends\" while adding an expense." },
     insightsTabs: { title: "Insights in two tabs", body: "Monthly: charts, categories and the calendar · Overview: net worth, the year and trips." },
     settings: { title: "Settings screen", body: "Language, theme, app lock and notifications moved to Profile → Settings." },

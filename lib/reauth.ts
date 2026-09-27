@@ -4,7 +4,8 @@ import { DEV_EMAIL, DEV_PASSWORD, localDevLogin } from "./devLogin";
 import { getSupabase } from "./supabase/client";
 
 /*
- * Confirming it's really you, for "forgot PIN" and deleting the account: sign
+ * Confirming it's really you, for "forgot PIN", changing the PromptPay ID and
+ * deleting the account: sign
  * in with Google again (forced to ask, not just pick an account), then carry
  * on. The intent is kept on this device across the redirect, and only counts
  * if the account's last sign-in is newer than the request. The database
@@ -12,10 +13,24 @@ import { getSupabase } from "./supabase/client";
  * nothing.
  */
 
-export type ReauthIntent = "unlock" | "delete";
+export type ReauthIntent = "unlock" | "delete" | "promptpay";
 const KEY = "tookbaht-reauth";
 /** A request older than this is ignored (matches the database's 10-minute window). */
 const MAX_AGE_MS = 10 * 60_000;
+
+/*
+ * After confirming for "promptpay", editing is allowed for a few minutes, in
+ * memory only: a reload or a typed URL doesn't reopen it.
+ */
+const EDIT_WINDOW_MS = 5 * 60_000;
+let editUntil = 0;
+export const allowPromptPayEdit = () => {
+  editUntil = Date.now() + EDIT_WINDOW_MS;
+};
+export const canEditPromptPay = () => Date.now() < editUntil;
+export const endPromptPayEdit = () => {
+  editUntil = 0;
+};
 
 export function hasPendingReauth(): boolean {
   try {

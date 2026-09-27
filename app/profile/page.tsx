@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import { TabScreen } from "@/components/app";
 import { Icon } from "@/components/ui/Icon";
-import { startReauth } from "@/lib/reauth";
+import { canEditPromptPay, endPromptPayEdit, startReauth } from "@/lib/reauth";
 import { useTranslation } from "react-i18next";
 import { ListCard, PrimaryButton, SecondaryButton, Sheet, TabHeader } from "@/components/ui/primitives";
 import { FeedbackSheet } from "@/components/FeedbackSheet";
@@ -14,7 +14,7 @@ import { BackupError, backupFileName, makeBackup, parseBackup, type BackupData }
 import { TYPE_META, categoryLabel } from "@/lib/constants";
 import { shortDate } from "@/lib/format";
 import { debtsByPerson } from "@/lib/ious";
-import { formatPromptPayId } from "@/lib/promptpay";
+import { maskPromptPayId } from "@/lib/promptpay";
 import { replaceAllData } from "@/lib/legacyImport";
 import { useStore } from "@/lib/store";
 
@@ -24,7 +24,10 @@ export default function ProfilePage() {
   const owedCount = useMemo(() => debtsByPerson(ious).length, [ious]);
   const myCategories = (settings.customCategories ?? []).filter((c) => !c.hidden).length;
   const { t: tr } = useTranslation();
-  const [sheet, setSheet] = useState<"" | "logout" | "delete" | "restore" | "currency" | "feedback" | "data" | "account" | "promptpay">("");
+  const [sheet, setSheet] = useState<"" | "logout" | "delete" | "restore" | "currency" | "feedback" | "data" | "account" | "promptpay" | "promptpayLocked">(
+    // Back from confirming with Google to change the PromptPay ID (see AppShell).
+    () => (canEditPromptPay() ? "promptpay" : ""),
+  );
   const [restoring, setRestoring] = useState<BackupData | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -114,8 +117,9 @@ export default function ProfilePage() {
         <NavRow label={tr("cats.title")} value={myCategories ? tr("cats.count", { count: myCategories }) : undefined} onClick={() => router.push("/categories")} />
         <NavRow
           label={tr("promptpay.row")}
-          value={settings.promptPayId ? formatPromptPayId(settings.promptPayId) : tr("promptpay.notSet")}
-          onClick={() => setSheet("promptpay")}
+          value={settings.promptPayId ? maskPromptPayId(settings.promptPayId) : tr("promptpay.notSet")}
+          // Setting it the first time is free; changing or removing it asks Google first.
+          onClick={() => setSheet(settings.promptPayId && !canEditPromptPay() ? "promptpayLocked" : "promptpay")}
         />
         <NavRow label={tr("profile.currency")} value={tr("profile.currencyValue")} onClick={() => setSheet("currency")} />
         <NavRow label={tr("ious.title")} value={owedCount ? tr("ious.people", { count: owedCount }) : undefined} onClick={() => router.push("/ious")} />
@@ -172,9 +176,42 @@ export default function ProfilePage() {
       </Sheet>
 
 
-      <Sheet open={sheet === "promptpay"} onClose={() => setSheet("")} title={tr("promptpay.row")}>
+      <Sheet
+        open={sheet === "promptpay"}
+        onClose={() => {
+          endPromptPayEdit();
+          setSheet("");
+        }}
+        title={tr("promptpay.row")}
+      >
         <p className="text-sm text-muted">{tr("promptpay.lead")}</p>
-        <PromptPayForm onSaved={() => setSheet("")} />
+        <PromptPayForm
+          onSaved={() => {
+            endPromptPayEdit();
+            setSheet("");
+          }}
+        />
+      </Sheet>
+      <Sheet open={sheet === "promptpayLocked"} onClose={() => !busy && setSheet("")} title={tr("promptpay.row")}>
+        <div className="flex items-center justify-between rounded-2xl border border-line bg-card px-4 py-3">
+          <span className="text-sm text-muted">{tr("promptpay.current")}</span>
+          <span className="font-mono text-[15px] font-semibold">{settings.promptPayId ? maskPromptPayId(settings.promptPayId) : ""}</span>
+        </div>
+        <p className="text-sm text-muted">{tr("promptpay.lockedLead")}</p>
+        <PrimaryButton
+          disabled={busy}
+          onClick={async () => {
+            // Google asks again; AppShell brings us back here with editing allowed.
+            setBusy(true);
+            if (!(await startReauth("promptpay"))) {
+              setBusy(false);
+              notify(tr("reauth.failed"), { tone: "error" });
+            }
+          }}
+        >
+          {tr("reauth.google")}
+        </PrimaryButton>
+        <SecondaryButton onClick={() => setSheet("")}>{tr("common.cancel")}</SecondaryButton>
       </Sheet>
       <Sheet open={sheet === "currency"} onClose={() => setSheet("")} title={tr("profile.currency")}>
         <p className="text-sm text-muted">{tr("profile.currencyLead")}</p>
