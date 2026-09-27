@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { PushScreen } from "@/components/app";
 import { CategorySheet, DateSheet } from "@/components/pickers";
 import { Card, Chip, Empty, ListCard, PickerRow, PrimaryButton, PushHeader } from "@/components/ui/primitives";
-import { EXPENSE_CATEGORIES, MONO_TONES, categoryLabel } from "@/lib/constants";
+import { MONO_TONES, categoryLabel, expenseCategories } from "@/lib/constants";
 import { addDays, baht2, diffDays, shortDate, stepCycle, todayISO } from "@/lib/format";
 import { accountDue, creditSummary, planInterest } from "@/lib/selectors";
 import { useGoBack } from "@/lib/nav";
@@ -179,7 +179,7 @@ export default function BuyInInstallmentsPage() {
       </div>
 
       <DateSheet open={sheet === "date"} onClose={() => setSheet("")} title={t("pay.firstDue")} value={firstDue} onChange={setFirstDue} />
-      <CategorySheet open={sheet === "category"} onClose={() => setSheet("")} title={t("common.category")} options={EXPENSE_CATEGORIES} value={category} onPick={setCategory} />
+      <CategorySheet open={sheet === "category"} onClose={() => setSheet("")} title={t("common.category")} options={expenseCategories()} value={category} onPick={setCategory} />
     </PushScreen>
   );
 }

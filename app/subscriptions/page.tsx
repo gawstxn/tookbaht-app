@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { DuePill, SubMono, TabScreen, TxIcon } from "@/components/app";
+import { RecurringSuggestions } from "@/components/RecurringSuggestions";
 import { Icon } from "@/components/ui/Icon";
 import { Empty, HeroCard, IconButton, ListCard, TabHeader, cx } from "@/components/ui/primitives";
 import { SUB_CATEGORIES, TYPE_META } from "@/lib/constants";
@@ -87,6 +88,8 @@ export default function SubscriptionsPage() {
           <span className="font-mono text-[13px] font-semibold text-lime">{baht(totals.next7)}</span>
         </div>
       </HeroCard>
+
+      <RecurringSuggestions />
 
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between">

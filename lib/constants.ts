@@ -1,6 +1,6 @@
 import type { IconName } from "@/components/ui/Icon";
 import { t } from "./i18n";
-import type { AccountKind, TxType } from "./types";
+import type { AccountKind, CustomCategory, TxType } from "./types";
 
 export interface CategoryDef {
   key: string;
@@ -89,13 +89,49 @@ export const TYPE_META: Record<TxType, { readonly label: string; color: string; 
   move: typeMeta("move", "var(--color-transfer)", "var(--color-transfer-tint)", ""),
 };
 
+/** Icons offered for the user's own categories. */
+export const CUSTOM_CATEGORY_ICONS: IconName[] = [
+  "food", "car", "bag", "bolt", "heart", "film", "home", "gift", "music", "book", "dumbbell", "laptop",
+  "wifi", "cloud", "users", "briefcase", "tag", "percent", "cash", "card", "target", "calendar", "chart", "dots",
+];
+const CUSTOM_DOTS = ["#2f5b45", "#33558f", "#8a2e22", "#6e3a1c", "#5b4a7a", "#c98a1e", "#1b6b4a", "#5f6259"];
+
+/**
+ * The user's own categories (profiles.settings.customCategories), kept in step
+ * with the store (see lib/store.ts) so labels resolve anywhere, including
+ * outside React.
+ */
+let custom: (CategoryDef & { type: "in" | "out"; hidden: boolean })[] = [];
+
+export function registerCustomCategories(list: CustomCategory[] | undefined) {
+  custom = (list ?? []).map((c, i) => ({
+    key: c.key,
+    label: c.label,
+    dot: CUSTOM_DOTS[i % CUSTOM_DOTS.length],
+    icon: (CUSTOM_CATEGORY_ICONS as string[]).includes(c.icon) ? (c.icon as IconName) : "dots",
+    type: c.type,
+    hidden: !!c.hidden,
+  }));
+}
+
+/** Built-in plus the user's own (visible) categories, the user's just before "other". */
+function withCustom(builtIn: CategoryDef[], type: "in" | "out"): CategoryDef[] {
+  const mine = custom.filter((c) => c.type === type && !c.hidden);
+  if (!mine.length) return builtIn;
+  const i = builtIn.findIndex((c) => c.key === "other" || c.key === "other-in");
+  return i < 0 ? [...builtIn, ...mine] : [...builtIn.slice(0, i), ...mine, ...builtIn.slice(i)];
+}
+export const expenseCategories = () => withCustom(EXPENSE_CATEGORIES, "out");
+export const incomeCategories = () => withCustom(INCOME_CATEGORIES, "in");
+
 const ALL_CATEGORIES = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES, ...SUB_CATEGORIES];
+const findCategory = (key: string) => ALL_CATEGORIES.find((c) => c.key === key) ?? custom.find((c) => c.key === key);
 
 export function categoryLabel(key?: string): string {
   if (!key) return "";
-  return ALL_CATEGORIES.find((c) => c.key === key)?.label ?? key;
+  return findCategory(key)?.label ?? key;
 }
 
 export function categoryIcon(key?: string): IconName {
-  return ALL_CATEGORIES.find((c) => c.key === key)?.icon ?? "dots";
+  return (key && findCategory(key)?.icon) || "dots";
 }

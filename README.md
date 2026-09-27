@@ -32,8 +32,9 @@
 
 ### Logging money
 - Income, expenses and transfers on a number pad that also adds up (`120+85` saves 205). Edit, delete, undo.
-- **Quick add:** one tap to log an entry you make again and again (suggested from your history); new entries preselect the category and account you use most.
-- **Read a slip:** pick a bank transfer slip photo and the amount, date and memo are filled in. Read on the device with tesseract.js (Thai); the photo never leaves the phone.
+- New entries preselect the category and account you use most.
+- **Read a slip:** pick a bank transfer slip photo and the amount, date and memo are filled in, or pick up to 10 and save them together after a check. Read on the device with tesseract.js (Thai); the photos never leave the phone.
+- Your own expense and income categories next to the built-in ones.
 - **Works offline:** opens from the copy on the device, queues what you log, and syncs when the connection is back.
 - Trip / project tags, a double-save check, and "balance doesn't match" reconciling against your bank app.
 - Activity list with search and filters (type, account, category, tag, date range).
@@ -51,8 +52,9 @@
 ### Budgets, goals and insights
 - Monthly income target, overall and per-category budgets with a "spent by today" pace line, and what's left to spend today.
 - Budget rollover per category, savings goals with the amount to put aside each month.
-- Money owed with friends in both directions: split a bill, mark it paid back (repayments lower your spending rather than count as income).
-- Insights: 6-month income vs spending, spending by category, a spending calendar, net worth over 12 months, trips, and a year in review.
+- Money owed with friends in both directions: split a bill evenly or by amount, show a PromptPay QR with the amount for a friend to scan, mark it paid back (repayments lower your spending rather than count as income).
+- Insights: 6-month income vs spending, spending by category, categories running above usual, a spending calendar, net worth over 12 months, how many months your money would last, trips, and a year in review.
+- Expenses logged by hand every month (rent paid by transfer) are spotted and offered as recurring entries.
 - In-app notification center and Web Push: charges due tomorrow, payment due dates, budgets at 80% / over, price rises, the monthly summary, and an optional 8 pm "anything to log?" nudge.
 
 ### Your data

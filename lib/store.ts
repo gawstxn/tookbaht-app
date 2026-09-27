@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import { TYPE_META } from "./constants";
+import { TYPE_META, registerCustomCategories } from "./constants";
 import { fetchAll, fromRow, toRow, type TransactionRow } from "./db";
 import { applyLang, currentLang, t, type Lang } from "./i18n";
 import { TERMS_VERSION } from "./legal";
@@ -79,6 +79,8 @@ interface Actions {
 
   /** Save a new entry; `undoable` puts an undo button on the toast (one-tap quick entries). */
   addTransaction: (t: Omit<Transaction, "id" | "createdAt">, opts?: { undoable?: boolean }) => string;
+  /** Several entries at once (e.g. a batch of slips), with one toast that can undo them all. */
+  addTransactions: (list: Omit<Transaction, "id" | "createdAt">[]) => void;
   /** Edit a saved transaction. Correcting a USD charge also learns the card's real FX fee. */
   updateTransaction: (id: string, patch: Partial<Omit<Transaction, "id" | "createdAt">>) => void;
   /** Make sure a recent USD rate is loaded (fetches one when stored rates are old). */
@@ -436,6 +438,21 @@ export const useStore = create<State & Actions>()((set, get) => {
       );
       return tx.id;
     },
+    addTransactions: (list) => {
+      if (!list.length) return;
+      const now = Date.now();
+      const txs: Transaction[] = list.map((input, i) => ({ ...input, id: crypto.randomUUID(), createdAt: now + i }));
+      const saved = txs.map((tx) => insertTransaction(tx));
+      const undo = () =>
+        txs.forEach((tx, i) =>
+          void saved[i].then((done) => {
+            if (!done) return;
+            set((s) => ({ transactions: s.transactions.filter((x) => x.id !== tx.id) }));
+            void save(del("transactions", tx.id), () => set((s) => ({ transactions: [...s.transactions, tx] })));
+          }),
+        );
+      ok(t("toast.txBatch", { count: txs.length, amount: baht(txs.reduce((a, x) => a + x.amount, 0)) }), { label: UNDO(), run: undo });
+    },
     updateTransaction: (id, patch) => {
       const prev = get().transactions.find((x) => x.id === id);
       if (!prev) return;
@@ -653,9 +670,12 @@ export const useStore = create<State & Actions>()((set, get) => {
     },
     setSettings: (p) => {
       const prev = get().settings;
-      const settings = { ...prev, ...p };
-      set({ settings });
-      void save(upd("profiles", { settings }, get().userId!), () => set({ settings: prev }));
+      set({ settings: { ...prev, ...p } });
+      // Send only what changed (undefined = remove the key): another device's
+      // older copy of the other settings must not overwrite them.
+      const patch = Object.fromEntries(Object.entries(p).map(([k, v]) => [k, v === undefined ? null : v]));
+      const before = Object.fromEntries(Object.keys(p).map((k) => [k, prev[k as keyof Settings]]));
+      void save({ kind: "rpc", fn: "merge_settings", args: { patch } }, () => set((s) => ({ settings: { ...s.settings, ...before } })));
     },
     setLanguage: (lang) => {
       applyLang(lang);
@@ -693,3 +713,11 @@ if (typeof window !== "undefined") {
     }, 800);
   });
 }
+
+// Keep the user's own category names resolvable everywhere (lib/constants.ts).
+let lastCustom: Settings["customCategories"];
+useStore.subscribe((s) => {
+  if (s.settings.customCategories === lastCustom) return;
+  lastCustom = s.settings.customCategories;
+  registerCustomCategories(lastCustom);
+});

@@ -6,7 +6,7 @@ import { TxDetailSheet } from "@/components/TxDetailSheet";
 import { DateSheet, MonthSwitcher } from "@/components/pickers";
 import { Icon } from "@/components/ui/Icon";
 import { Chip, Empty, IconButton, ListCard, PickerRow, PrimaryButton, SecondaryButton, Sheet, TabHeader } from "@/components/ui/primitives";
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, categoryLabel } from "@/lib/constants";
+import { categoryLabel, expenseCategories, incomeCategories } from "@/lib/constants";
 import { baht, baht2, dayHeading, shortDate, todayISO } from "@/lib/format";
 import { filterTransactions, monthTransactions, summarize, type TxFilter } from "@/lib/selectors";
 import { useTranslation } from "react-i18next";
@@ -230,7 +230,7 @@ function FilterSheet({ open, value, onClose, onApply }: { open: boolean; value: 
             </Chip>
           </div>
           {/* Expense and income each have their own "Other", so keep the two sets apart. */}
-          {([["type.out", EXPENSE_CATEGORIES], ["type.in", INCOME_CATEGORIES]] as const).map(([label, cats]) => (
+          {([["type.out", expenseCategories()], ["type.in", incomeCategories()]] as const).map(([label, cats]) => (
             <div key={label} className="flex flex-wrap items-center gap-1.5">
               <span className="w-full text-xs text-faint">{t(label)}</span>
               {cats.map((c) => (

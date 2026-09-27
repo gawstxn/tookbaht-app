@@ -17,7 +17,7 @@ function fakeClient() {
       return builder;
     };
   }
-  const sb = { from: (t: string) => (calls.push(["from", t]), builder) } as unknown as SupabaseClient;
+  const sb = { from: (t: string) => (calls.push(["from", t]), builder), rpc: (...a: unknown[]) => (calls.push(["rpc", ...a]), builder) } as unknown as SupabaseClient;
   return { sb, calls };
 }
 
@@ -69,11 +69,13 @@ describe("replaying writes", () => {
     void runOp(sb, { table: "transactions", kind: "update", values: { subscription_id: "s" }, match: { col: "id", in: ["a", "b"] } });
     void runOp(sb, { table: "accounts", kind: "delete", match: { col: "id", eq: "a1" } });
     void runOp(sb, { table: "goals", kind: "upsert", rows: { user_id: "u" } });
+    void runOp(sb, { kind: "rpc", fn: "merge_settings", args: { patch: { lang: "en" } } });
     expect(calls).toEqual([
       ["from", "ious"], ["update", { settled_on: null }], ["eq", "id", "i1"],
       ["from", "transactions"], ["update", { subscription_id: "s" }], ["in", "id", ["a", "b"]],
       ["from", "accounts"], ["delete"], ["eq", "id", "a1"],
       ["from", "goals"], ["upsert", { user_id: "u" }],
+      ["rpc", "merge_settings", { patch: { lang: "en" } }],
     ]);
   });
 

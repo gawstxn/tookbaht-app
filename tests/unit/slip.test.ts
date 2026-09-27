@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findAmount, findDate, parseSlip } from "@/lib/slip";
+import { findAmount, findDate, parseSlip, slipLogged } from "@/lib/slip";
 
 const TODAY = "2026-09-26";
 
@@ -62,5 +62,15 @@ xxx-x-x5678-x
     "qr": ["22 \u0e01.\u0e38\u0e22. 69 08:10 \u0e19.\n\n\u0e19\u0e32\u0e22 \u0e2a\u0e21\u0e0a\u0e32\u0e22 \u0e43\u0e08\u0e15\u0e14\u0e35\n\n\u0e18.\u0e01\u0e2a\u0e34\u0e01\u0e23\u0e44\u0e17\u0e22\n\n7-6\u0e40\u0e0a\u0e31\u0e0a\u0e39\u0e1f \u0e2a\u0e32\u0e02\u0e32 12345\n\u0e23\u0e2b\u0e31\u0e2a\u0e23\u0e49\u0e32\u0e19\u0e04\u0e49\u0e32 010555123\n\n\u0e08\u0e4d\u0e32\u0e19\u0e27\u0e19:\n\n89.00 \u0e1a\u0e32\u0e17\n", {"amount": 89, "date": "2026-09-22", "receiver": undefined}],
     };
     for (const [name, [text, expected]] of Object.entries(cases)) expect(parseSlip(text, TODAY), name).toMatchObject(expected);
+  });
+});
+
+describe("slip already logged", () => {
+  const txs = [{ type: "out" as const, amount: 250, date: "2026-09-20" }];
+  it("matches an expense with the same amount and date", () => {
+    expect(slipLogged(txs, { amount: 250, date: "2026-09-20" })).toBe(true);
+    expect(slipLogged(txs, { amount: 250, date: "2026-09-21" })).toBe(false);
+    expect(slipLogged(txs, { amount: 250 })).toBe(false);
+    expect(slipLogged([{ ...txs[0], type: "in" }], { amount: 250, date: "2026-09-20" })).toBe(false);
   });
 });

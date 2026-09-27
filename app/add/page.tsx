@@ -3,14 +3,15 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useRef, useState } from "react";
 import { PushScreen } from "@/components/app";
+import { CategoryEditSheet, type CategoryDraft } from "@/components/CategoryEditSheet";
 import { ConfirmSheet } from "@/components/ConfirmSheet";
-import { QuickEntries } from "@/components/QuickEntries";
+import { SlipBatchSheet } from "@/components/SlipBatchSheet";
 import { SlipReader } from "@/components/SlipReader";
 import { TagField } from "@/components/TagField";
 import { AccountSheet, DateSheet } from "@/components/pickers";
 import { Icon } from "@/components/ui/Icon";
 import { Chip, PrimaryButton, PushHeader, Segmented, cx } from "@/components/ui/primitives";
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, TYPE_META } from "@/lib/constants";
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, TYPE_META, expenseCategories, incomeCategories } from "@/lib/constants";
 import { evaluate, formatExpr, hasOperator, pressKey, type CalcKey } from "@/lib/calc";
 import { addDays, baht2, shortDate, todayISO } from "@/lib/format";
 import { entryDefaults, recentDuplicate } from "@/lib/quick";
@@ -20,6 +21,7 @@ import { formatMoney } from "@/lib/fx";
 import { useGoBack } from "@/lib/nav";
 import { useStore } from "@/lib/store";
 import { isDefaultTitle, txTitle } from "@/lib/txTitle";
+import type { SlipFields } from "@/lib/slip";
 import type { Transaction, TxType } from "@/lib/types";
 
 
@@ -71,9 +73,13 @@ function AddForm() {
   const [note, setNote] = useState(editing?.note ?? "");
   const [tag, setTag] = useState(editing?.tag ?? "");
   const [sheet, setSheet] = useState<"" | "acc" | "from" | "to" | "date">("");
+  // After saving, go straight on to splitting the bill with friends.
+  const [split, setSplit] = useState(false);
+  const [slips, setSlips] = useState<SlipFields[] | null>(null);
+  const [newCat, setNewCat] = useState<CategoryDraft | null>(null);
 
   // "Subscriptions" is for auto-logged charges; offer it only when editing one.
-  const cats = type === "in" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES.filter((c) => c.key !== "sub" || cat === "sub");
+  const cats = type === "in" ? incomeCategories() : expenseCategories().filter((c) => c.key !== "sub" || cat === "sub");
   const meta = TYPE_META[type];
   const copy = {
     amountLabel: t(`add.amount_${type}`),
@@ -132,8 +138,9 @@ function AddForm() {
       updateTransaction(editing.id, fields);
       goBack();
     } else {
-      addTransaction(fields);
-      router.push("/");
+      const id = addTransaction(fields);
+      if (split && type === "out") router.replace(`/ious/split?tx=${id}`);
+      else router.push("/");
     }
   };
 
@@ -183,8 +190,6 @@ function AddForm() {
         colorFor={(v) => TYPE_META[v].color}
       />
 
-      {!editing && !amount ? <QuickEntries type={type} onSaved={() => router.push("/")} /> : null}
-
       <output aria-live="polite" className="flex flex-col items-center gap-0.5 py-2">
         <span className="max-w-full truncate text-[13px] text-muted">{summing ? <span className="font-mono">{formatExpr(amount)} =</span> : copy.amountLabel}</span>
         <span className="font-mono text-[44px] font-semibold leading-tight tracking-tight" style={{ color: meta.color }}>
@@ -213,6 +218,16 @@ function AddForm() {
                 </span>
               </Chip>
             ))}
+            {!editing ? (
+              <button
+                type="button"
+                onClick={() => setNewCat({ type: type === "in" ? "in" : "out", label: "", icon: "tag" })}
+                className="flex min-h-9 items-center gap-1.5 rounded-full border border-dashed border-line px-3.5 text-[13px] font-medium text-muted"
+              >
+                <Icon name="plus" size={14} strokeWidth={2.2} />
+                {t("cats.add")}
+              </button>
+            ) : null}
           </div>
           <div className="grid grid-cols-2 gap-2">
             <FieldButton label={copy.acc} value={accountOf(acc)?.name ?? t("common.selectAccount")} onClick={() => setSheet("acc")} />
@@ -253,6 +268,14 @@ function AddForm() {
         />
         <div className="flex flex-wrap gap-2">
           <TagField value={tag} onChange={setTag} />
+          {!editing && type === "out" ? (
+            <Chip on={split} onClick={() => setSplit((v) => !v)}>
+              <span className="flex items-center gap-1.5">
+                <Icon name="users" size={15} strokeWidth={2} />
+                {t("split.action")}
+              </span>
+            </Chip>
+          ) : null}
           {!editing && type !== "in" ? (
             <SlipReader
               onRead={(f) => {
@@ -263,6 +286,7 @@ function AddForm() {
                 if (label && !note.trim()) setNote(label);
                 notify(t("slip.filled", { amount: f.amount ? baht2(f.amount) : "—", date: f.date ? shortDate(f.date) : "—" }));
               }}
+              onBatch={type === "out" ? setSlips : undefined}
             />
           ) : null}
         </div>
@@ -301,6 +325,8 @@ function AddForm() {
           { label: t("common.yesterday"), value: addDays(today, -1) },
         ]}
       />
+      <CategoryEditSheet draft={newCat} onClose={() => setNewCat(null)} onSaved={setCat} />
+      <SlipBatchSheet slips={slips} category={cat} accountId={acc} onClose={() => setSlips(null)} onSaved={() => router.push("/")} />
       <ConfirmSheet
         tone="ink"
         open={!!duplicate}

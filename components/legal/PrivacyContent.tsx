@@ -37,7 +37,11 @@ function PrivacyTh() {
             <b>ข้อความแจ้งปัญหา</b> — ถ้าคุณส่งจากหน้าโปรไฟล์ เราเก็บข้อความ เวอร์ชันแอป หน้าที่เปิดล่าสุด และชื่อรุ่นเบราว์เซอร์
           </li>
           <li>
-            <b>การตั้งค่าในแอป</b> — เช่น สถานะการอ่านการแจ้งเตือน และเขตเวลาที่ใช้คำนวณวันตัดบัญชี
+            <b>การตั้งค่าในแอป</b> — เช่น สถานะการอ่านการแจ้งเตือน เขตเวลาที่ใช้คำนวณวันตัดบัญชี หมวดหมู่ที่คุณสร้างเอง และรายการที่คุณบอกว่าไม่ใช่บิลรายเดือน
+          </li>
+          <li>
+            <b>พร้อมเพย์ของคุณ</b> — ถ้าคุณตั้งไว้ เราเก็บเบอร์มือถือ เลขบัตรประชาชน หรือเลข e-Wallet ที่คุณใส่ เพื่อสร้าง QR ให้เพื่อนสแกนจ่ายคืนเท่านั้น
+            QR สร้างบนอุปกรณ์ของคุณ และเลขนี้จะอยู่ใน QR ที่คุณแชร์ให้คนอื่น ลบได้ทุกเมื่อที่ โปรไฟล์ → พร้อมเพย์ของฉัน
           </li>
           <li>
             <b>ข้อมูลการแจ้งเตือน</b> — ถ้าคุณเปิดการแจ้งเตือน เราเก็บรหัสรับแจ้งเตือน (push subscription) ของอุปกรณ์นั้น และชื่อเบราว์เซอร์/อุปกรณ์แบบย่อ
@@ -172,7 +176,12 @@ function PrivacyEn() {
             <b>Problem reports</b> — if you send one from Profile, the message, app version, last screen you opened and your browser version.
           </li>
           <li>
-            <b>App settings</b> — such as notification read state, language, and the time zone used for billing dates.
+            <b>App settings</b> — such as notification read state, language, the time zone used for billing dates, categories you create, and suggestions you marked
+            as not a monthly bill.
+          </li>
+          <li>
+            <b>Your PromptPay ID</b> — if you set one, the mobile number, national ID or e-wallet ID you enter, used only to make QR codes friends scan to pay you back.
+            The QR is made on your device, and the ID is inside any QR you share. Remove it any time in Profile → My PromptPay.
           </li>
           <li>
             <b>Notification data</b> — if you turn on notifications, the device&apos;s push subscription and a short browser/device name.

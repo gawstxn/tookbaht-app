@@ -41,6 +41,22 @@ export function splitShare(total: number, people: number): number {
   return Math.floor((total * 100) / people) / 100;
 }
 
+export interface CustomSplit {
+  /** What the friends owe in total. */
+  friends: number;
+  /** What's left for the user to cover (0 when friends pay it all). */
+  yours: number;
+  /** Every friend owes something and together no more than the bill. */
+  ok: boolean;
+}
+
+/** A bill split by amounts typed per friend; the user covers the rest. */
+export function customSplit(total: number, amounts: number[]): CustomSplit {
+  const friends = round2(amounts.reduce((s, a) => s + (Number.isFinite(a) ? a : 0), 0));
+  const yours = round2(total - friends);
+  return { friends, yours, ok: total > 0 && amounts.length > 0 && amounts.every((a) => Number.isFinite(a) && a > 0) && yours >= 0 };
+}
+
 /** Names used before, most recent first, for quick picks. */
 export function knownPeople(ious: Iou[], limit = 8): string[] {
   const seen = new Set<string>();

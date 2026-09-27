@@ -7,10 +7,9 @@ import { MonthSwitcher } from "@/components/pickers";
 import { Icon } from "@/components/ui/Icon";
 import { BudgetBannerCard } from "@/components/BudgetBanner";
 import { NotificationBell } from "@/components/notifications";
-import { QuickEntries } from "@/components/QuickEntries";
 import { TxDetailSheet } from "@/components/TxDetailSheet";
 import { WhatsNew } from "@/components/WhatsNew";
-import { Bar, Card, Empty, HeroCard, ListCard, SectionHeader, TabHeader, cx } from "@/components/ui/primitives";
+import { Bar, Empty, HeroCard, ListCard, SectionHeader, TabHeader, cx } from "@/components/ui/primitives";
 import { budgetBanner, dailyAllowance, rolloverCarry, withCarry } from "@/lib/budget";
 import { formatMoney } from "@/lib/fx";
 import { baht, splitDecimals, todayISO } from "@/lib/format";
@@ -73,10 +72,13 @@ export default function OverviewPage() {
       </HeroCard>
 
       {allowance ? (
-        <Card className="flex flex-col gap-2 px-4 py-3.5">
+        <Link href="/goals" className="flex flex-col gap-2 rounded-[20px] border border-line bg-card px-4 py-3.5">
           <div className="flex items-end justify-between gap-3">
             <span className="flex flex-col">
-              <span className="text-[13px] text-muted">{allowance.left >= 0 ? tr("allowance.left") : tr("allowance.over")}</span>
+              <span className="flex items-center gap-0.5 text-[13px] text-muted">
+                {allowance.left >= 0 ? tr("allowance.left") : tr("allowance.over")}
+                <Icon name="chevronRight" size={14} strokeWidth={2} className="text-faint" />
+              </span>
               <span className={cx("font-mono text-[24px] font-semibold leading-tight", allowance.left < 0 && "text-expense")}>{baht(Math.abs(allowance.left))}</span>
             </span>
             <span className="text-right text-xs text-muted">
@@ -89,10 +91,11 @@ export default function OverviewPage() {
             track="var(--color-divider)"
             color={allowance.left < 0 ? "var(--color-expense)" : "var(--color-income)"}
           />
-        </Card>
+        </Link>
       ) : null}
 
-      <BudgetBannerCard banner={banner} />
+      {/* "On plan" repeats the allowance card's per-day figure; show the banner only when it adds something. */}
+      {allowance && banner.tone === "ok" ? null : <BudgetBannerCard banner={banner} />}
 
       {owed.length ? (
         <Link href="/ious" className="flex min-h-[60px] items-center gap-3 rounded-2xl border border-line bg-card px-4 py-2.5">
@@ -119,8 +122,6 @@ export default function OverviewPage() {
           <Icon name="chevronRight" size={16} strokeWidth={2} className="text-faint" />
         </Link>
       ) : null}
-
-      <QuickEntries heading />
 
       <section className="flex flex-col gap-2.5">
         <SectionHeader title={tr("overview.upcoming")} href="/subscriptions" />

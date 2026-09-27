@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { debtsByPerson, knownPeople, owedTotal, splitShare } from "@/lib/ious";
+import { customSplit, debtsByPerson, knownPeople, owedTotal, splitShare } from "@/lib/ious";
 import type { Iou } from "@/lib/types";
 
 let seq = 0;
@@ -27,5 +27,19 @@ describe("money friends owe", () => {
 
   it("suggests names used before, newest first, once each", () => {
     expect(knownPeople([iou({ person: "บอส" }), iou({ person: "มิ้นท์" }), iou({ person: "บอส" })])).toEqual(["บอส", "มิ้นท์"]);
+  });
+});
+
+describe("splitting by amount", () => {
+  it("leaves the rest of the bill to the user", () => {
+    expect(customSplit(1200, [450, 380.5])).toEqual({ friends: 830.5, yours: 369.5, ok: true });
+    expect(customSplit(0.3, [0.1, 0.2])).toEqual({ friends: 0.3, yours: 0, ok: true });
+  });
+
+  it("rejects missing amounts and more than the bill", () => {
+    expect(customSplit(1200, [450, 0]).ok).toBe(false);
+    expect(customSplit(1200, [450, NaN]).ok).toBe(false);
+    expect(customSplit(1200, [900, 400])).toEqual({ friends: 1300, yours: -100, ok: false });
+    expect(customSplit(1200, []).ok).toBe(false);
   });
 });
