@@ -48,6 +48,8 @@ export interface Transaction {
   subscriptionId?: string;
   /** Trip or project the entry belongs to ("เที่ยวญี่ปุ่น"). */
   tag?: string;
+  /** Expenses only: the tax deduction it counts towards (lib/tax.ts). */
+  taxType?: import("./tax").TaxType;
   /** Foreign charges: the original amount/currency and the THB rate used. */
   origAmount?: number;
   origCurrency?: Currency;

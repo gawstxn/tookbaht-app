@@ -27,7 +27,7 @@ function PrivacyTh() {
           </li>
           <li>
             <b>ข้อมูลการเงินที่คุณบันทึกเอง</b> — บัญชี ยอดเริ่มต้น วงเงินและวันครบกำหนดชำระของบัตร/PayLater รายรับ รายจ่าย การโอน โน้ต
-            subscriptions รายการประจำ รายการผ่อน (ราคาสินค้า จำนวนงวด ยอดต่องวด) เป้าหมาย งบประมาณ เป้าหมายเก็บเงิน และแท็กทริป/โปรเจกต์ที่คุณตั้งเอง
+            subscriptions รายการประจำ รายการผ่อน (ราคาสินค้า จำนวนงวด ยอดต่องวด) เป้าหมาย งบประมาณ เป้าหมายเก็บเงิน แท็กทริป/โปรเจกต์ที่คุณตั้งเอง และประเภทค่าลดหย่อนภาษีที่คุณติดป้ายไว้กับรายจ่าย
           </li>
           <li>
             <b>รายการติดเงินกับเพื่อน</b> — ชื่อเพื่อนที่คุณพิมพ์เอง จำนวนเงิน โน้ต ทิศทาง (เพื่อนติดคุณ หรือคุณติดเพื่อน) วันที่คืน และชื่อเพื่อนที่หาร subscription หรือรายการประจำกับคุณ ใช้เพื่อจดการยืม-คืนเท่านั้น
@@ -169,7 +169,7 @@ function PrivacyEn() {
           </li>
           <li>
             <b>Money data you enter</b> — accounts, opening balances, card / pay-later limits and due days, income, expenses, transfers, notes,
-            subscriptions, recurring entries, installment purchases (price, number and amount of installments), goals, budgets, savings goals and the trip / project tags you create.
+            subscriptions, recurring entries, installment purchases (price, number and amount of installments), goals, budgets, savings goals, the trip / project tags you create, and the tax deduction kinds you mark on expenses.
           </li>
           <li>
             <b>Money owed with friends</b> — the names you type, amounts, notes, who owes whom, when it was paid back, and the friends you share a subscription or recurring bill with, used only to track what&apos;s lent and borrowed. We never
