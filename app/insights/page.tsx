@@ -12,6 +12,7 @@ import { baht, displayYear, monthKey, monthLabel, monthNamesShort, todayISO } fr
 import { categoryBreakdown, compact, monthlySeries, niceTicks, yearSummary } from "@/lib/insights";
 import { runway, unusualCategories } from "@/lib/habits";
 import { installmentOutlook } from "@/lib/installments";
+import { taxYear } from "@/lib/tax";
 import { subTHB } from "@/lib/fx";
 import { tagSummaries } from "@/lib/tags";
 import { useStore } from "@/lib/store";
@@ -63,6 +64,7 @@ export default function InsightsPage() {
   const unusual = useMemo(() => unusualCategories(transactions, sel.month, today), [transactions, sel.month, today]);
   const cushion = useMemo(() => runway(accounts, transactions, today), [accounts, transactions, today]);
   const subscriptions = useStore((s) => s.subscriptions);
+  const taxTotal = useMemo(() => taxYear(transactions, String(year)).total, [transactions, year]);
   const usdRate = useStore((s) => s.usdRate);
   const outlook = useMemo(
     () => installmentOutlook(subscriptions, transactions, today, 6, (s) => subTHB(s, accounts, usdRate) ?? s.amount),
@@ -181,6 +183,17 @@ export default function InsightsPage() {
           <NetWorthChart />
 
           {outlook ? <InstallmentCard outlook={outlook} /> : null}
+
+          <Link href="/tax" className="block">
+            <Card className="flex items-center gap-3 px-4 py-3.5">
+              <span className="flex min-w-0 grow flex-col gap-0.5">
+                <span className="text-[15px] font-semibold">{t("tax.linkTitle", { year: displayYear(year) })}</span>
+                <span className="truncate text-xs text-muted">{taxTotal ? t("tax.totalIn", { year: displayYear(year) }) : t("tax.linkEmpty")}</span>
+              </span>
+              {taxTotal ? <span className="font-mono text-[15px] font-semibold">{baht(taxTotal)}</span> : null}
+              <Icon name="chevronRight" size={16} strokeWidth={2} className="text-faint" />
+            </Card>
+          </Link>
 
           {cushion ? (
             <Card className="flex flex-col gap-2 px-4 py-3.5">

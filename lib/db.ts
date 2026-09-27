@@ -29,6 +29,7 @@ export interface TransactionRow {
   to_id: string | null;
   subscription_id: string | null;
   tag: string | null;
+  tax_type: Transaction["taxType"] | null;
   orig_amount: Num | null;
   orig_currency: Currency | null;
   fx_rate: Num | null;
@@ -126,6 +127,7 @@ export const fromRow = {
     toId: opt(r.to_id),
     subscriptionId: opt(r.subscription_id),
     tag: opt(r.tag ?? null),
+    taxType: opt(r.tax_type ?? null),
     origAmount: r.orig_amount === null ? undefined : Number(r.orig_amount),
     origCurrency: opt(r.orig_currency),
     fxRate: r.fx_rate === null ? undefined : Number(r.fx_rate),
@@ -219,6 +221,8 @@ export const toRow = {
       to_id: t.toId ?? null,
       subscription_id: t.subscriptionId ?? null,
       tag: t.tag?.trim() || null,
+      // Only expenses count towards a deduction.
+      tax_type: t.type === "out" ? (t.taxType ?? null) : null,
       orig_amount: t.origAmount ?? null,
       orig_currency: t.origCurrency ?? null,
       fx_rate: t.fxRate ?? null,

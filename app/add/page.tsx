@@ -8,6 +8,7 @@ import { ConfirmSheet } from "@/components/ConfirmSheet";
 import { SlipBatchSheet } from "@/components/SlipBatchSheet";
 import { SlipReader } from "@/components/SlipReader";
 import { TagField } from "@/components/TagField";
+import { TaxField } from "@/components/TaxField";
 import { AccountSheet, DateSheet } from "@/components/pickers";
 import { Icon } from "@/components/ui/Icon";
 import { Chip, PrimaryButton, PushHeader, Segmented, cx } from "@/components/ui/primitives";
@@ -22,6 +23,7 @@ import { useGoBack } from "@/lib/nav";
 import { useStore } from "@/lib/store";
 import { isDefaultTitle, txTitle } from "@/lib/txTitle";
 import type { SlipFields } from "@/lib/slip";
+import type { TaxType } from "@/lib/tax";
 import type { Transaction, TxType } from "@/lib/types";
 
 
@@ -72,6 +74,7 @@ function AddForm() {
   const [date, setDate] = useState(editing?.date ?? today);
   const [note, setNote] = useState(editing?.note ?? "");
   const [tag, setTag] = useState(editing?.tag ?? "");
+  const [taxType, setTaxType] = useState<TaxType | undefined>(editing?.taxType);
   const [sheet, setSheet] = useState<"" | "acc" | "from" | "to" | "date">("");
   // After saving, go straight on to splitting the bill with friends.
   const [split, setSplit] = useState(false);
@@ -127,7 +130,7 @@ function AddForm() {
     const fields =
       type === "move"
         ? { type, amount: value, date, title, note: undefined, category: undefined, accountId: undefined, fromId: from, toId: to, tag: tag || undefined }
-        : { type, amount: value, date, title, note: note.trim() || undefined, category: cat, accountId: acc, fromId: undefined, toId: undefined, tag: tag || undefined };
+        : { type, amount: value, date, title, note: note.trim() || undefined, category: cat, accountId: acc, fromId: undefined, toId: undefined, tag: tag || undefined, taxType: type === "out" ? taxType : undefined };
     if (!editing && !confirmedDuplicate) {
       const now = clock();
       const dup = recentDuplicate(txs, fields, now);
@@ -268,6 +271,7 @@ function AddForm() {
         />
         <div className="flex flex-wrap gap-2">
           <TagField value={tag} onChange={setTag} />
+          {type === "out" ? <TaxField value={taxType} onChange={setTaxType} /> : null}
           {!editing && type === "out" ? (
             <Chip on={split} onClick={() => setSplit((v) => !v)}>
               <span className="flex items-center gap-1.5">
