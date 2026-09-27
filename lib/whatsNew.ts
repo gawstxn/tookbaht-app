@@ -6,6 +6,13 @@ import type { IconName } from "@/components/ui/Icon";
  */
 export const RELEASES: { version: string; items: { key: string; icon: IconName }[] }[] = [
   {
+    version: "1.22.0",
+    items: [
+      { key: "trip", icon: "users" },
+      { key: "quickText", icon: "pencil" },
+    ],
+  },
+  {
     version: "1.21.0",
     items: [
       { key: "promptpay", icon: "qr" },

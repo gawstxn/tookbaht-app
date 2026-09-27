@@ -32,6 +32,7 @@
 
 ### Logging money
 - Income, expenses and transfers on a number pad that also adds up (`120+85` saves 205). Edit, delete, undo.
+- **Type it in one line:** "ข้าวมันไก่ 50 เมื่อวาน" fills the amount, category (from your own past entries or common words) and day; Enter saves.
 - New entries preselect the category and account you use most.
 - **Read a slip:** pick a bank transfer slip photo and the amount, date and memo are filled in, or pick up to 10 and save them together after a check. Read on the device with tesseract.js (Thai); the photos never leave the phone.
 - Your own expense and income categories next to the built-in ones.
@@ -52,6 +53,7 @@
 ### Budgets, goals and insights
 - Monthly income target, overall and per-category budgets with a "spent by today" pace line, and what's left to spend today.
 - Budget rollover per category, savings goals with the amount to put aside each month.
+- **Split a trip:** bills you paid under a trip tag plus bills friends paid, each shared by some of the group, settled in the fewest transfers; the ones involving you become money owed.
 - Money owed with friends in both directions: split a bill evenly or by amount, show a PromptPay QR with the amount for a friend to scan, mark it paid back (repayments lower your spending rather than count as income).
 - Insights: 6-month income vs spending, spending by category, categories running above usual, a spending calendar, net worth over 12 months, how many months your money would last, trips, and a year in review.
 - Expenses logged by hand every month (rent paid by transfer) are spotted and offered as recurring entries.
