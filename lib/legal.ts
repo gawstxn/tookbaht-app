@@ -1,5 +1,9 @@
 /**
- * Version (date) of the current terms of use and privacy policy. Bump it when
+ * Identifies the current terms of use and privacy policy. Change it when
  * either document changes materially: everyone is asked to accept again.
+ * Only compared for equality, so it must never repeat an earlier value.
  */
-export const TERMS_VERSION = "2026-10-01";
+export const TERMS_VERSION = "2026-09-29.3";
+
+/** The date shown as "last updated" on the terms and privacy pages. */
+export const TERMS_UPDATED = "2026-09-29";
