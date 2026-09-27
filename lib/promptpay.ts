@@ -30,6 +30,21 @@ export function formatPromptPayId(raw: string): string {
   return d;
 }
 
+/**
+ * For display: enough to recognise it, not enough to read off a screen or a
+ * screenshot. "098-•••-4321", "1-••••-•••••-12-3".
+ */
+export function maskPromptPayId(raw: string): string {
+  const d = digits(raw);
+  const kind = promptPayKind(d);
+  if (kind === "phone") {
+    const f = formatPromptPayId(d);
+    return `${f.slice(0, 3)}-•••-${f.slice(-4)}`;
+  }
+  if (kind === "id") return `${d[0]}-••••-•••••-${d.slice(10, 12)}-${d[12]}`;
+  return d.length > 7 ? `${d.slice(0, 3)}•••${d.slice(-4)}` : "•••";
+}
+
 const field = (id: string, value: string) => `${id}${String(value.length).padStart(2, "0")}${value}`;
 
 /** CRC-16/CCITT-FALSE (poly 0x1021, init 0xFFFF), as uppercase hex. */
