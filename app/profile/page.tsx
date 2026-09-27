@@ -20,8 +20,9 @@ import { useStore } from "@/lib/store";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, userId, accounts, transactions, subscriptions, ious, savingsGoals, goals, settings, usdRate, pending, signOut, load, notify } = useStore();
+  const { user, userId, accounts, transactions, subscriptions, ious, savingsGoals, wishes, goals, settings, usdRate, pending, signOut, load, notify } = useStore();
   const owedCount = useMemo(() => debtsByPerson(ious).length, [ious]);
+  const waitingWishes = wishes.filter((w) => w.status === "waiting").length;
   const myCategories = (settings.customCategories ?? []).filter((c) => !c.hidden).length;
   const { t: tr } = useTranslation();
   const [sheet, setSheet] = useState<"" | "logout" | "delete" | "restore" | "currency" | "feedback" | "data" | "account" | "promptpay" | "promptpayLocked">(
@@ -48,7 +49,7 @@ export default function ProfilePage() {
   };
 
   const exportBackup = () => {
-    const file = makeBackup({ accounts, transactions, subscriptions, ious, savingsGoals, goals, settings });
+    const file = makeBackup({ accounts, transactions, subscriptions, ious, savingsGoals, wishes, goals, settings });
     download(new Blob([JSON.stringify(file, null, 1)], { type: "application/json" }), backupFileName());
   };
 
@@ -79,6 +80,7 @@ export default function ProfilePage() {
           subscriptions: subscriptions.map((s) => s.id),
           ious: ious.map((i) => i.id),
           savingsGoals: savingsGoals.map((g) => g.id),
+          wishes: wishes.map((w) => w.id),
         },
       );
       await load(userId);
@@ -123,6 +125,7 @@ export default function ProfilePage() {
         />
         <NavRow label={tr("profile.currency")} value={tr("profile.currencyValue")} onClick={() => setSheet("currency")} />
         <NavRow label={tr("ious.title")} value={owedCount ? tr("ious.people", { count: owedCount }) : undefined} onClick={() => router.push("/ious")} />
+        <NavRow label={tr("wish.title")} value={waitingWishes ? tr("wish.waitingCount", { count: waitingWishes }) : undefined} onClick={() => router.push("/wishlist")} />
         <NavRow label={tr("savings.title")} value={savingsGoals.length ? String(savingsGoals.length) : undefined} onClick={() => router.push("/goals")} />
         <NavRow label={tr("profile.myData")} value={tr("profile.myDataValue")} onClick={() => setSheet("data")} />
       </Group>

@@ -1,4 +1,4 @@
-import type { Account, Goals, Iou, SavingsGoal, Settings, Subscription, Transaction } from "./types";
+import type { Account, Goals, Iou, SavingsGoal, Settings, Subscription, Transaction, Wish } from "./types";
 
 /** Everything a backup file carries, in the app's own shapes. */
 export interface BackupData {
@@ -8,6 +8,8 @@ export interface BackupData {
   /** Added in 1.11; older files have none. */
   ious?: Iou[];
   savingsGoals?: SavingsGoal[];
+  /** Added in 1.26. */
+  wishes?: Wish[];
   goals?: Goals;
   settings?: Settings;
 }
@@ -32,6 +34,7 @@ export function makeBackup(data: BackupData, now = new Date()): BackupFile {
     subscriptions: data.subscriptions,
     ious: data.ious ?? [],
     savingsGoals: data.savingsGoals ?? [],
+    wishes: data.wishes ?? [],
     goals: data.goals,
     settings: data.settings,
   };
@@ -58,6 +61,7 @@ const validTransaction = (t: Transaction) =>
   DATE.test(t.date ?? "") &&
   (t.type === "move" ? str(t.fromId) && str(t.toId) : str(t.accountId));
 const validIou = (i: Iou) => str(i?.id) && str(i.person) && positive(i.amount) && DATE.test(i.date ?? "");
+const validWish = (w: Wish) => str(w?.id) && str(w.name) && positive(w.price) && oneOf(w.status, ["waiting", "bought", "skipped"]) && DATE.test(w.decideOn ?? "");
 const validSavingsGoal = (g: SavingsGoal) => str(g?.id) && str(g.name) && positive(g.target) && typeof g.saved === "number";
 const validSubscription = (s: Subscription) =>
   str(s?.id) && str(s.name) && positive(s.amount) && oneOf(s.cycle, ["week", "month", "year"]) && DATE.test(s.startDate ?? "") && str(s.accountId);
@@ -80,7 +84,9 @@ export function parseBackup(text: string): BackupData {
   if (!accounts.every(validAccount) || !transactions.every(validTransaction) || !subscriptions.every(validSubscription)) throw new BackupError("damaged");
   const ious = raw.ious ?? [];
   const savingsGoals = raw.savingsGoals ?? [];
+  const wishes = raw.wishes ?? [];
   if (!Array.isArray(ious) || !Array.isArray(savingsGoals) || !ious.every(validIou) || !savingsGoals.every(validSavingsGoal)) throw new BackupError("damaged");
+  if (!Array.isArray(wishes) || !wishes.every(validWish)) throw new BackupError("damaged");
   return {
     accounts: accounts.map((a) => ({ ...a, fxFeePct: a.fxFeePct ?? 0 })),
     transactions,
@@ -88,6 +94,7 @@ export function parseBackup(text: string): BackupData {
     subscriptions: subscriptions.map((s) => ({ ...s, currency: s.currency ?? "THB", kind: s.kind ?? "subscription", entryType: s.entryType ?? "out" })),
     ious: ious.map((i) => ({ ...i, note: i.note ?? "" })),
     savingsGoals,
+    wishes: wishes.map((w) => ({ ...w, note: w.note ?? "", decidedOn: w.status === "waiting" ? null : (w.decidedOn ?? w.decideOn), transactionId: w.transactionId ?? null })),
     goals: raw.goals,
     settings: raw.settings,
   };

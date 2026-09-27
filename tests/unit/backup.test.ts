@@ -12,6 +12,7 @@ const data: BackupData = {
   ],
   ious: [{ id: "i1", person: "บอส", amount: 300, note: "หมูกระทะ", date: "2026-09-02", transactionId: "t1", settledOn: null, createdAt: 3 }],
   savingsGoals: [{ id: "g1", name: "เที่ยวญี่ปุ่น", target: 40000, saved: 5000, deadline: "2027-03-31", accountId: null, tone: "#33558f" }],
+  wishes: [{ id: "w1", name: "หูฟัง", price: 3990, note: "", decideOn: "2026-10-06", status: "skipped", decidedOn: "2026-10-06", transactionId: null, createdAt: 5 }],
   goals: { incomeTarget: 50000, expenseBudget: 30000, categoryBudgets: { food: 8000 }, alertAt80: true },
   settings: { faceLock: false },
 };
@@ -34,12 +35,14 @@ describe("backup files", () => {
     const old = JSON.parse(file());
     delete old.ious;
     delete old.savingsGoals;
-    expect(parseBackup(JSON.stringify(old))).toMatchObject({ ious: [], savingsGoals: [] });
+    delete old.wishes;
+    expect(parseBackup(JSON.stringify(old))).toMatchObject({ ious: [], savingsGoals: [], wishes: [] });
   });
 
   it("rejects a damaged debt or goal", () => {
     expect(problem(file({ ious: [{ id: "i", person: "", amount: 1, date: "2026-09-02" }] }))).toBe("damaged");
     expect(problem(file({ savingsGoals: [{ id: "g", name: "x", target: 0, saved: 0 }] }))).toBe("damaged");
+    expect(problem(file({ wishes: [{ id: "w", name: "x", price: 1, status: "maybe", decideOn: "2026-10-06" }] }))).toBe("damaged");
   });
 
   it("names the file by date", () => {

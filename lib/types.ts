@@ -86,6 +86,20 @@ export interface Subscription {
   splitWith?: string[];
 }
 
+/** Something the user wants, parked until `decideOn` before buying. */
+export interface Wish {
+  id: string;
+  name: string;
+  price: number;
+  note: string;
+  decideOn: ISODate;
+  status: "waiting" | "bought" | "skipped";
+  decidedOn: ISODate | null;
+  /** The expense it became, when bought. */
+  transactionId: string | null;
+  createdAt: number;
+}
+
 /** Who owes whom: a friend owes the user, or the user owes a friend. */
 export type IouDirection = "owed_to_me" | "i_owe";
 
