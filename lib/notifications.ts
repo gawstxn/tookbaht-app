@@ -3,9 +3,9 @@ import { baht, addDays, fromISO, monthKey, monthLabel, relativeDue, shiftMonth, 
 import { formatMoney } from "./fx";
 import { t } from "./i18n";
 import { REPAY_CATEGORY, accountDue, daysLeftInMonth, monthTransactions, nextCharge, summarize } from "./selectors";
-import type { Account, Goals, Settings, Subscription, Transaction } from "./types";
+import type { Account, Goals, Settings, Subscription, Transaction, Wish } from "./types";
 
-export type NotifKind = "due" | "over" | "near" | "autolog" | "income" | "weekly" | "summary" | "price";
+export type NotifKind = "due" | "over" | "near" | "autolog" | "income" | "weekly" | "summary" | "price" | "wish";
 
 export interface AppNotification {
   id: string;
@@ -46,8 +46,9 @@ export function buildNotifications(input: {
   goals: Goals;
   today: string;
   now: number;
+  wishes?: Wish[];
 }): AppNotification[] {
-  const { accounts, transactions, subscriptions, goals, today, now } = input;
+  const { accounts, transactions, subscriptions, goals, today, now, wishes = [] } = input;
   const accName = (id?: string) => accounts.find((a) => a.id === id)?.name ?? "";
   const out: AppNotification[] = [];
 
@@ -164,6 +165,19 @@ export function buildNotifications(input: {
       title: t("notif.priceUp", { name: s.name }),
       body: t("notif.priceUpBody", { from: formatMoney(price(prev), currency), to: formatMoney(price(last), currency) }),
       href: `/subscriptions/${s.id}`,
+    });
+  }
+
+  // A wish reached its day to decide (09:00 that day).
+  for (const w of wishes) {
+    if (w.status !== "waiting" || w.decideOn > today) continue;
+    out.push({
+      id: `wish:${w.id}:${w.decideOn}`,
+      kind: "wish",
+      at: at(w.decideOn, 9),
+      title: t("notif.wishReady", { name: w.name }),
+      body: t("notif.wishReadyBody", { amount: baht(w.price) }),
+      href: "/wishlist",
     });
   }
 

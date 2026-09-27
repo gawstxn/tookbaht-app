@@ -53,6 +53,7 @@
 ### Budgets, goals and insights
 - Monthly income target, overall and per-category budgets with a "spent by today" pace line, and what's left to spend today.
 - Budget rollover per category, savings goals with the amount to put aside each month.
+- **Wishlist:** park something you want for a few days before buying; the day to decide shows in the notification center, and what you skip adds up as money held back.
 - **Split a trip:** bills you paid under a trip tag plus bills friends paid, each shared by some of the group, settled in the fewest transfers; the ones involving you become money owed.
 - Money owed with friends in both directions: split a bill evenly or by amount, show a PromptPay QR with the amount for a friend to scan, mark it paid back (repayments lower your spending rather than count as income).
 - Insights: 6-month income vs spending, spending by category, categories running above usual, a spending calendar, net worth over 12 months, how many months your money would last, installments already committed for the coming months, trips, and a year in review.

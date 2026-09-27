@@ -2,7 +2,7 @@
 
 import { toRow } from "./db";
 import { getSupabase } from "./supabase/client";
-import type { Account, Goals, Iou, SavingsGoal, Settings, Subscription, Transaction } from "./types";
+import type { Account, Goals, Iou, SavingsGoal, Settings, Subscription, Transaction, Wish } from "./types";
 
 /** Data saved by the offline-only version of the app. */
 const LEGACY_KEY = "tookbaht-v1";
@@ -14,6 +14,7 @@ export interface LegacyData {
   subscriptions: Subscription[];
   ious?: Iou[];
   savingsGoals?: SavingsGoal[];
+  wishes?: Wish[];
   goals?: Goals;
   settings?: Settings;
 }
@@ -129,6 +130,13 @@ export async function importData(userId: string, data: LegacyData): Promise<void
     await insert("transactions", transactions);
     await insert("savings_goals", savingsGoals);
     await insert("ious", ious);
+    await insert(
+      "wishes",
+      (data.wishes ?? []).map((w) => {
+        const txId = w.transactionId ? newId(w.transactionId) : undefined;
+        return toRow.wish({ ...w, id: newId(w.id), transactionId: txId && knownTx.has(txId) ? txId : null });
+      }),
+    );
     if (data.goals) {
       const { error } = await sb.from("goals").upsert({ user_id: userId, ...toRow.goals(data.goals) });
       if (error) throw error;
@@ -148,13 +156,14 @@ export async function importData(userId: string, data: LegacyData): Promise<void
 export async function replaceAllData(
   userId: string,
   data: LegacyData,
-  current: { accounts: string[]; transactions: string[]; subscriptions: string[]; ious: string[]; savingsGoals: string[] },
+  current: { accounts: string[]; transactions: string[]; subscriptions: string[]; ious: string[]; savingsGoals: string[]; wishes: string[] },
 ): Promise<void> {
   await importData(userId, data);
   const sb = getSupabase();
   // Rows that reference others go first: debts and goals, then transactions, subscriptions, accounts.
   for (const [table, ids] of [
     ["ious", current.ious],
+    ["wishes", current.wishes],
     ["savings_goals", current.savingsGoals],
     ["transactions", current.transactions],
     ["subscriptions", current.subscriptions],

@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Account, Currency, Goals, Iou, SavingsGoal, Settings, Subscription, Transaction, User } from "./types";
+import type { Account, Currency, Goals, Iou, SavingsGoal, Settings, Subscription, Transaction, User, Wish } from "./types";
 
 /* Row shapes as stored in Postgres (snake_case). Numeric columns may arrive as strings. */
 
@@ -63,6 +63,17 @@ export interface IouRow {
   date: string;
   transaction_id: string | null;
   settled_on: string | null;
+  created_at: string;
+}
+interface WishRow {
+  id: string;
+  name: string;
+  price: Num;
+  note: string;
+  decide_on: string;
+  status: Wish["status"];
+  decided_on: string | null;
+  transaction_id: string | null;
   created_at: string;
 }
 interface SavingsGoalRow {
@@ -151,6 +162,17 @@ export const fromRow = {
     settledOn: r.settled_on,
     createdAt: Date.parse(r.created_at),
   }),
+  wish: (r: WishRow): Wish => ({
+    id: r.id,
+    name: r.name,
+    price: Number(r.price),
+    note: r.note ?? "",
+    decideOn: r.decide_on,
+    status: r.status,
+    decidedOn: r.decided_on,
+    transactionId: r.transaction_id,
+    createdAt: Date.parse(r.created_at),
+  }),
   savingsGoal: (r: SavingsGoalRow): SavingsGoal => ({
     id: r.id,
     name: r.name,
@@ -236,6 +258,19 @@ export const toRow = {
       settled_on: i.settledOn,
       created_at: i.createdAt ? new Date(i.createdAt).toISOString() : undefined,
     }),
+  wish: (w: Partial<Wish>) =>
+    strip({
+      id: w.id,
+      name: w.name,
+      price: w.price,
+      note: w.note,
+      decide_on: w.decideOn,
+      status: w.status,
+      // null clears these; undefined leaves them alone.
+      decided_on: w.decidedOn,
+      transaction_id: w.transactionId,
+      created_at: w.createdAt ? new Date(w.createdAt).toISOString() : undefined,
+    }),
   savingsGoal: (g: Partial<SavingsGoal>) =>
     strip({
       id: g.id,
@@ -265,7 +300,7 @@ const PAGE = 1000;
 
 /** Everything the app shows for the signed-in user. */
 export async function fetchAll(sb: SupabaseClient, userId: string) {
-  const [profile, accounts, subscriptions, goals, transactions, rate, session, ious, savings] = await Promise.all([
+  const [profile, accounts, subscriptions, goals, transactions, rate, session, ious, savings, wishes] = await Promise.all([
     sb.from("profiles").select("name, email, settings, deletion_requested_at").eq("id", userId).single<ProfileRow>(),
     sb.from("accounts").select("*").order("sort_order").order("created_at").returns<AccountRow[]>(),
     sb.from("subscriptions").select("*").order("created_at").returns<SubscriptionRow[]>(),
@@ -276,8 +311,9 @@ export async function fetchAll(sb: SupabaseClient, userId: string) {
     sb.auth.getSession(),
     sb.from("ious").select("*").order("date").order("created_at").returns<IouRow[]>(),
     sb.from("savings_goals").select("*").order("created_at").returns<SavingsGoalRow[]>(),
+    sb.from("wishes").select("*").order("created_at").returns<WishRow[]>(),
   ]);
-  for (const r of [profile, accounts, subscriptions, goals, ious, savings]) if (r.error) throw r.error;
+  for (const r of [profile, accounts, subscriptions, goals, ious, savings, wishes]) if (r.error) throw r.error;
 
   const user: User = { name: profile.data!.name, email: profile.data!.email, provider: session.data.session?.user.app_metadata.provider };
   return {
@@ -290,6 +326,7 @@ export async function fetchAll(sb: SupabaseClient, userId: string) {
     transactions,
     ious: ious.data!.map(fromRow.iou),
     savingsGoals: savings.data!.map(fromRow.savingsGoal),
+    wishes: wishes.data!.map(fromRow.wish),
     usdRate: rate.data ? { rate: Number(rate.data.rate), date: rate.data.date } : null,
   };
 }

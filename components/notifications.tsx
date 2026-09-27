@@ -17,11 +17,11 @@ const minuteNow = () => Math.floor(Date.now() / 60_000) * 60_000;
 
 /** The user's notifications plus unread count. */
 export function useNotifications() {
-  const { accounts, transactions, subscriptions, goals, settings } = useStore();
+  const { accounts, transactions, subscriptions, goals, settings, wishes } = useStore();
   const now = useSyncExternalStore(subscribeMinute, minuteNow, () => 0);
   const items = useMemo(
-    () => (now ? buildNotifications({ accounts, transactions, subscriptions, goals, today: todayISO(), now }) : []),
-    [accounts, transactions, subscriptions, goals, now],
+    () => (now ? buildNotifications({ accounts, transactions, subscriptions, goals, wishes, today: todayISO(), now }) : []),
+    [accounts, transactions, subscriptions, goals, wishes, now],
   );
   const unread = items.filter((n) => isUnread(n, settings));
   return { items, unread, settings };
@@ -36,6 +36,7 @@ export const NOTIF_STYLE: Record<NotifKind, { icon: IconName; bg: string; fg: st
   weekly: { icon: "chart", bg: "var(--color-chip)", fg: "var(--color-ink)" },
   summary: { icon: "chart", bg: "var(--color-lime-tint)", fg: "var(--color-lime-ink)" },
   price: { icon: "tag", bg: "var(--color-warn-tint)", fg: "var(--color-warn-ink)" },
+  wish: { icon: "bag", bg: "var(--color-income-tint)", fg: "var(--color-income)" },
 };
 
 /** Header bell with an unread badge. */

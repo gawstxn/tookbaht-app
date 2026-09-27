@@ -5,12 +5,12 @@ import { TYPE_META, registerCustomCategories } from "./constants";
 import { fetchAll, fromRow, toRow, type IouRow, type TransactionRow } from "./db";
 import { applyLang, currentLang, t, type Lang } from "./i18n";
 import { TERMS_VERSION } from "./legal";
-import { baht, toISO, todayISO } from "./format";
+import { baht, shortDate, toISO, todayISO } from "./format";
 import { impliedFeePct, type UsdRate } from "./fx";
 import { clearTripDrafts } from "./tripSplit";
 import { isDuplicate, isNetworkError, online, outbox, runOp, snapshot, type Op } from "./offline";
 import { getSupabase } from "./supabase/client";
-import type { Account, Goals, Iou, SavingsGoal, Settings, Subscription, Transaction, User } from "./types";
+import type { Account, Goals, Iou, SavingsGoal, Settings, Subscription, Transaction, User, Wish } from "./types";
 
 const EMPTY_GOALS: Goals = { incomeTarget: 0, expenseBudget: 0, categoryBudgets: {}, alertAt80: true };
 
@@ -33,6 +33,7 @@ interface State {
   subscriptions: Subscription[];
   ious: Iou[];
   savingsGoals: SavingsGoal[];
+  wishes: Wish[];
   goals: Goals;
   settings: Settings;
   /** Selected month on overview/list screens, "YYYY-MM". */
@@ -111,6 +112,14 @@ interface Actions {
   /** Put money towards a manual goal (negative takes some out). */
   addToSavings: (id: string, amount: number) => void;
 
+  /** Wishlist: park something to buy until a day to decide. */
+  addWish: (w: Pick<Wish, "name" | "price" | "note" | "decideOn">) => void;
+  /** Bought (logged as an expense from `accountId`) or not buying after all. */
+  decideWish: (id: string, status: "bought" | "skipped", accountId?: string) => void;
+  /** Back to waiting (the expense it became is left alone). */
+  reopenWish: (id: string) => void;
+  deleteWish: (id: string) => void;
+
   /** Send a problem report from the profile screen. Resolves false when it couldn't be sent. */
   sendFeedback: (message: string, page: string) => Promise<boolean>;
 
@@ -133,6 +142,7 @@ const initial: State = {
   subscriptions: [],
   ious: [],
   savingsGoals: [],
+  wishes: [],
   goals: EMPTY_GOALS,
   settings: { faceLock: false },
   viewMonth: todayISO().slice(0, 7),
@@ -144,7 +154,7 @@ const initial: State = {
 };
 
 /** What is kept on the device so the app opens offline. */
-type Snapshot = Pick<State, "user" | "accounts" | "transactions" | "subscriptions" | "ious" | "savingsGoals" | "goals" | "settings" | "usdRate" | "deletionRequestedAt">;
+type Snapshot = Pick<State, "user" | "accounts" | "transactions" | "subscriptions" | "ious" | "savingsGoals" | "wishes" | "goals" | "settings" | "usdRate" | "deletionRequestedAt">;
 export const toSnapshot = (s: State): Snapshot => ({
   user: s.user,
   accounts: s.accounts,
@@ -152,6 +162,7 @@ export const toSnapshot = (s: State): Snapshot => ({
   subscriptions: s.subscriptions,
   ious: s.ious,
   savingsGoals: s.savingsGoals,
+  wishes: s.wishes,
   goals: s.goals,
   settings: s.settings,
   usdRate: s.usdRate,
@@ -270,7 +281,8 @@ export const useStore = create<State & Actions>()((set, get) => {
       // opening never waits on the network (a weak signal can hang for a long time).
       const cached = snapshot<Snapshot>(userId).read();
       if (cached) {
-        set({ ...cached.data, status: "ready", offline: false });
+        // Copies saved before the wishlist existed lack it.
+        set({ ...cached.data, wishes: cached.data.wishes ?? [], status: "ready", offline: false });
         if (cached.data.settings.lang) applyLang(cached.data.settings.lang);
         void get().sync(true);
         return;
@@ -635,6 +647,61 @@ export const useStore = create<State & Actions>()((set, get) => {
     updateSavingsGoal: (id, patch) => {
       patchSavingsGoal(id, patch);
       ok(t("toast.saved"));
+    },
+    addWish: (input) => {
+      const wish: Wish = { ...input, id: crypto.randomUUID(), status: "waiting", decidedOn: null, transactionId: null, createdAt: Date.now() };
+      set((s) => ({ wishes: [...s.wishes, wish] }));
+      ok(t("toast.wishAdded", { name: wish.name, date: shortDate(wish.decideOn) }));
+      void save(ins("wishes", toRow.wish(wish)), () => set((s) => ({ wishes: s.wishes.filter((x) => x.id !== wish.id) })));
+    },
+    decideWish: (id, status, accountId) => {
+      const prev = get().wishes.find((x) => x.id === id);
+      if (!prev) return;
+      const today = todayISO();
+      let transactionId: string | null = null;
+      let saved: Promise<boolean> = Promise.resolve(true);
+      if (status === "bought" && accountId) {
+        const tx: Transaction = { id: crypto.randomUUID(), type: "out", amount: prev.price, date: today, title: prev.name, note: prev.name, category: "shop", accountId, createdAt: Date.now() };
+        transactionId = tx.id;
+        saved = insertTransaction(tx);
+      }
+      const patch = { status, decidedOn: today, transactionId };
+      set((s) => ({ wishes: s.wishes.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
+      const back = () => set((s) => ({ wishes: s.wishes.map((x) => (x.id === id ? prev : x)) }));
+      const undo = () => {
+        back();
+        void save(upd("wishes", toRow.wish({ status: "waiting", decidedOn: null, transactionId: null }), id), () => {});
+        if (transactionId) {
+          const txId = transactionId;
+          set((s) => ({ transactions: s.transactions.filter((x) => x.id !== txId) }));
+          void save(del("transactions", txId), () => {});
+        }
+      };
+      ok(t(status === "bought" ? "toast.wishBought" : "toast.wishSkipped", { name: prev.name, amount: baht(prev.price) }), { label: UNDO(), run: undo });
+      // The wish points at the new expense, so that row has to exist first.
+      void saved.then((done) => {
+        if (done) void save(upd("wishes", toRow.wish(patch), id), back);
+        else back();
+      });
+    },
+    reopenWish: (id) => {
+      const prev = get().wishes.find((x) => x.id === id);
+      if (!prev) return;
+      const patch = { status: "waiting" as const, decidedOn: null, transactionId: null };
+      set((s) => ({ wishes: s.wishes.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
+      ok(t("toast.wishReopened", { name: prev.name }));
+      void save(upd("wishes", toRow.wish(patch), id), () => set((s) => ({ wishes: s.wishes.map((x) => (x.id === id ? prev : x)) })));
+    },
+    deleteWish: (id) => {
+      const prev = get().wishes.find((x) => x.id === id);
+      if (!prev) return;
+      set((s) => ({ wishes: s.wishes.filter((x) => x.id !== id) }));
+      const restore = () => {
+        set((s) => ({ wishes: [...s.wishes, prev] }));
+        void save(ins("wishes", toRow.wish(prev)), () => set((s) => ({ wishes: s.wishes.filter((x) => x.id !== prev.id) })));
+      };
+      ok(t("toast.deleted", { name: prev.name }), { label: UNDO(), run: restore });
+      void save(del("wishes", id), () => set((s) => ({ wishes: [...s.wishes, prev] })));
     },
     deleteSavingsGoal: (id) => {
       const prev = get().savingsGoals.find((x) => x.id === id);

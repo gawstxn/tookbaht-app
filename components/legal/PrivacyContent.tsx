@@ -34,6 +34,9 @@ function PrivacyTh() {
             เราไม่ติดต่อหรือส่งอะไรถึงคนเหล่านั้น แนะนำให้ใส่แค่ชื่อเล่นที่คุณจำได้
           </li>
           <li>
+            <b>รายการอยากได้</b> — ชื่อของ ราคา โน้ต วันที่จะตัดสินใจ และผลว่าซื้อหรือไม่ซื้อ ใช้แสดงรายการและยอดที่ห้ามใจได้เท่านั้น
+          </li>
+          <li>
             <b>ข้อความแจ้งปัญหา</b> — ถ้าคุณส่งจากหน้าโปรไฟล์ เราเก็บข้อความ เวอร์ชันแอป หน้าที่เปิดล่าสุด และชื่อรุ่นเบราว์เซอร์
           </li>
           <li>
@@ -171,6 +174,9 @@ function PrivacyEn() {
           <li>
             <b>Money owed with friends</b> — the names you type, amounts, notes, who owes whom, when it was paid back, and the friends you share a subscription or recurring bill with, used only to track what&apos;s lent and borrowed. We never
             contact or send anything to these people; we suggest using just a nickname you&apos;ll recognise.
+          </li>
+          <li>
+            <b>Wishlist</b> — what you want, its price, your note, the day to decide and whether you bought it, used only to show the list and what you held back.
           </li>
           <li>
             <b>Problem reports</b> — if you send one from Profile, the message, app version, last screen you opened and your browser version.
