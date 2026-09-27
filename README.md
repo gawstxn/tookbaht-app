@@ -55,7 +55,7 @@
 - Budget rollover per category, savings goals with the amount to put aside each month.
 - **Split a trip:** bills you paid under a trip tag plus bills friends paid, each shared by some of the group, settled in the fewest transfers; the ones involving you become money owed.
 - Money owed with friends in both directions: split a bill evenly or by amount, show a PromptPay QR with the amount for a friend to scan, mark it paid back (repayments lower your spending rather than count as income).
-- Insights: 6-month income vs spending, spending by category, categories running above usual, a spending calendar, net worth over 12 months, how many months your money would last, trips, and a year in review.
+- Insights: 6-month income vs spending, spending by category, categories running above usual, a spending calendar, net worth over 12 months, how many months your money would last, installments already committed for the coming months, trips, and a year in review.
 - Expenses logged by hand every month (rent paid by transfer) are spotted and offered as recurring entries.
 - In-app notification center and Web Push: charges due tomorrow, payment due dates, budgets at 80% / over, price rises, the monthly summary, and an optional 8 pm "anything to log?" nudge.
 

@@ -11,6 +11,8 @@ import { categoryLabel } from "@/lib/constants";
 import { baht, displayYear, monthKey, monthLabel, monthNamesShort, todayISO } from "@/lib/format";
 import { categoryBreakdown, compact, monthlySeries, niceTicks, yearSummary } from "@/lib/insights";
 import { runway, unusualCategories } from "@/lib/habits";
+import { installmentOutlook } from "@/lib/installments";
+import { subTHB } from "@/lib/fx";
 import { tagSummaries } from "@/lib/tags";
 import { useStore } from "@/lib/store";
 
@@ -60,6 +62,12 @@ export default function InsightsPage() {
   const net = sel.income - sel.expense;
   const unusual = useMemo(() => unusualCategories(transactions, sel.month, today), [transactions, sel.month, today]);
   const cushion = useMemo(() => runway(accounts, transactions, today), [accounts, transactions, today]);
+  const subscriptions = useStore((s) => s.subscriptions);
+  const usdRate = useStore((s) => s.usdRate);
+  const outlook = useMemo(
+    () => installmentOutlook(subscriptions, transactions, today, 6, (s) => subTHB(s, accounts, usdRate) ?? s.amount),
+    [subscriptions, transactions, today, accounts, usdRate],
+  );
 
   return (
     <PushScreen>
@@ -171,6 +179,8 @@ export default function InsightsPage() {
       ) : (
         <>
           <NetWorthChart />
+
+          {outlook ? <InstallmentCard outlook={outlook} /> : null}
 
           {cushion ? (
             <Card className="flex flex-col gap-2 px-4 py-3.5">
@@ -308,5 +318,54 @@ function Figure({ label, value, color }: { label: string; value: string; color?:
       </dt>
       <dd className="font-mono text-[15px] font-semibold">{value}</dd>
     </div>
+  );
+}
+
+/** Money already promised to installment plans over the next months. */
+function InstallmentCard({ outlook }: { outlook: NonNullable<ReturnType<typeof installmentOutlook>> }) {
+  const { t } = useTranslation();
+  const names = monthNamesShort();
+  const next = outlook.months[1];
+  const top = Math.max(...outlook.months.map((m) => m.amount)) || 1;
+  const pct = outlook.income ? Math.round((next.amount / outlook.income) * 100) : null;
+  return (
+    <Link href="/subscriptions" className="block">
+      <Card className="flex flex-col gap-3 px-4 py-3.5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[15px] font-semibold">{t("outlook.title")}</h2>
+          <Icon name="chevronRight" size={16} strokeWidth={2} className="text-faint" />
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs text-muted">{t("outlook.next", { month: monthLabel(next.month) })}</span>
+          <span className="font-mono text-[26px] font-semibold leading-tight">{baht(next.amount)}</span>
+          {pct !== null ? <span className="text-xs text-muted">{t("outlook.ofIncome", { pct })}</span> : null}
+        </div>
+        <div className="flex h-20 items-end gap-2" aria-hidden="true">
+          {outlook.months.map((m, i) => (
+            <div key={m.month} className="flex h-full grow flex-col items-center justify-end gap-1">
+              <div
+                className="w-full max-w-7 rounded-t-md"
+                style={{ height: `${Math.max(m.amount ? 6 : 2, (m.amount / top) * 100)}%`, background: m.amount ? "var(--color-chart-out)" : "var(--color-divider)", opacity: m.amount && i !== 1 ? 0.4 : 1 }}
+              />
+              <span className="text-[10px] text-muted">{names[Number(m.month.slice(5, 7)) - 1]}</span>
+            </div>
+          ))}
+        </div>
+        <table className="sr-only">
+          <caption>{t("outlook.title")}</caption>
+          <tbody>
+            {outlook.months.map((m) => (
+              <tr key={m.month}>
+                <th scope="row">{monthLabel(m.month)}</th>
+                <td>{baht(m.amount)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <span className="border-t border-divider pt-2.5 text-xs leading-relaxed text-muted">
+          {t("outlook.summary", { count: outlook.planCount, amount: baht(outlook.remaining), last: outlook.lastDue ? monthLabel(outlook.lastDue.slice(0, 7)) : "" })}
+        </span>
+      </Card>
+    </Link>
   );
 }
