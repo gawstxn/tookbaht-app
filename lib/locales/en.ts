@@ -892,8 +892,16 @@ const en: Messages = {
     eachLater: "Each charge is split at the amount actually charged",
     row: "Shared with",
   },
+  outlook: {
+    title: "Installments ahead",
+    next: "Due in {{month}}",
+    ofIncome: "{{pct}}% of your average monthly income",
+    summary_one: "{{count}} plan · {{amount}} left in total · last one in {{last}}",
+    summary_other: "{{count}} plans · {{amount}} left in total · last one in {{last}}",
+  },
   whatsNew: {
     title: "What's new in v{{version}}",
+    outlook: { title: "Installments ahead", body: "Insights → Overview shows what your installment plans take next month and the five after, as a share of income, and when they end." },
     sharedSubs: { title: "Share subscriptions with friends", body: "Add the friends who share a subscription or recurring bill. Each charge records what they owe, ready for a PromptPay QR." },
     promptpaySafe: { title: "PromptPay ID protected", body: "Changing or removing your PromptPay ID now asks Google first, and the number is partly hidden on screen." },
     trip: { title: "Split a trip with friends", body: "Insights → Trips, pick a trip and tap Split this trip. Every bill is added up into the fewest transfers." },
