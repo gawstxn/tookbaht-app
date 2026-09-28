@@ -1,4 +1,4 @@
-import { baht, baht2 } from "./money";
+import { MASK, baht, baht2, isMasked } from "./money";
 import type { Account, Currency, Subscription } from "./types";
 
 /** Latest THB per USD and the date it's for. */
@@ -11,7 +11,7 @@ const usd = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFr
 
 /** "US$21.40" or "฿149" / "฿149.00". */
 export function formatMoney(amount: number, currency: Currency, decimals = false): string {
-  if (currency === "USD") return "US$" + usd.format(amount);
+  if (currency === "USD") return "US$" + (isMasked() ? MASK : usd.format(amount));
   return decimals ? baht2(amount) : baht(amount);
 }
 

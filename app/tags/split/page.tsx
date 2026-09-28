@@ -8,7 +8,7 @@ import { BahtInput } from "@/components/BahtInput";
 import { PersonField, personTone } from "@/components/ious";
 import { Icon } from "@/components/ui/Icon";
 import { Card, Chip, Empty, HeroCard, ListCard, Monogram, PrimaryButton, PushHeader, SecondaryButton, Sheet, cx } from "@/components/ui/primitives";
-import { baht2, shortDate, todayISO } from "@/lib/format";
+import { baht2, baht2Exact, shortDate, todayISO } from "@/lib/format";
 import { knownPeople } from "@/lib/ious";
 import { useGoBack } from "@/lib/nav";
 import { useStore } from "@/lib/store";
@@ -120,7 +120,7 @@ function TripSplit() {
   };
 
   const share = async () => {
-    const text = settleText(tag, transfers, t("trip.you"), (x) => t("trip.shareLine", x), baht2);
+    const text = settleText(tag, transfers, t("trip.you"), (x) => t("trip.shareLine", x), baht2Exact);
     try {
       if (navigator.share) await navigator.share({ text });
       else {

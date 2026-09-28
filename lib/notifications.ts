@@ -1,5 +1,6 @@
 import { budgetLines, rolloverCarry, withCarry } from "./budget";
 import { baht, addDays, fromISO, monthKey, monthLabel, relativeDue, shiftMonth, toISO } from "./format";
+import { formatForeign } from "./currencies";
 import { formatMoney } from "./fx";
 import { t } from "./i18n";
 import { REPAY_CATEGORY, accountDue, daysLeftInMonth, monthTransactions, nextCharge, summarize } from "./selectors";
@@ -157,13 +158,14 @@ export function buildNotifications(input: {
     const [prev, last] = logged.slice(-2);
     const price = (tx: Transaction) => tx.origAmount ?? tx.amount;
     const currency = last.origCurrency ?? "THB";
+    const money = (n: number, c: typeof currency) => (c === "THB" ? baht(n) : formatForeign(n, c));
     if ((prev.origCurrency ?? "THB") !== currency || price(last) < price(prev) * 1.01) continue;
     out.push({
       id: `price:${s.id}:${last.date}`,
       kind: "price",
       at: Math.max(last.createdAt, at(last.date, 0)),
       title: t("notif.priceUp", { name: s.name }),
-      body: t("notif.priceUpBody", { from: formatMoney(price(prev), currency), to: formatMoney(price(last), currency) }),
+      body: t("notif.priceUpBody", { from: money(price(prev), currency), to: money(price(last), currency) }),
       href: `/subscriptions/${s.id}`,
     });
   }

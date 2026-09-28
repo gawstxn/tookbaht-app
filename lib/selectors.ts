@@ -1,4 +1,4 @@
-import { daysInMonth, diffDays, dueDatesUntil, monthKey, monthlyEquivalent, stepCycle } from "./format";
+import { baht, daysInMonth, diffDays, dueDatesUntil, monthKey, monthlyEquivalent, stepCycle } from "./format";
 import { t } from "./i18n";
 import type { Account, Subscription, Transaction } from "./types";
 
@@ -49,8 +49,7 @@ export function accountBalance(a: Account, txs: Transaction[]): number {
 
 export function accountSubtitle(a: Account, txs: Transaction[]): string {
   const bal = accountBalance(a, txs);
-  const f = "฿" + Math.round(bal).toLocaleString("en-US");
-  return t(a.kind === "credit" ? "balance.creditLeft" : "balance.left", { amount: f });
+  return t(a.kind === "credit" ? "balance.creditLeft" : "balance.left", { amount: baht(bal) });
 }
 
 type Schedule = Pick<Subscription, "startDate" | "cycle" | "installments">;

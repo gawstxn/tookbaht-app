@@ -4,8 +4,8 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { PushScreen } from "@/components/app";
-import { NetWorthChart, SpendCalendar } from "@/components/insightCharts";
 import { MonthCardSheet } from "@/components/MonthCardSheet";
+import { ForecastCard, NetWorthChart, SpendCalendar } from "@/components/insightCharts";
 import { Icon } from "@/components/ui/Icon";
 import { Card, Empty, PushHeader, Segmented } from "@/components/ui/primitives";
 import { categoryLabel } from "@/lib/constants";
@@ -13,6 +13,7 @@ import { baht, displayYear, monthKey, monthLabel, monthNamesShort, todayISO } fr
 import { categoryBreakdown, compact, monthlySeries, niceTicks, yearSummary } from "@/lib/insights";
 import { runway, unusualCategories } from "@/lib/habits";
 import { installmentOutlook } from "@/lib/installments";
+import { monthForecast } from "@/lib/forecast";
 import { taxYear } from "@/lib/tax";
 import { subTHB } from "@/lib/fx";
 import { tagSummaries } from "@/lib/tags";
@@ -68,6 +69,11 @@ export default function InsightsPage() {
   const subscriptions = useStore((s) => s.subscriptions);
   const taxTotal = useMemo(() => taxYear(transactions, String(year)).total, [transactions, year]);
   const usdRate = useStore((s) => s.usdRate);
+  const expenseBudget = useStore((s) => s.goals.expenseBudget);
+  const forecast = useMemo(
+    () => monthForecast(transactions, subscriptions, expenseBudget, current, today, (s) => subTHB(s, accounts, usdRate) ?? s.amount),
+    [transactions, subscriptions, expenseBudget, current, today, accounts, usdRate],
+  );
   const outlook = useMemo(
     () => installmentOutlook(subscriptions, transactions, today, 6, (s) => subTHB(s, accounts, usdRate) ?? s.amount),
     [subscriptions, transactions, today, accounts, usdRate],
@@ -148,6 +154,8 @@ export default function InsightsPage() {
         </button>
       ) : null}
       <MonthCardSheet open={sharing} onClose={() => setSharing(false)} month={sel.month} />
+
+      {forecast && sel.month === current ? <ForecastCard forecast={forecast} month={current} /> : null}
 
       {unusual.length ? (
         <Card className="flex flex-col gap-2 px-4 py-3.5">
