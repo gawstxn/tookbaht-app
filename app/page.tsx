@@ -6,6 +6,7 @@ import { SubMono, TabScreen, TxIcon, TxRow } from "@/components/app";
 import { MonthSwitcher } from "@/components/pickers";
 import { Icon } from "@/components/ui/Icon";
 import { BudgetBannerCard } from "@/components/BudgetBanner";
+import { LeftoverCard } from "@/components/LeftoverCard";
 import { NotificationBell } from "@/components/notifications";
 import { StreakChip, StreakSync } from "@/components/streak";
 import { TxDetailSheet } from "@/components/TxDetailSheet";
@@ -119,6 +120,7 @@ export default function OverviewPage() {
 
       {/* "On plan" repeats the allowance card's per-day figure; show the banner only when it adds something. */}
       {allowance && banner.tone === "ok" ? null : <BudgetBannerCard banner={banner} />}
+      <LeftoverCard />
 
       {owed.length ? (
         <Link href="/ious" className="flex min-h-[60px] items-center gap-3 rounded-2xl border border-line bg-card px-4 py-2.5">
