@@ -38,6 +38,9 @@ function PrivacyTh() {
             <b>รายการอยากได้</b> — ชื่อของ ราคา โน้ต วันที่จะตัดสินใจ และผลว่าซื้อหรือไม่ซื้อ ใช้แสดงรายการและยอดที่ห้ามใจได้เท่านั้น
           </li>
           <li>
+            <b>การจดต่อเนื่อง</b> — วันที่คุณยืนยันว่าไม่ได้ใช้เงิน และสรุปความต่อเนื่อง (จำนวนวัน วันล่าสุดที่นับ สิทธิ์กู้ที่เหลือ) ใช้นับความต่อเนื่อง ระดับ และข้อความแจ้งเตือนตอนค่ำเท่านั้น ส่วนวันที่จดรายการ แอปคำนวณจากรายการที่มีอยู่แล้ว
+          </li>
+          <li>
             <b>ข้อความแจ้งปัญหา</b> — ถ้าคุณส่งจากหน้าโปรไฟล์ เราเก็บข้อความ เวอร์ชันแอป หน้าที่เปิดล่าสุด และชื่อรุ่นเบราว์เซอร์
           </li>
           <li>
@@ -179,6 +182,9 @@ function PrivacyEn() {
           </li>
           <li>
             <b>Wishlist</b> — what you want, its price, your note, the day to decide and whether you bought it, used only to show the list and what you held back.
+          </li>
+          <li>
+            <b>Streak</b> — the days you confirm you spent nothing and a streak summary (its length, the latest day counted, restores left), used only for your streak, tier and the evening reminder. Days you logged entries are worked out from the entries you already have.
           </li>
           <li>
             <b>Problem reports</b> — if you send one from Profile, the message, app version, last screen you opened and your browser version.

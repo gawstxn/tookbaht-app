@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { pusherFor, setUpVapid } from "@/lib/push";
-import { logReminderText } from "@/lib/pushText";
+import { logReminderText, type StreakState } from "@/lib/pushText";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 
 /**
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   const db = createSupabaseAdmin();
   const { data, error } = await db.rpc("pending_log_reminders");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  const pending = (data ?? []) as { user_id: string; date: string }[];
+  const pending = (data ?? []) as { user_id: string; date: string; streak: number; streak_state: StreakState }[];
   if (!pending.length) return NextResponse.json({ reminders: 0, sent: 0 });
 
   let pusher: Awaited<ReturnType<typeof pusherFor>>;
@@ -30,7 +30,8 @@ export async function GET(request: NextRequest) {
   }
   const delivered: { user_id: string; date: string }[] = [];
   for (const r of pending) {
-    if (await pusher.push(r.user_id, { ...logReminderText(pusher.lang(r.user_id)), url: "/add", tag: `log-${r.date}` })) delivered.push(r);
+    const text = logReminderText(pusher.lang(r.user_id), r.streak, r.streak_state);
+    if (await pusher.push(r.user_id, { ...text, tag: `log-${r.date}` })) delivered.push({ user_id: r.user_id, date: r.date });
   }
   const { sent, removed } = await pusher.finish();
   if (delivered.length) {

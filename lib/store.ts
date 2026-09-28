@@ -127,6 +127,8 @@ interface Actions {
   setSettings: (s: Partial<Settings>) => void;
   /** Change the display name and/or picked avatar (undefined avatar = show the initial). */
   updateProfile: (p: { name: string; avatar?: string }) => void;
+  /** Confirm no spending on `day` (today, or a missed day being restored) for the streak. */
+  markNoSpend: (day: string) => void;
   /** Switch the UI language and remember it on the profile. */
   setLanguage: (lang: Lang) => void;
   /** Record that the user accepted the current terms and privacy policy. */
@@ -766,6 +768,13 @@ export const useStore = create<State & Actions>()((set, get) => {
       }
       if (avatar !== settings.avatar) get().setSettings({ avatar });
       ok(t("toast.profileSaved"));
+    },
+    markNoSpend: (day) => {
+      const list = get().settings.noSpend ?? [];
+      if (list.some((x) => x.d === day)) return;
+      const today = todayISO();
+      get().setSettings({ noSpend: [...list, { d: day, at: today }] });
+      ok(t(day === today ? "streak.noSpendSaved" : "streak.restoredToast"));
     },
     setLanguage: (lang) => {
       applyLang(lang);

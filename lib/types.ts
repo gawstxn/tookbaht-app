@@ -171,6 +171,12 @@ export interface Settings {
   dismissedRecurring?: string[];
   /** Picked profile picture (lib/avatars.ts key); the initial shows when unset. */
   avatar?: string;
+  /** "Spent nothing" confirmations for the streak: for day `d`, made on day `at` (lib/streak.ts). */
+  noSpend?: { d: ISODate; at: ISODate }[];
+  /** Highest streak milestone already celebrated. */
+  streakMilestone?: number;
+  /** Streak as last worked out on a device, for the server's evening reminder: length, latest counted day, restores left. */
+  streak?: { n: number; last: ISODate | null; left: number };
 }
 
 export interface CustomCategory {

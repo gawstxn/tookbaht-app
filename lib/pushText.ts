@@ -81,11 +81,29 @@ export function summaryText(lang: Lang, r: PendingSummary) {
   return { title: `สรุปเดือน${month}`, body: over.length ? `${body}\nเกินงบ: ${over.join(", ")}` : body };
 }
 
-/** Evening nudge when nothing was logged today. */
-export function logReminderText(lang: Lang) {
-  return lang === "en"
-    ? { title: "Anything to log today?", body: "Tap to add today's spending before you forget" }
-    : { title: "วันนี้จดรายการหรือยัง?", body: "แตะเพื่อจดรายจ่ายของวันนี้ก่อนลืม" };
+/** Where the user's streak stands for the evening nudge (see pending_log_reminders). */
+export type StreakState = "keep" | "restore" | null;
+
+/**
+ * Evening nudge when nothing was logged today: keep a running streak, restore
+ * a missed day, or (no streak yet) start one. Opens the add screen, or the
+ * streak screen to restore.
+ */
+export function logReminderText(lang: Lang, streak = 0, state: StreakState = null) {
+  const en = lang === "en";
+  if (state === "keep") {
+    return en
+      ? { title: `${streak}-day streak`, body: "Log something today, or confirm you spent nothing, to keep it going", url: "/add" }
+      : { title: `จดต่อเนื่องมา ${streak} วันแล้ว`, body: "จดสักรายการวันนี้ หรือกดยืนยันว่าไม่ได้ใช้เงิน เพื่อไม่ให้ขาด", url: "/add" };
+  }
+  if (state === "restore") {
+    return en
+      ? { title: "You missed a day", body: `Go back and log it to keep your ${streak}-day streak`, url: "/streak" }
+      : { title: "มีวันที่ลืมจด", body: `ย้อนไปจดเพื่อรักษาความต่อเนื่อง ${streak} วันไว้`, url: "/streak" };
+  }
+  return en
+    ? { title: "Anything to log today?", body: "Log today's spending and start a streak", url: "/add" }
+    : { title: "วันนี้จดรายการหรือยัง?", body: "จดรายจ่ายของวันนี้ แล้วเริ่มนับวันจดต่อเนื่อง", url: "/add" };
 }
 
 export function budgetText(lang: Lang, r: PendingBudget) {

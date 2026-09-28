@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import { TabScreen } from "@/components/app";
@@ -10,6 +11,7 @@ import { ListCard, PrimaryButton, SecondaryButton, Sheet, TabHeader } from "@/co
 import { FeedbackSheet } from "@/components/FeedbackSheet";
 import { PromptPayForm } from "@/components/PromptPayForm";
 import { Avatar, ProfileSheet } from "@/components/ProfileSheet";
+import { useStreak } from "@/components/streak";
 import { Group, NavRow } from "@/components/settingsUi";
 import { BackupError, backupFileName, makeBackup, parseBackup, type BackupData } from "@/lib/backup";
 import { TYPE_META, categoryLabel } from "@/lib/constants";
@@ -26,6 +28,7 @@ export default function ProfilePage() {
   const waitingWishes = wishes.filter((w) => w.status === "waiting").length;
   const myCategories = (settings.customCategories ?? []).filter((c) => !c.hidden).length;
   const { t: tr } = useTranslation();
+  const streak = useStreak();
   const [sheet, setSheet] = useState<"" | "profile" | "logout" | "delete" | "restore" | "currency" | "feedback" | "data" | "account" | "promptpay" | "promptpayLocked">(
     // Back from confirming with Google to change the PromptPay ID (see AppShell).
     () => (canEditPromptPay() ? "promptpay" : ""),
@@ -101,7 +104,11 @@ export default function ProfilePage() {
 
       <section className="flex flex-col gap-4 rounded-[28px] bg-hero p-[22px] text-on-hero shadow-hero">
         <button type="button" onClick={() => setSheet("profile")} aria-label={tr("profile.editTitle")} className="flex items-center gap-4 text-left">
-          <Avatar name={user?.name} avatar={settings.avatar} size={60} />
+          <span className="shrink-0 rounded-full p-[3px]" style={{ background: streak.tier.tone }}>
+            <span className="block rounded-full bg-hero p-[2px]">
+              <Avatar name={user?.name} avatar={settings.avatar} size={56} />
+            </span>
+          </span>
           <div className="flex min-w-0 grow flex-col gap-0.5">
             <span className="truncate font-serif text-xl font-bold">{user?.name}</span>
             <span className="truncate text-[13px] text-on-ink-muted">{user?.email}</span>
@@ -110,10 +117,15 @@ export default function ProfilePage() {
             <Icon name="pencil" size={16} strokeWidth={2} />
           </span>
         </button>
-        <div className="flex items-center gap-2 border-t border-ink-line pt-3 text-xs text-on-ink-muted">
-          <Icon name="check" size={14} strokeWidth={2.2} className="text-lime" />
-          {user?.provider === "google" ? tr("profile.googleNote") : tr("profile.emailNote")}
-        </div>
+        <Link href="/streak" className="flex min-h-9 items-center gap-2 border-t border-ink-line pt-3 text-xs text-on-ink-muted">
+          <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: streak.tier.tone }} />
+          <span className="font-semibold text-on-hero">{tr(`streak.tier.${streak.tier.key}`)}</span>
+          <span className="flex grow items-center gap-1">
+            <Icon name="flame" size={13} strokeWidth={2.2} className={streak.doneToday ? "text-lime" : undefined} />
+            {tr("streak.days", { count: streak.current })}
+          </span>
+          <Icon name="chevronRight" size={14} strokeWidth={2.2} />
+        </Link>
       </section>
 
       <Group title={tr("profile.finance")}>
