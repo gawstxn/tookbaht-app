@@ -72,9 +72,9 @@ function ProfileFields({ onDone }: { onDone: () => void }) {
             aria-checked={!avatar}
             aria-label={tr("profile.pictureInitial")}
             onClick={() => setAvatar(undefined)}
-            className={cx("aspect-square rounded-full border-2 p-0.5", !avatar ? "border-ink" : "border-transparent")}
+            className={cx("block w-full self-start rounded-full border-2 p-0.5", !avatar ? "border-ink" : "border-transparent")}
           >
-            <span className="flex h-full w-full items-center justify-center rounded-full bg-lime text-lg font-bold text-on-lime">
+            <span className="flex aspect-square w-full items-center justify-center rounded-full bg-lime text-lg font-bold text-on-lime">
               {(clean || user?.name || "?").trim()[0]?.toUpperCase() ?? "?"}
             </span>
           </button>
@@ -86,10 +86,10 @@ function ProfileFields({ onDone }: { onDone: () => void }) {
               aria-checked={avatar === key}
               aria-label={tr("profile.pictureN", { n: i + 1 })}
               onClick={() => setAvatar(key)}
-              className={cx("relative aspect-square rounded-full border-2 p-0.5", avatar === key ? "border-ink" : "border-transparent")}
+              className={cx("relative block w-full self-start rounded-full border-2 p-0.5", avatar === key ? "border-ink" : "border-transparent")}
             >
               {/* eslint-disable-next-line @next/next/no-img-element -- tiny static files */}
-              <img src={avatarSrc(key)!} alt="" draggable={false} loading="lazy" className="h-full w-full rounded-full" />
+              <img src={avatarSrc(key)!} alt="" draggable={false} loading="lazy" className="block aspect-square w-full rounded-full" />
               {avatar === key ? (
                 <span aria-hidden="true" className="absolute -right-0.5 -bottom-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-ink text-paper">
                   <Icon name="check" size={12} strokeWidth={3} />
