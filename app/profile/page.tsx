@@ -12,6 +12,8 @@ import { FeedbackSheet } from "@/components/FeedbackSheet";
 import { PromptPayForm } from "@/components/PromptPayForm";
 import { Avatar, ProfileSheet } from "@/components/ProfileSheet";
 import { TierBadge } from "@/components/TierBadge";
+import { useCashFlow } from "@/components/cashflow";
+import { firstShortfall } from "@/lib/cashflow";
 import { useStreak } from "@/components/streak";
 import { Group, NavRow } from "@/components/settingsUi";
 import { BackupError, backupFileName, makeBackup, parseBackup, type BackupData } from "@/lib/backup";
@@ -26,6 +28,8 @@ export default function ProfilePage() {
   const router = useRouter();
   const { user, userId, accounts, transactions, subscriptions, ious, savingsGoals, wishes, goals, settings, usdRate, pending, signOut, load, notify } = useStore();
   const owedCount = useMemo(() => debtsByPerson(ious).length, [ious]);
+  const cashFlows = useCashFlow();
+  const cashShort = useMemo(() => firstShortfall(cashFlows), [cashFlows]);
   const waitingWishes = wishes.filter((w) => w.status === "waiting").length;
   const myCategories = (settings.customCategories ?? []).filter((c) => !c.hidden).length;
   const { t: tr } = useTranslation();
@@ -133,6 +137,7 @@ export default function ProfilePage() {
 
       <Group title={tr("profile.finance")}>
         <NavRow label={tr("profile.myAccounts")} value={tr("common.accounts", { count: accounts.length })} onClick={() => router.push("/accounts")} />
+        <NavRow label={tr("cashflow.open")} value={cashShort ? tr("cashflow.rowShort", { date: shortDate(cashShort.event.date, false) }) : undefined} onClick={() => router.push("/cashflow")} />
         <NavRow label={tr("cats.title")} value={myCategories ? tr("cats.count", { count: myCategories }) : undefined} onClick={() => router.push("/categories")} />
         <NavRow
           label={tr("promptpay.row")}

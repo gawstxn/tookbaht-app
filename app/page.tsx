@@ -7,6 +7,7 @@ import { MonthSwitcher } from "@/components/pickers";
 import { Icon } from "@/components/ui/Icon";
 import { BudgetBannerCard } from "@/components/BudgetBanner";
 import { LeftoverCard } from "@/components/LeftoverCard";
+import { CashFlowAlert } from "@/components/cashflow";
 import { NotificationBell } from "@/components/notifications";
 import { StreakChip, StreakSync } from "@/components/streak";
 import { TxDetailSheet } from "@/components/TxDetailSheet";
@@ -120,6 +121,7 @@ export default function OverviewPage() {
 
       {/* "On plan" repeats the allowance card's per-day figure; show the banner only when it adds something. */}
       {allowance && banner.tone === "ok" ? null : <BudgetBannerCard banner={banner} />}
+      <CashFlowAlert />
       <LeftoverCard />
 
       {owed.length ? (
