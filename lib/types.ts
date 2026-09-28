@@ -52,7 +52,7 @@ export interface Transaction {
   taxType?: import("./tax").TaxType;
   /** Foreign charges: the original amount/currency and the THB rate used. */
   origAmount?: number;
-  origCurrency?: Currency;
+  origCurrency?: import("./currencies").FxCurrency;
   fxRate?: number;
   createdAt: number;
 }
@@ -169,6 +169,8 @@ export interface Settings {
   promptPayId?: string;
   /** Monthly-bill suggestions the user said aren't bills (lib/habits.ts keys). */
   dismissedRecurring?: string[];
+  /** Currency each trip (tag) is logged in abroad, e.g. { "เที่ยวญี่ปุ่น": "JPY" }. */
+  tripCurrencies?: Record<string, import("./currencies").FxCurrency>;
   /** Last month ("YYYY-MM") whose leftover the user saved or skipped (lib/leftover.ts). */
   leftoverMonth?: string;
   /** Picked profile picture (lib/avatars.ts key); the initial shows when unset. */

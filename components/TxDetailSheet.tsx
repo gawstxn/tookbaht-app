@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { TYPE_META, categoryLabel } from "@/lib/constants";
 import { baht2, shortDate } from "@/lib/format";
-import { formatMoney } from "@/lib/fx";
+import { formatForeign } from "@/lib/currencies";
 import { useStore } from "@/lib/store";
 import { txTitle } from "@/lib/txTitle";
 import type { Transaction } from "@/lib/types";
@@ -64,7 +64,7 @@ export function TxDetailSheet({ tx: open, onClose }: { tx: Transaction | null; o
             {tx.origAmount && tx.fxRate ? (
               <Detail
                 label={tr("tx.original")}
-                value={tr("tx.originalValue", { amount: formatMoney(tx.origAmount, tx.origCurrency ?? "USD"), rate: tx.fxRate.toFixed(2) })}
+                value={tr("tx.originalValue", { amount: formatForeign(tx.origAmount, tx.origCurrency ?? "USD"), rate: tx.fxRate.toFixed(2) })}
               />
             ) : null}
             {ious.some((i) => i.transactionId === tx.id) ? (

@@ -1,10 +1,11 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { PushScreen } from "@/components/app";
 import { CategoryEditSheet, type CategoryDraft } from "@/components/CategoryEditSheet";
 import { ConfirmSheet } from "@/components/ConfirmSheet";
+import { CurrencySheet } from "@/components/CurrencySheet";
 import { SlipBatchSheet } from "@/components/SlipBatchSheet";
 import { SlipReader } from "@/components/SlipReader";
 import { TagField } from "@/components/TagField";
@@ -18,7 +19,9 @@ import { addDays, baht2, shortDate, todayISO } from "@/lib/format";
 import { entryDefaults, recentDuplicate } from "@/lib/quick";
 import { accountBalance } from "@/lib/selectors";
 import { useTranslation } from "react-i18next";
-import { formatMoney } from "@/lib/fx";
+import { currencySymbol, formatForeign, fxToBaht, type FxCurrency } from "@/lib/currencies";
+import type { UsdRate } from "@/lib/fx";
+import { fetchRate } from "@/lib/fxRates";
 import { useGoBack } from "@/lib/nav";
 import { useStore } from "@/lib/store";
 import { isDefaultTitle, txTitle } from "@/lib/txTitle";
@@ -77,7 +80,11 @@ function AddForm() {
   const [note, setNote] = useState(editing?.note ?? "");
   const [tag, setTag] = useState(editing?.tag ?? "");
   const [taxType, setTaxType] = useState<TaxType | undefined>(editing?.taxType);
-  const [sheet, setSheet] = useState<"" | "acc" | "from" | "to" | "date">("");
+  // Logging abroad: the amount is typed in the trip's currency and saved in baht at the day's rate.
+  const tripCurrencies = useStore((s) => s.settings.tripCurrencies);
+  const [cur, setCur] = useState<FxCurrency | "">("");
+  const [rate, setRate] = useState<{ key: string; value: UsdRate | null } | null>(null);
+  const [sheet, setSheet] = useState<"" | "acc" | "from" | "to" | "date" | "cur">("");
   // After saving, go straight on to splitting the bill with friends.
   const [split, setSplit] = useState(false);
   const [slips, setSlips] = useState<SlipFields[] | null>(null);
@@ -95,7 +102,29 @@ function AddForm() {
   const value = evaluate(amount);
   const summing = hasOperator(amount);
   const accountOf = (id: string) => accounts.find((a) => a.id === id);
-  const canSave = value > 0 && (type !== "move" || (from && to && from !== to));
+  const foreign = !editing && type !== "move" ? cur : "";
+  const rateKey = foreign ? `${foreign}:${date}` : "";
+  useEffect(() => {
+    if (!rateKey) return;
+    const [c, d] = rateKey.split(":");
+    let live = true;
+    void fetchRate(c as FxCurrency, d).then((r) => {
+      if (live) setRate({ key: rateKey, value: r });
+    });
+    return () => {
+      live = false;
+    };
+  }, [rateKey]);
+  // undefined while loading, null when there's no rate (offline).
+  const dayRate = rate?.key === rateKey ? rate.value : undefined;
+  const feePct = accountOf(acc)?.fxFeePct ?? 0;
+  const bahtValue = foreign ? (dayRate ? fxToBaht(value, dayRate.rate, feePct) : 0) : value;
+  const canSave = value > 0 && (type !== "move" || (from && to && from !== to)) && (!foreign || !!dayRate);
+  const pickTag = (next: string) => {
+    setTag(next);
+    const c = tripCurrencies?.[next];
+    if (!editing && c) setCur(c);
+  };
 
   const changeType = (next: TxType) => {
     setType(next);
@@ -129,10 +158,11 @@ function AddForm() {
     // Keep a title the user or a subscription set (e.g. "Claude Pro") unless a note replaces it.
     const kept = editing && editing.type === type && !isDefaultTitle(editing, accounts) ? editing.title : "";
     const title = note.trim() || kept || fallback;
+    const fx = foreign && dayRate ? { origAmount: value, origCurrency: foreign, fxRate: dayRate.rate } : {};
     const fields =
       type === "move"
         ? { type, amount: value, date, title, note: undefined, category: undefined, accountId: undefined, fromId: from, toId: to, tag: tag || undefined }
-        : { type, amount: value, date, title, note: note.trim() || undefined, category: cat, accountId: acc, fromId: undefined, toId: undefined, tag: tag || undefined, taxType: type === "out" ? taxType : undefined };
+        : { type, amount: bahtValue, date, title, note: note.trim() || undefined, category: cat, accountId: acc, fromId: undefined, toId: undefined, tag: tag || undefined, taxType: type === "out" ? taxType : undefined, ...fx };
     if (!editing && !confirmedDuplicate) {
       const now = clock();
       const dup = recentDuplicate(txs, fields, now);
@@ -144,6 +174,9 @@ function AddForm() {
       goBack();
     } else {
       const id = addTransaction(fields);
+      // The first entry of a trip in another currency sets the trip's currency.
+      const trip = tag.trim();
+      if (trip && foreign && tripCurrencies?.[trip] !== foreign) setSettings({ tripCurrencies: { ...tripCurrencies, [trip]: foreign } });
       if (split && type === "out") router.replace(`/ious/split?tx=${id}`);
       else router.push("/");
     }
@@ -198,14 +231,32 @@ function AddForm() {
       <output aria-live="polite" className="flex flex-col items-center gap-0.5 py-2">
         <span className="max-w-full truncate text-[13px] text-muted">{summing ? <span className="font-mono">{formatExpr(amount)} =</span> : copy.amountLabel}</span>
         <span className="font-mono text-[44px] font-semibold leading-tight tracking-tight" style={{ color: meta.color }}>
-          {value < 0 ? "−" : meta.sign}฿{amountText.replace("-", "")}
+          {value < 0 ? "−" : meta.sign}
+          {foreign ? currencySymbol(foreign).trim() : "฿"}
+          {amountText.replace("-", "")}
         </span>
+        {foreign ? (
+          <span className="text-center text-xs leading-relaxed text-muted">
+            {dayRate ? (
+              <>
+                <span className="font-mono font-semibold text-ink">{t("fxEntry.converted", { amount: baht2(bahtValue) })}</span>
+                <br />
+                {t("fxEntry.rate", { currency: foreign, rate: dayRate.rate.toFixed(4), date: shortDate(dayRate.date) })}
+                {feePct ? ` · ${t("fxEntry.fee", { pct: feePct })}` : ""}
+              </>
+            ) : dayRate === null ? (
+              <span className="text-danger">{t("fxEntry.noRate")}</span>
+            ) : (
+              t("fxEntry.loading")
+            )}
+          </span>
+        ) : null}
       </output>
       {editing?.origAmount && editing.fxRate ? (
         <p className="-mt-2 text-center text-xs leading-relaxed text-muted">
           {t("tx.original")}{" "}
           <span className="font-mono font-semibold text-ink">
-            {t("tx.originalValue", { amount: formatMoney(editing.origAmount, editing.origCurrency ?? "USD"), rate: editing.fxRate.toFixed(2) })}
+            {t("tx.originalValue", { amount: formatForeign(editing.origAmount, editing.origCurrency ?? "USD"), rate: editing.fxRate.toFixed(2) })}
           </span>
           <br />
           {t("tx.fixHint")}
@@ -272,7 +323,18 @@ function AddForm() {
           className="min-h-11 w-full rounded-xl border border-line bg-card px-3 text-sm outline-none"
         />
         <div className="flex flex-wrap gap-2">
-          <TagField value={tag} onChange={setTag} />
+          <TagField value={tag} onChange={pickTag} />
+          {!editing && type !== "move" ? (
+            <button
+              type="button"
+              aria-haspopup="dialog"
+              onClick={() => setSheet("cur")}
+              className={cx("flex min-h-9 items-center gap-1.5 self-start rounded-full px-3 text-[13px] font-medium", cur ? "bg-ink text-on-ink" : "border border-line bg-card text-muted")}
+            >
+              <Icon name="globe" size={14} strokeWidth={2.2} />
+              {cur || t("fxEntry.chip")}
+            </button>
+          ) : null}
           {type === "out" ? <TaxField value={taxType} onChange={setTaxType} /> : null}
           {!editing && type === "out" ? (
             <Chip on={split} onClick={() => setSplit((v) => !v)}>
@@ -286,7 +348,11 @@ function AddForm() {
             <SlipReader
               onRead={(f) => {
                 // Fill what the slip shows; everything stays editable before saving.
-                if (f.amount) setAmount(String(f.amount));
+                // Slips are in baht.
+                if (f.amount) {
+                  setAmount(String(f.amount));
+                  setCur("");
+                }
                 if (f.date) setDate(f.date);
                 const label = f.memo || f.receiver;
                 if (label && !note.trim()) setNote(label);
@@ -331,6 +397,7 @@ function AddForm() {
           { label: t("common.yesterday"), value: addDays(today, -1) },
         ]}
       />
+      <CurrencySheet open={sheet === "cur"} onClose={() => setSheet("")} title={t("fxEntry.pickTitle")} value={cur} onPick={setCur} />
       <CategoryEditSheet draft={newCat} onClose={() => setNewCat(null)} onSaved={setCat} />
       <SlipBatchSheet slips={slips} category={cat} accountId={acc} onClose={() => setSlips(null)} onSaved={() => router.push("/")} />
       <ConfirmSheet

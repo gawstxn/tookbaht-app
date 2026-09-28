@@ -5,6 +5,7 @@ import type { IconName } from "@/components/ui/Icon";
  * entry with every user-visible release (copy in locales: whatsNew.<key>).
  */
 export const RELEASES: { version: string; items: { key: string; icon: IconName }[] }[] = [
+  { version: "1.33.0", items: [{ key: "tripCurrency", icon: "globe" }] },
   { version: "1.32.0", items: [{ key: "leftover", icon: "target" }] },
   { version: "1.31.0", items: [{ key: "forecast", icon: "chart" }] },
   { version: "1.30.0", items: [{ key: "hideAmounts", icon: "eyeOff" }] },

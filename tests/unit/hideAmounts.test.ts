@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { amountsHidden, setAmountsHidden } from "@/lib/hideAmounts";
+import { formatForeign } from "@/lib/currencies";
 import { formatMoney } from "@/lib/fx";
 import { compact } from "@/lib/insights";
 import { baht, baht2, baht2Exact, splitDecimals } from "@/lib/money";
@@ -20,6 +21,7 @@ describe("hide amounts", () => {
     expect(formatMoney(21.4, "USD")).toBe("US$•••");
     expect(formatMoney(149, "THB", true)).toBe("฿•••");
     expect(compact(45000)).toBe("•••");
+    expect(formatForeign(3000, "JPY")).toBe("¥•••");
     expect(compact(0)).toBe("0");
   });
 
