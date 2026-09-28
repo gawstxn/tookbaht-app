@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { PushScreen } from "@/components/app";
 import { NetWorthChart, SpendCalendar } from "@/components/insightCharts";
+import { MonthCardSheet } from "@/components/MonthCardSheet";
 import { Icon } from "@/components/ui/Icon";
 import { Card, Empty, PushHeader, Segmented } from "@/components/ui/primitives";
 import { categoryLabel } from "@/lib/constants";
@@ -47,6 +48,7 @@ export default function InsightsPage() {
   const series = useMemo(() => monthlySeries(transactions, current), [transactions, current]);
   const [selected, setSelected] = useState(current);
   const [tab, setTab] = useState<Tab>(readTab);
+  const [sharing, setSharing] = useState(false);
   const pickTab = (next: Tab) => {
     setTab(next);
     try {
@@ -130,6 +132,22 @@ export default function InsightsPage() {
           </tbody>
         </table>
       </Card>
+
+      {sel.income > 0 || sel.expense > 0 ? (
+        <button type="button" aria-haspopup="dialog" onClick={() => setSharing(true)} className="text-left">
+          <Card className="flex items-center gap-3 px-4 py-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-lime text-on-lime">
+              <Icon name="share" size={17} strokeWidth={2.2} />
+            </span>
+            <span className="flex min-w-0 grow flex-col">
+              <span className="text-[15px] font-semibold">{t("monthCard.open", { month: monthLabel(sel.month) })}</span>
+              <span className="text-xs text-muted">{t("monthCard.openHint")}</span>
+            </span>
+            <Icon name="chevronRight" size={16} strokeWidth={2} className="text-faint" />
+          </Card>
+        </button>
+      ) : null}
+      <MonthCardSheet open={sharing} onClose={() => setSharing(false)} month={sel.month} />
 
       {unusual.length ? (
         <Card className="flex flex-col gap-2 px-4 py-3.5">
