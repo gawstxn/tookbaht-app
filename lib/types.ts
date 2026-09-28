@@ -171,6 +171,8 @@ export interface Settings {
   dismissedRecurring?: string[];
   /** Currency each trip (tag) is logged in abroad, e.g. { "เที่ยวญี่ปุ่น": "JPY" }. */
   tripCurrencies?: Record<string, import("./currencies").FxCurrency>;
+  /** Last month ("YYYY-MM") whose leftover the user saved or skipped (lib/leftover.ts). */
+  leftoverMonth?: string;
   /** Picked profile picture (lib/avatars.ts key); the initial shows when unset. */
   avatar?: string;
   /** "Spent nothing" confirmations for the streak: for day `d`, made on day `at` (lib/streak.ts). */
