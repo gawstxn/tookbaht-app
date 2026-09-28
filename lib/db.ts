@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { FxCurrency } from "./currencies";
 import type { Account, Currency, Goals, Iou, SavingsGoal, Settings, Subscription, Transaction, User, Wish } from "./types";
 
 /* Row shapes as stored in Postgres (snake_case). Numeric columns may arrive as strings. */
@@ -31,7 +32,7 @@ export interface TransactionRow {
   tag: string | null;
   tax_type: Transaction["taxType"] | null;
   orig_amount: Num | null;
-  orig_currency: Currency | null;
+  orig_currency: FxCurrency | null;
   fx_rate: Num | null;
   created_at: string;
 }
