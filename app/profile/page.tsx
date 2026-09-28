@@ -11,6 +11,7 @@ import { ListCard, PrimaryButton, SecondaryButton, Sheet, TabHeader } from "@/co
 import { FeedbackSheet } from "@/components/FeedbackSheet";
 import { PromptPayForm } from "@/components/PromptPayForm";
 import { Avatar, ProfileSheet } from "@/components/ProfileSheet";
+import { TierBadge } from "@/components/TierBadge";
 import { useStreak } from "@/components/streak";
 import { Group, NavRow } from "@/components/settingsUi";
 import { BackupError, backupFileName, makeBackup, parseBackup, type BackupData } from "@/lib/backup";
@@ -118,8 +119,10 @@ export default function ProfilePage() {
           </span>
         </button>
         <Link href="/streak" className="flex min-h-9 items-center gap-2 border-t border-ink-line pt-3 text-xs text-on-ink-muted">
-          <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: streak.tier.tone }} />
-          <span className="font-semibold text-on-hero">{tr(`streak.tier.${streak.tier.key}`)}</span>
+          <span className="flex items-center gap-1">
+            <TierBadge tier={streak.tier} size={16} />
+            <span className="font-semibold text-on-hero">{tr(`streak.tier.${streak.tier.key}`)}</span>
+          </span>
           <span className="flex grow items-center gap-1">
             <Icon name="flame" size={13} strokeWidth={2.2} className={streak.doneToday ? "text-lime" : undefined} />
             {tr("streak.days", { count: streak.current })}

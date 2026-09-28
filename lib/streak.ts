@@ -27,14 +27,14 @@ export function restoreQuota(streak: number): number {
 /** Streak lengths that get a celebration. */
 export const MILESTONES = [3, 7, 14, 30, 60, 100, 180, 365];
 
-/** Tiers named after Thai money, coloured like the notes; reached by days counted overall. */
+/** Tiers: money that grows (the icons), coloured metal to gem so they read as a climb; reached by days counted overall. */
 export const TIERS = [
-  { key: "coin", days: 0, tone: "#c98a1e" },
-  { key: "note20", days: 7, tone: "#2f5b45" },
-  { key: "note50", days: 30, tone: "#33558f" },
-  { key: "note100", days: 100, tone: "#8a2e22" },
-  { key: "note500", days: 200, tone: "#5b4a7a" },
-  { key: "note1000", days: 365, tone: "#6e3a1c" },
+  { key: "coin", days: 0, tone: "#b87333" },
+  { key: "note", days: 7, tone: "#8e9aa6" },
+  { key: "wad", days: 30, tone: "#c9a227" },
+  { key: "stack", days: 100, tone: "#2e9d74" },
+  { key: "bag", days: 200, tone: "#3f7fd0" },
+  { key: "safe", days: 365, tone: "#9460d6" },
 ] as const;
 export type TierKey = (typeof TIERS)[number]["key"];
 

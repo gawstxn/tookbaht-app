@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PushScreen } from "@/components/app";
 import { useStreak } from "@/components/streak";
+import { TierBadge } from "@/components/TierBadge";
 import { Icon } from "@/components/ui/Icon";
 import { Bar, Card, HeroCard, PushHeader, SecondaryButton, Sheet, cx } from "@/components/ui/primitives";
 import { dayHeading, daysInMonth, monthKey, monthLabel, shiftMonth, shortDate, toISO, weekdayNamesShort } from "@/lib/format";
@@ -31,7 +32,7 @@ export default function StreakPage() {
             <Icon name="flame" size={28} strokeWidth={2} />
           </span>
           <div className="flex flex-col">
-            <span className="font-mono text-4xl font-semibold leading-tight tracking-tight">{t("streak.days", { count: s.current })}</span>
+            <DayCount count={s.current} className="text-4xl leading-tight" unitClass="text-2xl" />
             <span className="text-[13px] text-on-ink-muted">
               {s.missed.length ? t("streak.statusMissed") : s.doneToday ? t("streak.statusDone") : t("streak.statusPending")}
             </span>
@@ -39,8 +40,8 @@ export default function StreakPage() {
         </div>
         <button type="button" aria-haspopup="dialog" onClick={() => setTiersOpen(true)} className="flex flex-col gap-2 border-t border-ink-line pt-3 text-left">
           <div className="flex w-full items-center justify-between gap-2 text-[13px]">
-            <span className="flex items-center gap-2 font-semibold">
-              <span aria-hidden="true" className="h-3 w-3 rounded-full" style={{ background: s.tier.tone }} />
+            <span className="flex items-center gap-1 font-semibold">
+              <TierBadge tier={s.tier} size={20} />
               {t(`streak.tier.${s.tier.key}`)}
             </span>
             <span className="flex items-center gap-1 text-on-ink-muted">
@@ -88,8 +89,8 @@ export default function StreakPage() {
       ) : null}
 
       <div className="grid grid-cols-2 gap-2.5">
-        <Stat label={t("streak.best")} value={t("streak.days", { count: s.best })} />
-        <Stat label={t("streak.total")} value={t("streak.days", { count: s.total })} />
+        <Stat label={t("streak.best")} count={s.best} />
+        <Stat label={t("streak.total")} count={s.total} />
       </div>
 
       <StreakCalendar today={s.today} onTime={s.onTime} restored={s.restored} />
@@ -120,7 +121,7 @@ function TierSheet({ open, onClose, total, current }: { open: boolean; onClose: 
           return (
             <li key={tier.key} className={cx("flex min-h-[64px] flex-col justify-center gap-2 py-3", i < TIERS.length - 1 && "border-b border-divider")}>
               <div className="flex items-center gap-3">
-                <span aria-hidden="true" className="h-7 w-7 shrink-0 rounded-full" style={{ background: tier.tone }} />
+                <TierBadge tier={tier} size={28} />
                 <span className="flex grow flex-col">
                   <span className={cx("text-[15px] font-semibold", i > at && "text-muted")}>{t(`streak.tier.${tier.key}`)}</span>
                   <span className="text-xs text-muted">{tier.days ? t("streak.tierNeeds", { count: tier.days }) : t("streak.tierStart")}</span>
@@ -142,12 +143,23 @@ function TierSheet({ open, onClose, total, current }: { open: boolean; onClose: 
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, count }: { label: string; count: number }) {
   return (
     <Card className="flex flex-col gap-0.5 px-4 py-3">
       <span className="text-xs text-muted">{label}</span>
-      <span className="font-mono text-lg font-semibold">{value}</span>
+      <DayCount count={count} className="text-lg" unitClass="text-[15px]" />
     </Card>
+  );
+}
+
+/** "4 วัน": the number in mono, the unit in the body font so the mono space doesn't open a gap. */
+function DayCount({ count, className, unitClass }: { count: number; className: string; unitClass: string }) {
+  const { t } = useTranslation();
+  return (
+    <span className={cx("flex items-baseline gap-1.5 font-semibold", className)}>
+      <span className="font-mono tracking-tight">{count}</span>
+      <span className={unitClass}>{t("streak.unit", { count })}</span>
+    </span>
   );
 }
 
