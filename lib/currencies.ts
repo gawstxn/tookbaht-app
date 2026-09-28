@@ -1,3 +1,5 @@
+import { MASK, isMasked } from "./money";
+
 /**
  * Currencies an entry can be logged in abroad (a trip in Japan: yen). Only
  * ones the ECB publishes against THB, so there's always a day's rate; the
@@ -33,8 +35,9 @@ export const currencySymbol = (c: FxCurrency) => META[c].symbol;
 const whole = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 const cents = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-/** "¥3,000", "₩45,000", "€12.50". */
+/** "¥3,000", "₩45,000", "€12.50"; "¥•••" while amounts are hidden. */
 export function formatForeign(amount: number, c: FxCurrency): string {
+  if (isMasked()) return META[c].symbol + MASK;
   return META[c].symbol + (META[c].decimals ? cents : whole).format(amount);
 }
 

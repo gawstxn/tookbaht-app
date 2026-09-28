@@ -103,7 +103,7 @@ function PrivacyTh() {
         <h2>4. คุกกี้และข้อมูลในเครื่อง</h2>
         <p>
           แอปใช้คุกกี้เฉพาะที่จำเป็นสำหรับการเข้าสู่ระบบ เก็บไฟล์ของแอปไว้ในเครื่องเพื่อให้เปิดได้เร็วและแสดงหน้าออฟไลน์
-          และเก็บการตั้งค่าเฉพาะเครื่องไว้ในเบราว์เซอร์ ได้แก่ ธีม ภาษา และล็อกแอป ไม่มีคุกกี้โฆษณาหรือคุกกี้ติดตาม
+          และเก็บการตั้งค่าเฉพาะเครื่องไว้ในเบราว์เซอร์ ได้แก่ ธีม ภาษา ล็อกแอป และการซ่อนยอดเงิน ไม่มีคุกกี้โฆษณาหรือคุกกี้ติดตาม
           เพื่อให้เปิดแอปและจดรายการได้ตอนไม่มีอินเทอร์เน็ต แอปเก็บสำเนาข้อมูลของคุณล่าสุด และรายการที่จดตอนออฟไลน์ซึ่งรอส่งขึ้นเซิร์ฟเวอร์
           ไว้ในเบราว์เซอร์ของอุปกรณ์นั้น รวมถึงการหารทริปที่ยังไม่ได้บันทึก (ชื่อเพื่อนและบิลที่เพื่อนจ่าย) ทั้งหมดนี้ถูกลบเมื่อคุณออกจากระบบ ส่วนรูปสลิปที่ใช้ &quot;อ่านสลิป&quot; จะถูกอ่านบนอุปกรณ์ของคุณเท่านั้น ไม่ถูกส่งขึ้นเซิร์ฟเวอร์และไม่ถูกเก็บไว้
         </p>
@@ -253,7 +253,7 @@ function PrivacyEn() {
         <h2>4. Cookies and on-device storage</h2>
         <p>
           The app only uses cookies needed to keep you signed in, stores its own files on your device so it opens quickly and can show an
-          offline screen, and keeps per-device settings (theme, language and the app lock) in the browser. There are no advertising or
+          offline screen, and keeps per-device settings (theme, language, the app lock and hiding amounts) in the browser. There are no advertising or
           tracking cookies. So the app opens and you can log entries without a connection, it also keeps a copy of your latest data, and
           entries made offline that are waiting to be sent, in that device&apos;s browser, along with any trip split you haven&apos;t saved yet
           (friends&apos; names and the bills they paid). All of this is removed when you sign out. Slip photos used with &quot;Read a slip&quot; are read on your device only; they are never uploaded or kept.
