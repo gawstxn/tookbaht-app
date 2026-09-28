@@ -6,9 +6,10 @@ import { useTranslation } from "react-i18next";
 import { PushScreen } from "@/components/app";
 import { useStreak } from "@/components/streak";
 import { Icon } from "@/components/ui/Icon";
-import { Bar, Card, HeroCard, PushHeader, SecondaryButton, cx } from "@/components/ui/primitives";
+import { Bar, Card, HeroCard, PushHeader, SecondaryButton, Sheet, cx } from "@/components/ui/primitives";
 import { dayHeading, daysInMonth, monthKey, monthLabel, shiftMonth, shortDate, toISO, weekdayNamesShort } from "@/lib/format";
 import { useGoBack } from "@/lib/nav";
+import { TIERS } from "@/lib/streak";
 import { useStore } from "@/lib/store";
 
 /** Logging streak: today's status, restoring missed days, tier and a calendar of counted days. */
@@ -18,6 +19,7 @@ export default function StreakPage() {
   const s = useStreak();
   const markNoSpend = useStore((st) => st.markNoSpend);
   const toNext = s.next ? s.next.days - s.total : 0;
+  const [tiersOpen, setTiersOpen] = useState(false);
 
   return (
     <PushScreen>
@@ -35,18 +37,23 @@ export default function StreakPage() {
             </span>
           </div>
         </div>
-        <div className="flex flex-col gap-2 border-t border-ink-line pt-3">
-          <div className="flex items-center justify-between gap-2 text-[13px]">
+        <button type="button" aria-haspopup="dialog" onClick={() => setTiersOpen(true)} className="flex flex-col gap-2 border-t border-ink-line pt-3 text-left">
+          <div className="flex w-full items-center justify-between gap-2 text-[13px]">
             <span className="flex items-center gap-2 font-semibold">
               <span aria-hidden="true" className="h-3 w-3 rounded-full" style={{ background: s.tier.tone }} />
               {t(`streak.tier.${s.tier.key}`)}
             </span>
-            <span className="text-on-ink-muted">
+            <span className="flex items-center gap-1 text-on-ink-muted">
               {s.next ? t("streak.toNext", { count: toNext, tier: t(`streak.tier.${s.next.key}`) }) : t("streak.topTier")}
+              <Icon name="chevronRight" size={14} strokeWidth={2} />
             </span>
           </div>
-          {s.next ? <Bar value={(s.total - s.tier.days) / (s.next.days - s.tier.days)} color="var(--color-lime)" track="var(--color-ink-line)" /> : null}
-        </div>
+          {s.next ? (
+            <span className="w-full">
+              <Bar value={(s.total - s.tier.days) / (s.next.days - s.tier.days)} color="var(--color-lime)" track="var(--color-ink-line)" />
+            </span>
+          ) : null}
+        </button>
       </HeroCard>
 
       {s.missed.map((d) => (
@@ -93,7 +100,45 @@ export default function StreakPage() {
         <p>{t("streak.ruleRestore")}</p>
         <p>{t("streak.ruleTier")}</p>
       </section>
+      <TierSheet open={tiersOpen} onClose={() => setTiersOpen(false)} total={s.total} current={s.tier.key} />
     </PushScreen>
+  );
+}
+
+/** Every tier, what it takes, and where the user stands. */
+function TierSheet({ open, onClose, total, current }: { open: boolean; onClose: () => void; total: number; current: string }) {
+  const { t } = useTranslation();
+  const at = TIERS.findIndex((x) => x.key === current);
+  return (
+    <Sheet open={open} onClose={onClose} title={t("streak.tiersTitle")}>
+      <p className="text-sm leading-relaxed text-muted">{t("streak.tiersLead", { count: total })}</p>
+      <ol className="flex flex-col rounded-[20px] border border-line bg-card px-4 py-0.5">
+        {TIERS.map((tier, i) => {
+          const passed = i < at;
+          const here = i === at;
+          const next = TIERS[i + 1];
+          return (
+            <li key={tier.key} className={cx("flex min-h-[64px] flex-col justify-center gap-2 py-3", i < TIERS.length - 1 && "border-b border-divider")}>
+              <div className="flex items-center gap-3">
+                <span aria-hidden="true" className="h-7 w-7 shrink-0 rounded-full" style={{ background: tier.tone }} />
+                <span className="flex grow flex-col">
+                  <span className={cx("text-[15px] font-semibold", i > at && "text-muted")}>{t(`streak.tier.${tier.key}`)}</span>
+                  <span className="text-xs text-muted">{tier.days ? t("streak.tierNeeds", { count: tier.days }) : t("streak.tierStart")}</span>
+                </span>
+                {here ? (
+                  <span className="shrink-0 rounded-full bg-lime px-2.5 py-1 text-[11px] font-bold text-on-lime">{t("streak.tierYou")}</span>
+                ) : passed ? (
+                  <Icon name="check" size={18} strokeWidth={2.4} className="shrink-0 text-income" aria-label={t("streak.tierPassed")} />
+                ) : (
+                  <span className="shrink-0 text-xs text-muted">{t("streak.tierLeft", { count: tier.days - total })}</span>
+                )}
+              </div>
+              {here && next ? <Bar value={(total - tier.days) / (next.days - tier.days)} color="var(--color-lime-ink)" track="var(--color-divider)" /> : null}
+            </li>
+          );
+        })}
+      </ol>
+    </Sheet>
   );
 }
 
