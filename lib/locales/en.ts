@@ -362,6 +362,19 @@ const en: Messages = {
     delete: "Delete",
     digits: "{{count}} of {{total}} digits entered",
   },
+  forecast: {
+    title: "Month-end forecast",
+    lead: "At this pace, by the end of the month you'll have spent about",
+    over: "{{amount}} over budget",
+    under: "{{amount}} under budget",
+    budget: "Budget",
+    today: "Today",
+    chartLabel: "Spending so far this month, heading for about {{amount}} by month end",
+    spent: "Spent so far",
+    bills: "Bills and installments to come",
+    daily_one: "About {{amount}} a day, {{count}} more day",
+    daily_other: "About {{amount}} a day, {{count}} more days",
+  },
   insights: {
     title: "Insights",
     open: "Insights",
@@ -1024,6 +1037,7 @@ const en: Messages = {
   },
   whatsNew: {
     title: "What's new in v{{version}}",
+    forecast: { title: "Month-end forecast", body: "Insights → Monthly shows where this month's spending is heading and whether it will go over budget, from what you've spent, the bills and installments still to come, and your daily average." },
     hideAmounts: { title: "Hide amounts", body: "Tap the eye on the Home card and every amount turns into ฿•••, handy in public or before sharing a screenshot. Tap again to show them. Set per device." },
     streak: { title: "Streaks and money tiers", body: "Tap the flame on Home to see your logging streak, restore a missed day, and climb from Coin to the 1,000-baht note. Spent nothing today? Confirm it and the day still counts." },
     profileLook: { title: "Your name and picture", body: "Tap the card at the top of Profile to change your display name and pick a picture: 16 people and animals to choose from." },
