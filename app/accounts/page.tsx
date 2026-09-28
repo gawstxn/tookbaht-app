@@ -8,6 +8,7 @@ import { AccountEditSheet } from "@/components/AccountEditSheet";
 import { ReconcileSheet } from "@/components/ReconcileSheet";
 import { Icon } from "@/components/ui/Icon";
 import { IconButton, ListCard, PushHeader } from "@/components/ui/primitives";
+import { CASHFLOW_DAYS } from "@/lib/cashflow";
 import { baht, shortDate, todayISO } from "@/lib/format";
 import { accountBalance, accountDeleteBlock, accountDue, creditSummary } from "@/lib/selectors";
 import { deleteBlockedText } from "@/components/accountDeleteText";
@@ -66,6 +67,17 @@ export default function AccountsPage() {
         })}
       </ListCard>
       <p className="text-center text-xs text-muted">{t("accounts.deleteHint")}</p>
+
+      <Link href="/cashflow" className="flex min-h-[64px] items-center gap-3 rounded-[20px] border border-line bg-card px-4">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-chip">
+          <Icon name="calendar" size={17} strokeWidth={2} />
+        </span>
+        <span className="flex min-w-0 grow flex-col">
+          <span className="text-[15px] font-semibold">{t("cashflow.open")}</span>
+          <span className="text-xs text-muted">{t("cashflow.openHint", { count: CASHFLOW_DAYS })}</span>
+        </span>
+        <Icon name="chevronRight" size={16} strokeWidth={2} className="text-faint" />
+      </Link>
 
       <AccountEditSheet
         open={editing !== ""}
