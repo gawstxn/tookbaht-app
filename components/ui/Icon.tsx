@@ -63,6 +63,11 @@ const PATHS = {
   qr: <><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><path d="M14 14h2v2M20 14v.01M14 20h.01M17 17h3v3h-3z" /></>,
   // Account kinds
   bank: <><path d="M3 10l9-6 9 6" /><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8" /><path d="M3 21h18" /></>,
+  coin: <><circle cx="12" cy="12" r="8" /><path d="M12 8v8M9.5 10h4a1.5 1.5 0 0 1 0 3h-3.5" /></>,
+  note: <><rect x="3" y="7" width="18" height="10" rx="2" /><circle cx="12" cy="12" r="2" /></>,
+  notes2: <><rect x="3" y="9" width="16" height="9" rx="2" /><path d="M6 6h13a2 2 0 0 1 2 2v7" /><circle cx="11" cy="13.5" r="1.8" /></>,
+  notesStack: <><rect x="3" y="11" width="15" height="8" rx="2" /><path d="M5.5 8h12a2 2 0 0 1 2 2v6" /><path d="M8 5h11a2 2 0 0 1 2 2v6" /></>,
+  moneyBag: <><path d="M9 4h6l-1.5 3h-3z" /><path d="M10.5 7C6 9 4 12.5 4 15.5 4 18.5 6.5 20 12 20s8-1.5 8-4.5c0-3-2-6.5-6.5-8.5" /><path d="M12 11v6M10 12.5h3a1.2 1.2 0 0 1 0 2.4h-2.5" /></>,
   vault: <><rect x="3" y="4" width="18" height="15" rx="2" /><circle cx="12" cy="11.5" r="3.5" /><path d="M12 8v1M12 14v1M6 19v2M18 19v2" /></>,
   card: <><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20M6 15h4" /></>,
   cash: <><rect x="2" y="6" width="20" height="12" rx="2" /><circle cx="12" cy="12" r="2.5" /><path d="M6 10v4M18 10v4" /></>,

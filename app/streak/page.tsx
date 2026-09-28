@@ -41,7 +41,7 @@ export default function StreakPage() {
         <button type="button" aria-haspopup="dialog" onClick={() => setTiersOpen(true)} className="flex flex-col gap-2 border-t border-ink-line pt-3 text-left">
           <div className="flex w-full items-center justify-between gap-2 text-[13px]">
             <span className="flex items-center gap-2 font-semibold">
-              <TierBadge tier={s.tier} width={40} />
+              <TierBadge tier={s.tier} size={32} ring="border-hero" />
               {t(`streak.tier.${s.tier.key}`)}
             </span>
             <span className="flex items-center gap-1 text-on-ink-muted">
@@ -121,7 +121,7 @@ function TierSheet({ open, onClose, total, current }: { open: boolean; onClose: 
           return (
             <li key={tier.key} className={cx("flex min-h-[64px] flex-col justify-center gap-2 py-3", i < TIERS.length - 1 && "border-b border-divider")}>
               <div className="flex items-center gap-3">
-                <TierBadge tier={tier} width={52} />
+                <TierBadge tier={tier} state={here ? "current" : passed ? "reached" : "ahead"} />
                 <span className="flex grow flex-col">
                   <span className={cx("text-[15px] font-semibold", i > at && "text-muted")}>{t(`streak.tier.${tier.key}`)}</span>
                   <span className="text-xs text-muted">{tier.days ? t("streak.tierNeeds", { count: tier.days }) : t("streak.tierStart")}</span>
