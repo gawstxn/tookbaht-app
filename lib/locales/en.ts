@@ -454,6 +454,7 @@ const en: Messages = {
   cashflow: {
     title: "Will it cover?",
     open: "Will it cover?",
+    rowShort: "Short on {{date}}",
     openHint: "Each account over the next {{count}} days",
     lead: "Each account's balance day by day over the next {{count}} days, from scheduled income, bills, installments, transfers and card bills.",
     now: "Now",
