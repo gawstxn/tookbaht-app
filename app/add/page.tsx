@@ -71,7 +71,9 @@ function AddForm() {
   const [acc, setAcc] = useState(editing?.accountId ?? initial?.accountId ?? "");
   const [from, setFrom] = useState(editing?.fromId ?? initial?.fromId ?? "");
   const [to, setTo] = useState(editing?.toId ?? initial?.toId ?? "");
-  const [date, setDate] = useState(editing?.date ?? today);
+  // /add?date=<day> starts on a past day (going back to log a missed streak day).
+  const presetDate = /^\d{4}-\d{2}-\d{2}$/.test(params.get("date") ?? "") && params.get("date")! <= today ? params.get("date")! : today;
+  const [date, setDate] = useState(editing?.date ?? presetDate);
   const [note, setNote] = useState(editing?.note ?? "");
   const [tag, setTag] = useState(editing?.tag ?? "");
   const [taxType, setTaxType] = useState<TaxType | undefined>(editing?.taxType);

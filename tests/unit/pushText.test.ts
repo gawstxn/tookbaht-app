@@ -42,4 +42,10 @@ describe("push texts", () => {
     expect(logReminderText("th").title).toBe("วันนี้จดรายการหรือยัง?");
     expect(logReminderText("en").title).toBe("Anything to log today?");
   });
+  it("mentions the streak when there is one, or invites starting one", () => {
+    expect(logReminderText("th", 0, null)).toMatchObject({ body: "จดรายจ่ายของวันนี้ แล้วเริ่มนับวันจดต่อเนื่อง", url: "/add" });
+    expect(logReminderText("th", 12, "keep")).toMatchObject({ title: "จดต่อเนื่องมา 12 วันแล้ว", url: "/add" });
+    expect(logReminderText("en", 12, "keep").title).toBe("12-day streak");
+    expect(logReminderText("th", 12, "restore")).toMatchObject({ body: "ย้อนไปจดเพื่อรักษาความต่อเนื่อง 12 วันไว้", url: "/streak" });
+  });
 });

@@ -40,6 +40,7 @@ const PATHS = {
   car: <><path d="M3 13l2-6h14l2 6v5H3z" /><path d="M3 13h18" /><circle cx="7.5" cy="16" r="1" /><circle cx="16.5" cy="16" r="1" /></>,
   bag: <><path d="M5 8h14l-1 13H6z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" /></>,
   bolt: <path d="M13 2L4 14h7l-1 8 9-12h-7z" />,
+  flame: <path d="M12 22c4 0 7-2.8 7-7 0-3.2-1.8-5.6-3.6-7.4-.5 1.9-1.6 3.1-2.9 3.6C12.8 7.6 11.4 4.4 8.5 2c.3 3.6-1.3 5.8-2.9 7.8C4.6 11.2 5 12.9 5 15c0 4.2 3 7 7 7z" />,
   heart: <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />,
   film: <><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M7 4v16M17 4v16M3 12h18" /></>,
   dots: <><circle cx="5" cy="12" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /></>,

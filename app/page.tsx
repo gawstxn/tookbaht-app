@@ -7,6 +7,7 @@ import { MonthSwitcher } from "@/components/pickers";
 import { Icon } from "@/components/ui/Icon";
 import { BudgetBannerCard } from "@/components/BudgetBanner";
 import { NotificationBell } from "@/components/notifications";
+import { StreakChip, StreakSync } from "@/components/streak";
 import { TxDetailSheet } from "@/components/TxDetailSheet";
 import { WhatsNew } from "@/components/WhatsNew";
 import { Bar, Empty, HeroCard, ListCard, SectionHeader, TabHeader, cx } from "@/components/ui/primitives";
@@ -46,8 +47,14 @@ export default function OverviewPage() {
       <TabHeader
         title={tr("overview.title")}
         subtitle={<MonthSwitcher />}
-        actions={<NotificationBell />}
+        actions={
+          <>
+            <StreakChip />
+            <NotificationBell />
+          </>
+        }
       />
+      <StreakSync />
 
       <HeroCard>
         <div className="flex flex-col gap-1">
