@@ -169,6 +169,8 @@ export interface Settings {
   promptPayId?: string;
   /** Monthly-bill suggestions the user said aren't bills (lib/habits.ts keys). */
   dismissedRecurring?: string[];
+  /** Picked profile picture (lib/avatars.ts key); the initial shows when unset. */
+  avatar?: string;
 }
 
 export interface CustomCategory {
