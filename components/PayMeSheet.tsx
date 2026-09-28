@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { baht2 } from "@/lib/format";
+import { baht2, baht2Exact } from "@/lib/format";
 import { maskPromptPayId, promptPayPayload } from "@/lib/promptpay";
 import { encodeQr } from "@/lib/qr";
 import { useStore } from "@/lib/store";
@@ -29,7 +29,7 @@ export function PayMeSheet({ open, person, amount, onClose }: { open: boolean; p
     setSharing(true);
     try {
       const file = new File([await qrPng(grid)], "tookbaht-promptpay.png", { type: "image/png" });
-      const text = t("promptpay.shareText", { name: person, amount: baht2(amount) });
+      const text = t("promptpay.shareText", { name: person, amount: baht2Exact(amount) });
       if (navigator.canShare?.({ files: [file] })) await navigator.share({ files: [file], text });
       else notify(t("promptpay.shareUnsupported"), { tone: "error" });
     } catch (e) {
