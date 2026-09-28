@@ -5,6 +5,7 @@ import { Fragment, ViewTransition, useEffect, useLayoutEffect, useRef, useState 
 import { useTranslation } from "react-i18next";
 import { applyLang, preferredLang } from "@/lib/i18n";
 import { applyTheme, followSystemTheme, themePref } from "@/lib/theme";
+import { useAmountsHidden } from "@/lib/hideAmounts";
 import { isManualBack, notifyPathCommitted, rememberPath } from "@/lib/nav";
 import { allowPromptPayEdit, hasPendingReauth, takeReauth } from "@/lib/reauth";
 import { setUnlocked, writeLock } from "@/lib/appLock";
@@ -46,6 +47,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const noData = NO_DATA_PATHS.some((p) => pathname.startsWith(p));
   const onOnboarding = pathname === "/onboarding";
   const { i18n } = useTranslation();
+  const hidden = useAmountsHidden();
 
   // Pages prerender in Thai; switch to the saved/device language once in the browser.
   useEffect(() => {
@@ -159,8 +161,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="relative mx-auto min-h-dvh w-full max-w-[430px] bg-paper">
       <div className="app-content">
         <PageTransition path={pathname}>
-          {/* Remount on language change so memoised labels recompute. */}
-          <Fragment key={i18n.language}>{content}</Fragment>
+          {/* Remount on language change or hiding amounts so memoised labels recompute. */}
+          <Fragment key={`${i18n.language}-${hidden}`}>{content}</Fragment>
         </PageTransition>
       </div>
       {status === "ready" && TAB_ROOTS.includes(pathname) ? <OfflinePill /> : null}
