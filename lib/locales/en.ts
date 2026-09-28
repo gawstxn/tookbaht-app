@@ -1122,6 +1122,7 @@ const en: Messages = {
   },
   whatsNew: {
     title: "What's new in v{{version}}",
+    tierArt: { title: "Tiers as coins and notes", body: "Every streak tier now has its own picture, from the 10-baht coin to the 1,000-baht note, on the streak screen and your profile." },
     tiers: { title: "See every money tier", body: "On the streak screen, tap your tier to see all six, from Coin to the 1,000-baht note, how many days each takes, and where you are." },
     monthCard: { title: "Share your month", body: "Insights → Monthly, tap \"Share summary\" for an image of what you kept, your top category and what you held back, ready for an IG story or LINE. Show percentages if you'd rather not share real amounts." },
     tripCurrency: { title: "Log in yen, won or euros", body: "When adding an entry, tap \"Currency\" and type the amount in that currency. It's converted to baht at that day's rate and the original is kept. Tag the trip once and its next entries use the same currency." },
