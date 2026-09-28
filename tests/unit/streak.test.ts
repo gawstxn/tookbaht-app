@@ -70,7 +70,7 @@ describe("streak", () => {
 describe("tiers", () => {
   it("climbs with counted days", () => {
     expect(tierFor(0)).toMatchObject({ tier: { key: "coin" }, next: { key: "note", days: 7 } });
-    expect(tierFor(30).tier.key).toBe("note50");
+    expect(tierFor(30).tier.key).toBe("wad");
     expect(tierFor(400)).toMatchObject({ tier: { key: "safe" }, next: null });
   });
 });
