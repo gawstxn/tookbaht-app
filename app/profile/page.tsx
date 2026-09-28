@@ -119,8 +119,10 @@ export default function ProfilePage() {
           </span>
         </button>
         <Link href="/streak" className="flex min-h-9 items-center gap-2 border-t border-ink-line pt-3 text-xs text-on-ink-muted">
-          <TierBadge tier={streak.tier} size={16} />
-          <span className="font-semibold text-on-hero">{tr(`streak.tier.${streak.tier.key}`)}</span>
+          <span className="flex items-center gap-1">
+            <TierBadge tier={streak.tier} size={16} />
+            <span className="font-semibold text-on-hero">{tr(`streak.tier.${streak.tier.key}`)}</span>
+          </span>
           <span className="flex grow items-center gap-1">
             <Icon name="flame" size={13} strokeWidth={2.2} className={streak.doneToday ? "text-lime" : undefined} />
             {tr("streak.days", { count: streak.current })}

@@ -32,7 +32,7 @@ export default function StreakPage() {
             <Icon name="flame" size={28} strokeWidth={2} />
           </span>
           <div className="flex flex-col">
-            <span className="font-mono text-4xl font-semibold leading-tight tracking-tight">{t("streak.days", { count: s.current })}</span>
+            <DayCount count={s.current} className="text-4xl leading-tight" unitClass="text-2xl" />
             <span className="text-[13px] text-on-ink-muted">
               {s.missed.length ? t("streak.statusMissed") : s.doneToday ? t("streak.statusDone") : t("streak.statusPending")}
             </span>
@@ -40,7 +40,7 @@ export default function StreakPage() {
         </div>
         <button type="button" aria-haspopup="dialog" onClick={() => setTiersOpen(true)} className="flex flex-col gap-2 border-t border-ink-line pt-3 text-left">
           <div className="flex w-full items-center justify-between gap-2 text-[13px]">
-            <span className="flex items-center gap-2 font-semibold">
+            <span className="flex items-center gap-1 font-semibold">
               <TierBadge tier={s.tier} size={20} />
               {t(`streak.tier.${s.tier.key}`)}
             </span>
@@ -89,8 +89,8 @@ export default function StreakPage() {
       ) : null}
 
       <div className="grid grid-cols-2 gap-2.5">
-        <Stat label={t("streak.best")} value={t("streak.days", { count: s.best })} />
-        <Stat label={t("streak.total")} value={t("streak.days", { count: s.total })} />
+        <Stat label={t("streak.best")} count={s.best} />
+        <Stat label={t("streak.total")} count={s.total} />
       </div>
 
       <StreakCalendar today={s.today} onTime={s.onTime} restored={s.restored} />
@@ -143,12 +143,23 @@ function TierSheet({ open, onClose, total, current }: { open: boolean; onClose: 
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, count }: { label: string; count: number }) {
   return (
     <Card className="flex flex-col gap-0.5 px-4 py-3">
       <span className="text-xs text-muted">{label}</span>
-      <span className="font-mono text-lg font-semibold">{value}</span>
+      <DayCount count={count} className="text-lg" unitClass="text-[15px]" />
     </Card>
+  );
+}
+
+/** "4 วัน": the number in mono, the unit in the body font so the mono space doesn't open a gap. */
+function DayCount({ count, className, unitClass }: { count: number; className: string; unitClass: string }) {
+  const { t } = useTranslation();
+  return (
+    <span className={cx("flex items-baseline gap-1.5 font-semibold", className)}>
+      <span className="font-mono tracking-tight">{count}</span>
+      <span className={unitClass}>{t("streak.unit", { count })}</span>
+    </span>
   );
 }
 

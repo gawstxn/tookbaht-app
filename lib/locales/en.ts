@@ -1085,6 +1085,8 @@ const en: Messages = {
     chipLabel: "{{count}}-day streak",
     days_one: "{{count}} day",
     days_other: "{{count}} days",
+    unit_one: "day",
+    unit_other: "days",
     statusDone: "Logged today",
     statusPending: "Not logged yet today",
     statusMissed: "You missed a day: go back and log it to keep your streak",

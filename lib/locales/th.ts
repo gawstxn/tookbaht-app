@@ -1086,6 +1086,8 @@ const th = {
     chipLabel: "จดต่อเนื่อง {{count}} วัน",
     days_one: "{{count}} วัน",
     days_other: "{{count}} วัน",
+    unit_one: "วัน",
+    unit_other: "วัน",
     statusDone: "วันนี้จดแล้ว",
     statusPending: "วันนี้ยังไม่ได้จด",
     statusMissed: "มีวันที่ลืมจด ย้อนไปจดเพื่อรักษาไว้",
