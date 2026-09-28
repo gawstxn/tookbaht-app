@@ -375,7 +375,7 @@ function TransferRow({ label, name, balance, onClick }: { label: string; name?: 
         <span className="text-[11px] text-muted">{label}</span>
         <span className="text-[15px] font-semibold">{name ?? t("common.selectAccount")}</span>
       </span>
-      <span className="font-mono text-[13px] text-muted">฿{balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+      <span className="font-mono text-[13px] text-muted">{baht2(balance)}</span>
     </button>
   );
 }

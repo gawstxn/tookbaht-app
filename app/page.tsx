@@ -19,6 +19,7 @@ import { debtsByPerson } from "@/lib/ious";
 import { isService, monthTransactions, summarize, upcomingSubscriptions } from "@/lib/selectors";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
+import { setAmountsHidden, useAmountsHidden } from "@/lib/hideAmounts";
 import type { Transaction } from "@/lib/types";
 
 export default function OverviewPage() {
@@ -27,6 +28,7 @@ export default function OverviewPage() {
   const owing = useMemo(() => debtsByPerson(ious, "i_owe"), [ious]);
   const [selected, setSelected] = useState<Transaction | null>(null);
   const { t: tr } = useTranslation();
+  const hidden = useAmountsHidden();
   const today = todayISO();
 
   const month = useMemo(() => monthTransactions(transactions, viewMonth), [transactions, viewMonth]);
@@ -59,9 +61,23 @@ export default function OverviewPage() {
 
       <HeroCard>
         <div className="flex flex-col gap-1">
-          <span className="text-[13px] text-on-ink-muted">{tr("overview.leftThisMonth")}</span>
+          <div className="flex items-center justify-between">
+            <span className="text-[13px] text-on-ink-muted">{tr("overview.leftThisMonth")}</span>
+            <button
+              type="button"
+              aria-pressed={hidden}
+              aria-label={tr(hidden ? "overview.showAmounts" : "overview.hideAmounts")}
+              onClick={() => {
+                setAmountsHidden(!hidden);
+                useStore.getState().notify(tr(hidden ? "overview.amountsShown" : "overview.amountsHidden"));
+              }}
+              className="-my-3 -mr-3 flex h-11 w-11 items-center justify-center text-on-ink-muted"
+            >
+              <Icon name={hidden ? "eyeOff" : "eye"} size={18} strokeWidth={2} />
+            </button>
+          </div>
           <span className="font-mono text-4xl font-semibold leading-tight tracking-tight">
-            {sum.net < 0 ? "−" : ""}
+            {sum.net < 0 && !hidden ? "−" : ""}
             {whole.replace("-", "")}
             <span className="text-xl text-on-ink-faint">{dec}</span>
           </span>

@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { baht, daysInMonth, displayYear, monthLabel, monthNamesShort, shortDate, todayISO, weekdayNamesShort } from "@/lib/format";
-import { compact, dailySpend, netWorthSeries } from "@/lib/insights";
+import type { MonthForecast } from "@/lib/forecast";
+import { compact, dailySpend, netWorthSeries, niceTicks } from "@/lib/insights";
 import { useStore } from "@/lib/store";
 import { TxRow } from "./app";
 import { Card, ListCard, Sheet, cx } from "./ui/primitives";
@@ -176,6 +177,80 @@ export function NetWorthChart() {
           ))}
         </tbody>
       </table>
+    </Card>
+  );
+}
+
+/** Where this month's spending is heading: the running total so far, then dashed to month end, against the budget. */
+export function ForecastCard({ forecast: f, month }: { forecast: MonthForecast; month: string }) {
+  const { t } = useTranslation();
+  const days = f.actual.length + f.ahead.length;
+  const ticks = niceTicks(Math.max(f.projected, f.budget), 3);
+  const hi = ticks[ticks.length - 1] || 1;
+  const plotH = H - TOP - BOTTOM;
+  const band = (W - LEFT) / days;
+  const x = (d: number) => LEFT + band * (d - 0.5); // d = day of month
+  const y = (v: number) => TOP + plotH - (v / hi) * plotH;
+  const today = f.actual.length;
+  const over = f.budget > 0 ? f.projected - f.budget : 0;
+  const line = (vals: number[], from: number) => vals.map((v, i) => `${x(from + i)},${y(v)}`).join(" ");
+
+  return (
+    <Card className="flex flex-col gap-2.5 px-4 py-3.5">
+      <div className="flex flex-col gap-0.5">
+        <h2 className="text-[15px] font-semibold">{t("forecast.title")}</h2>
+        <span className="text-xs text-muted">{t("forecast.lead")}</span>
+        <span className="font-mono text-[28px] font-semibold leading-tight">{baht(f.projected)}</span>
+        {f.budget > 0 ? (
+          <span className={cx("text-sm font-semibold", over > 0 ? "text-expense" : "text-income")}>
+            {t(over > 0 ? "forecast.over" : "forecast.under", { amount: baht(Math.abs(over)) })}
+          </span>
+        ) : null}
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={t("forecast.chartLabel", { amount: baht(f.projected) })}>
+        {ticks.map((v) => (
+          <g key={v}>
+            <line x1={LEFT} x2={W} y1={y(v)} y2={y(v)} stroke="var(--color-divider)" strokeWidth={1} />
+            <text x={LEFT - 6} y={y(v) + 3.5} textAnchor="end" fontSize={10} fill="var(--color-faint)" className="font-mono">
+              {compact(v)}
+            </text>
+          </g>
+        ))}
+        {f.budget > 0 ? (
+          <g>
+            <line x1={LEFT} x2={W} y1={y(f.budget)} y2={y(f.budget)} stroke="var(--color-muted)" strokeWidth={1.5} strokeDasharray="2 3" />
+            <text x={W} y={y(f.budget) - 4} textAnchor="end" fontSize={10} fill="var(--color-muted)">
+              {t("forecast.budget")}
+            </text>
+          </g>
+        ) : null}
+        <polyline points={line([f.actual[today - 1], ...f.ahead], today)} fill="none" stroke={over > 0 ? "var(--color-expense)" : "var(--color-chart-out)"} strokeWidth={2} strokeDasharray="4 4" strokeLinecap="round" opacity={0.7} />
+        <polyline points={line(f.actual, 1)} fill="none" stroke="var(--color-chart-out)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        <circle cx={x(today)} cy={y(f.actual[today - 1])} r={4} fill="var(--color-chart-out)" stroke="var(--color-card)" strokeWidth={2} />
+        {[1, today, days].filter((d, i, a) => a.indexOf(d) === i && (d === today || Math.abs(d - today) > 4)).map((d) => (
+          <text key={d} x={x(d)} y={H - 5} textAnchor={d === 1 ? "start" : d === days ? "end" : "middle"} fontSize={10} fontWeight={d === today ? 600 : 400} fill={d === today ? "var(--color-ink)" : "var(--color-muted)"}>
+            {d === today ? t("forecast.today") : `${d} ${monthNamesShort()[Number(month.slice(5, 7)) - 1]}`}
+          </text>
+        ))}
+      </svg>
+      <dl className="flex flex-col gap-1 border-t border-divider pt-2 text-xs">
+        <div className="flex justify-between gap-3">
+          <dt className="text-muted">{t("forecast.spent")}</dt>
+          <dd className="font-mono">{baht(f.spent)}</dd>
+        </div>
+        {f.scheduled > 0 ? (
+          <div className="flex justify-between gap-3">
+            <dt className="text-muted">{t("forecast.bills")}</dt>
+            <dd className="font-mono">{baht(f.scheduled)}</dd>
+          </div>
+        ) : null}
+        {f.daysLeft > 0 ? (
+          <div className="flex justify-between gap-3">
+            <dt className="text-muted">{t("forecast.daily", { amount: baht(f.perDay), count: f.daysLeft })}</dt>
+            <dd className="font-mono">{baht(f.perDay * f.daysLeft)}</dd>
+          </div>
+        ) : null}
+      </dl>
     </Card>
   );
 }

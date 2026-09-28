@@ -1,4 +1,5 @@
 import { daysInMonth, shiftMonth } from "./format";
+import { MASK, isMasked } from "./money";
 import { monthTransactions, spendByCategory, summarize } from "./selectors";
 import type { Account, Transaction } from "./types";
 
@@ -137,8 +138,9 @@ export function niceTicks(max: number, target = 3): number[] {
   return Array.from({ length: Math.round(top / step) + 1 }, (_, i) => i * step);
 }
 
-/** Short axis label: 45000 → "45K", 1250000 → "1.3M". */
+/** Short axis label: 45000 → "45K", 1250000 → "1.3M"; "•••" while amounts are hidden (0 stays). */
 export function compact(n: number): string {
+  if (isMasked() && n !== 0) return MASK;
   if (n >= 1_000_000) return `${+(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${+(n / 1_000).toFixed(n >= 10_000 ? 0 : 1)}K`;
   return String(Math.round(n));
