@@ -45,6 +45,9 @@ const BRAND_CATEGORY: Record<string, string> = {
   strava: "fit", headspace: "fit", fitnessfirst: "fit", jetts: "fit",
   ais: "net", truemove: "net", dtac: "net", "3bb": "net", nt: "net",
   joox: "music",
+  cloudflare: "cloud", namecheap: "cloud", godaddy: "cloud", porkbun: "cloud", hostinger: "cloud", wix: "cloud",
+  vercel: "cloud", netlify: "cloud", digitalocean: "cloud", aws: "cloud", googlecloud: "cloud", supabase: "cloud",
+  googleworkspace: "cloud",
   duolingo: "learn", medium: "learn",
 };
 
