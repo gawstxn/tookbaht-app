@@ -6,6 +6,7 @@ import type { IconName } from "@/components/ui/Icon";
  */
 export const RELEASES: { version: string; items: { key: string; icon: IconName }[] }[] = [
   { version: "1.31.0", items: [{ key: "forecast", icon: "chart" }] },
+  { version: "1.30.0", items: [{ key: "hideAmounts", icon: "eyeOff" }] },
   { version: "1.29.0", items: [{ key: "streak", icon: "flame" }] },
   { version: "1.28.0", items: [{ key: "profileLook", icon: "user" }, { key: "domains", icon: "cloud" }] },
   { version: "1.27.0", items: [{ key: "tax", icon: "percent" }] },

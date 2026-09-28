@@ -24,7 +24,7 @@ export const weekdayNamesShort = () => (en() ? EN_WEEKDAYS_SHORT : TH_WEEKDAYS_S
 /** Buddhist-era year in Thai, Gregorian in English. */
 export const displayYear = (y: number) => (en() ? y : y + 543);
 
-export { baht, baht2, num, splitDecimals } from "./money";
+export { baht, baht2, baht2Exact, num, splitDecimals } from "./money";
 
 /* ---------- dates (all local time, no timezone drift) ---------- */
 

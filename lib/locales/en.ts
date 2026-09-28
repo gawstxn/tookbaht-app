@@ -100,6 +100,10 @@ const en: Messages = {
   },
   shell: { loadFailed: "Couldn't load your data", checkConnection: "Check your internet connection and try again." },
   overview: {
+    hideAmounts: "Hide amounts",
+    showAmounts: "Show amounts",
+    amountsHidden: "Amounts hidden",
+    amountsShown: "Amounts shown",
     title: "Overview",
     leftThisMonth: "Left this month",
     target: "Goal {{amount}}",
@@ -1034,6 +1038,7 @@ const en: Messages = {
   whatsNew: {
     title: "What's new in v{{version}}",
     forecast: { title: "Month-end forecast", body: "Insights → Monthly shows where this month's spending is heading and whether it will go over budget, from what you've spent, the bills and installments still to come, and your daily average." },
+    hideAmounts: { title: "Hide amounts", body: "Tap the eye on the Home card and every amount turns into ฿•••, handy in public or before sharing a screenshot. Tap again to show them. Set per device." },
     streak: { title: "Streaks and money tiers", body: "Tap the flame on Home to see your logging streak, restore a missed day, and climb from Coin to the 1,000-baht note. Spent nothing today? Confirm it and the day still counts." },
     profileLook: { title: "Your name and picture", body: "Tap the card at the top of Profile to change your display name and pick a picture: 16 people and animals to choose from." },
     domains: { title: "Domains & hosting", body: "Cloudflare, Namecheap, Vercel and other domain and hosting services are now in the subscription list, with their logos. Set the cycle to yearly for domain renewals." },
