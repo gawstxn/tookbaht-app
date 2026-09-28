@@ -68,6 +68,7 @@ export const SUB_CATALOG: { readonly title: string; readonly names: string[] }[]
   { get title() { return t("catalog.net"); }, get names() { return ["AIS Fibre", "True Online", "3BB", "NT Broadband", t("catalog.aisMonthly"), t("catalog.trueMonthly"), t("catalog.dtacMonthly")]; } },
   { get title() { return t("catalog.ai"); }, names: ["ChatGPT Plus", "Claude Pro", "Gemini Advanced", "Perplexity Pro", "GitHub Copilot", "Cursor", "Notion", "Canva Pro", "Microsoft 365", "Adobe Creative Cloud", "Figma", "Grammarly", "Zoom"] },
   { get title() { return t("catalog.cloud"); }, names: ["iCloud+", "Google One", "Dropbox", "1Password", "Bitwarden", "NordVPN", "ExpressVPN", "Proton VPN", "Surfshark"] },
+  { get title() { return t("catalog.web"); }, names: ["Cloudflare", "Namecheap", "GoDaddy", "Porkbun", "Hostinger", "Wix", "Google Workspace", "Vercel", "Netlify", "DigitalOcean", "AWS", "Google Cloud", "Supabase"] },
   { get title() { return t("catalog.games"); }, names: ["PlayStation Plus", "Xbox Game Pass", "Nintendo Switch Online", "Apple Arcade", "Discord Nitro"] },
   { get title() { return t("catalog.health"); }, names: ["Fitness First", "Jetts Fitness", "Strava", "Headspace", "Duolingo", "Medium"] },
   { get title() { return t("catalog.other"); }, names: ["Apple One", "X Premium", "Patreon", "Tinder"] },

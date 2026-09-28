@@ -125,6 +125,8 @@ interface Actions {
 
   setGoals: (g: Goals) => void;
   setSettings: (s: Partial<Settings>) => void;
+  /** Change the display name and/or picked avatar (undefined avatar = show the initial). */
+  updateProfile: (p: { name: string; avatar?: string }) => void;
   /** Switch the UI language and remember it on the profile. */
   setLanguage: (lang: Lang) => void;
   /** Record that the user accepted the current terms and privacy policy. */
@@ -754,6 +756,16 @@ export const useStore = create<State & Actions>()((set, get) => {
       const patch = Object.fromEntries(Object.entries(p).map(([k, v]) => [k, v === undefined ? null : v]));
       const before = Object.fromEntries(Object.keys(p).map((k) => [k, prev[k as keyof Settings]]));
       void save({ kind: "rpc", fn: "merge_settings", args: { patch } }, () => set((s) => ({ settings: { ...s.settings, ...before } })));
+    },
+    updateProfile: ({ name, avatar }) => {
+      const { user, userId, settings } = get();
+      if (!user || !userId) return;
+      if (name !== user.name) {
+        set({ user: { ...user, name } });
+        void save(upd("profiles", { name }, userId), () => set((s) => ({ user: s.user && { ...s.user, name: user.name } })));
+      }
+      if (avatar !== settings.avatar) get().setSettings({ avatar });
+      ok(t("toast.profileSaved"));
     },
     setLanguage: (lang) => {
       applyLang(lang);

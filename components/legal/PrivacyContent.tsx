@@ -24,6 +24,7 @@ function PrivacyTh() {
         <ul>
           <li>
             <b>ข้อมูลบัญชี Google</b> — ชื่อและอีเมลที่ Google ส่งให้ตอนเข้าสู่ระบบ เราไม่ได้รับรหัสผ่านของคุณ
+            คุณเปลี่ยนชื่อที่แสดงได้ และเลือกรูปโปรไฟล์จากชุดที่แอปมีให้ (แอปไม่รับอัปโหลดรูป เก็บแค่ว่าคุณเลือกรูปไหน)
           </li>
           <li>
             <b>ข้อมูลการเงินที่คุณบันทึกเอง</b> — บัญชี ยอดเริ่มต้น วงเงินและวันครบกำหนดชำระของบัตร/PayLater รายรับ รายจ่าย การโอน โน้ต
@@ -166,6 +167,7 @@ function PrivacyEn() {
         <ul>
           <li>
             <b>Google account details</b> — the name and email Google shares when you sign in. We never receive your password.
+            You can change the display name and pick a profile picture from the app&apos;s own set (nothing is uploaded; we only keep which one you chose).
           </li>
           <li>
             <b>Money data you enter</b> — accounts, opening balances, card / pay-later limits and due days, income, expenses, transfers, notes,
