@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { budgetText, chargeText, dueText, logReminderText, summaryText, type PendingReminder } from "@/lib/pushText";
+import { budgetText, chargeText, dueText, logReminderText, renewText, summaryText, type PendingReminder } from "@/lib/pushText";
 
 const charge = (p: Partial<PendingReminder>): PendingReminder => ({
   subscription_id: "s", user_id: "u", name: "Netflix", amount: "419.00", currency: "THB", due_date: "2026-09-26",
@@ -16,6 +16,12 @@ describe("push texts", () => {
     const r = charge({ kind: "recurring", name: "หูฟัง", amount: 1290, installment_no: 2, installments: 3, account_name: "SPayLater" });
     expect(chargeText("th", r).title).toBe("หูฟัง (งวด 2/3) ถึงกำหนดพรุ่งนี้");
     expect(chargeText("en", r).title).toBe("หูฟัง (2 of 3) is due tomorrow");
+  });
+
+  it("asks a week before a yearly renewal", () => {
+    const r = { subscription_id: "s", user_id: "u", name: "Cloudflare", amount: "350.00", currency: "THB" as const, due_date: "2026-10-05", days: 7 };
+    expect(renewText("th", r)).toEqual({ title: "Cloudflare จะต่ออายุในอีก 7 วัน", body: "฿350 สำหรับอีก 1 ปี ยังใช้อยู่ไหม" });
+    expect(renewText("en", r).title).toBe("Cloudflare renews in 7 days");
   });
 
   it("reminds about a pay-later payment with what is owed", () => {

@@ -87,6 +87,13 @@ export default function SubscriptionsPage() {
           <span className="grow">{tr("subs.next7")}</span>
           <span className="font-mono text-[13px] font-semibold text-lime">{baht(totals.next7)}</span>
         </div>
+        {totals.count ? (
+          <div className="-mt-2 flex min-h-9 items-center gap-2 text-xs text-on-ink-muted">
+            <Icon name="repeat" size={14} strokeWidth={2} className="text-lime" />
+            <span className="grow">{tr("subs.perYearAll")}</span>
+            <span className="font-mono text-[13px] font-semibold">{baht(totals.perMonth * 12 + totals.perYearExtra)}</span>
+          </div>
+        ) : null}
       </HeroCard>
 
       <RecurringSuggestions />

@@ -39,6 +39,15 @@ export interface PendingSummary {
   expense: number | string;
   over_budget: string[];
 }
+export interface PendingRenewal {
+  subscription_id: string;
+  user_id: string;
+  name: string;
+  amount: number | string;
+  currency: "THB" | "USD";
+  due_date: string;
+  days: number;
+}
 /* Push text in the user's language (the cron route has no i18n instance). */
 
 export function chargeText(lang: Lang, r: PendingReminder) {
@@ -52,6 +61,14 @@ export function chargeText(lang: Lang, r: PendingReminder) {
   return lang === "en"
     ? { title: `${r.name} bills tomorrow`, body: `${amount} from ${r.account_name}` }
     : { title: `${r.name} ตัดบัญชีพรุ่งนี้`, body: `${amount} จาก${r.account_name}` };
+}
+
+/** A week before a yearly service renews: still using it? */
+export function renewText(lang: Lang, r: PendingRenewal) {
+  const amount = formatMoney(Number(r.amount), r.currency ?? "THB");
+  return lang === "en"
+    ? { title: `${r.name} renews in ${r.days} days`, body: `${amount} for another year. Still using it?` }
+    : { title: `${r.name} จะต่ออายุในอีก ${r.days} วัน`, body: `${amount} สำหรับอีก 1 ปี ยังใช้อยู่ไหม` };
 }
 
 export function dueText(lang: Lang, r: PendingDue) {
