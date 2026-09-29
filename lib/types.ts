@@ -183,6 +183,8 @@ export interface Settings {
   noSpend?: { d: ISODate; at: ISODate }[];
   /** Highest streak milestone already celebrated. */
   streakMilestone?: number;
+  /** Sunday of the latest perfect week already celebrated. */
+  perfectWeek?: ISODate;
   /** Streak as last worked out on a device, for the server's evening reminder: length, latest counted day, restores left. */
   streak?: { n: number; last: ISODate | null; left: number };
 }
