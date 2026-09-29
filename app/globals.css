@@ -103,6 +103,19 @@ body {
 body {
   font-family: var(--font-sans);
   -webkit-tap-highlight-color: transparent;
+  /* Like a native app: a long press doesn't select text or open Safari's
+     link preview (opening a link from it breaks the installed app's shell). */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+/* Text fields still need selection for editing, copy and paste. */
+input,
+textarea,
+[contenteditable="true"] {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 button {
