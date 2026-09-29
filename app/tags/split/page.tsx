@@ -12,6 +12,7 @@ import { baht2, baht2Exact, shortDate, todayISO } from "@/lib/format";
 import { knownPeople } from "@/lib/ious";
 import { useGoBack } from "@/lib/nav";
 import { useStore } from "@/lib/store";
+import { PayMeSheet } from "@/components/PayMeSheet";
 import { ME, TRIP_DRAFT_PREFIX, settleText, settleUp, tripShares, type TripBill } from "@/lib/tripSplit";
 import { txTitle } from "@/lib/txTitle";
 
@@ -80,6 +81,8 @@ function TripSplit() {
   };
   const [adding, setAdding] = useState<"" | "friend" | "bill">("");
   const [editing, setEditing] = useState<string | null>(null);
+  // Kept after closing so the sheet doesn't change while it slides away.
+  const [payMe, setPayMe] = useState<{ person: string; amount: number; open: boolean }>({ person: "", amount: 0, open: false });
   const names = useMemo(() => knownPeople(ious), [ious]);
   const everyone = [ME, ...draft.friends];
   const who = (p: string) => (p === ME ? t("trip.you") : p);
@@ -213,6 +216,17 @@ function TripSplit() {
                   <Icon name="chevronRight" size={14} strokeWidth={2.2} className="shrink-0 text-faint" />
                   <span className="min-w-0 grow truncate font-medium">{who(x.to)}</span>
                   <span className={cx("font-mono font-semibold", x.to === ME ? "text-income" : x.from === ME ? "text-expense" : "")}>{baht2(x.amount)}</span>
+                  {x.to === ME ? (
+                    <button
+                      type="button"
+                      aria-label={t("promptpay.open", { name: x.from })}
+                      onClick={() => setPayMe({ person: x.from, amount: x.amount, open: true })}
+                      className="flex h-9 shrink-0 items-center gap-1 rounded-full border border-line bg-card px-3 text-xs font-semibold"
+                    >
+                      <Icon name="qr" size={16} strokeWidth={2} />
+                      QR
+                    </button>
+                  ) : null}
                 </div>
               ))}
             </Card>
@@ -239,6 +253,7 @@ function TripSplit() {
         ) : null}
       </div>
 
+      <PayMeSheet open={payMe.open} person={payMe.person} amount={payMe.amount} onClose={() => setPayMe((x) => ({ ...x, open: false }))} />
       <AddFriendSheet
         open={adding === "friend"}
         names={names.filter((n) => !draft.friends.includes(n))}
