@@ -19,7 +19,7 @@ import { addDays, baht2, shortDate, todayISO } from "@/lib/format";
 import { entryDefaults, recentDuplicate } from "@/lib/quick";
 import { accountBalance } from "@/lib/selectors";
 import { useTranslation } from "react-i18next";
-import { currencySymbol, formatForeign, fxToBaht, type FxCurrency } from "@/lib/currencies";
+import { currencySymbol, formatForeign, formatRate, fxToBaht, type FxCurrency } from "@/lib/currencies";
 import type { UsdRate } from "@/lib/fx";
 import { fetchRate } from "@/lib/fxRates";
 import { useGoBack } from "@/lib/nav";
@@ -241,7 +241,7 @@ function AddForm() {
               <>
                 <span className="font-mono font-semibold text-ink">{t("fxEntry.converted", { amount: baht2(bahtValue) })}</span>
                 <br />
-                {t("fxEntry.rate", { currency: foreign, rate: dayRate.rate.toFixed(4), date: shortDate(dayRate.date) })}
+                {t("fxEntry.rate", { currency: foreign, rate: formatRate(dayRate.rate), date: shortDate(dayRate.date) })}
                 {feePct ? ` · ${t("fxEntry.fee", { pct: feePct })}` : ""}
               </>
             ) : dayRate === null ? (
@@ -256,7 +256,7 @@ function AddForm() {
         <p className="-mt-2 text-center text-xs leading-relaxed text-muted">
           {t("tx.original")}{" "}
           <span className="font-mono font-semibold text-ink">
-            {t("tx.originalValue", { amount: formatForeign(editing.origAmount, editing.origCurrency ?? "USD"), rate: editing.fxRate.toFixed(2) })}
+            {t("tx.originalValue", { amount: formatForeign(editing.origAmount, editing.origCurrency ?? "USD"), rate: formatRate(editing.fxRate), currency: editing.origCurrency ?? "USD" })}
           </span>
           <br />
           {t("tx.fixHint")}

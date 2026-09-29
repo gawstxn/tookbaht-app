@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { useState } from "react";
 import { AccountMark, PushScreen } from "@/components/app";
-import { AccountEditSheet } from "@/components/AccountEditSheet";
+import { AccountEditSheet, MAX_ACCOUNTS } from "@/components/AccountEditSheet";
 import { ReconcileSheet } from "@/components/ReconcileSheet";
 import { Icon } from "@/components/ui/Icon";
 import { IconButton, ListCard, PushHeader } from "@/components/ui/primitives";
@@ -17,7 +17,7 @@ import { useStore } from "@/lib/store";
 
 export default function AccountsPage() {
   const { t } = useTranslation();
-  const { accounts, transactions, subscriptions, addAccount, updateAccount, removeAccount } = useStore();
+  const { accounts, transactions, subscriptions, addAccount, updateAccount, removeAccount, notify } = useStore();
   // "" = closed, "new" = adding, otherwise the account id being edited.
   const [editing, setEditing] = useState("");
   const current = accounts.find((a) => a.id === editing);
@@ -28,10 +28,14 @@ export default function AccountsPage() {
     return d && d.owed > 0 ? t("accounts.dueLine", { date: shortDate(d.due, false), amount: baht(d.owed) }) : null;
   };
   const [reconciling, setReconciling] = useState("");
+  const addNew = () => {
+    if (accounts.length >= MAX_ACCOUNTS) notify(t("accounts.full", { count: MAX_ACCOUNTS }), { tone: "error" });
+    else setEditing("new");
+  };
 
   return (
     <PushScreen>
-      <PushHeader title={t("accounts.title")} backHref="/profile" action={<IconButton icon="plus" label={t("accounts.add")} onClick={() => setEditing("new")} />} />
+      <PushHeader title={t("accounts.title")} backHref="/profile" action={<IconButton icon="plus" label={t("accounts.add")} onClick={addNew} />} />
 
       <ListCard>
         {accounts.map((a) => {

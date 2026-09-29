@@ -41,6 +41,11 @@ export function formatForeign(amount: number, c: FxCurrency): string {
   return META[c].symbol + (META[c].decimals ? cents : whole).format(amount);
 }
 
+/** Baht per unit for display: "33.48" for a dollar, "0.2140" for a yen, "0.002012" for a rupiah. */
+export function formatRate(rate: number): string {
+  return rate >= 1 ? rate.toFixed(2) : rate.toPrecision(4);
+}
+
 /** Baht for a foreign amount: the day's rate plus the card's foreign-transaction fee, to the satang. */
 export function fxToBaht(amount: number, rate: number, feePct = 0): number {
   return Math.round(amount * rate * (1 + feePct / 100) * 100) / 100;

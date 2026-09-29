@@ -31,6 +31,13 @@ export function installMode({ ua, maxTouchPoints, standalone, canPrompt }: Insta
   return ios ? "ios" : "android";
 }
 
+/**
+ * Inline in <head>: Chrome can fire beforeinstallprompt before the app's
+ * scripts have loaded, and a missed event means Android visitors only get the
+ * menu steps. This keeps it for lib/install to pick up.
+ */
+export const INSTALL_BOOT_SCRIPT = `addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__installPrompt=e})`;
+
 let deferred: BeforeInstallPromptEvent | null = null;
 const listeners = new Set<() => void>();
 const notify = () => listeners.forEach((l) => l());
@@ -41,6 +48,7 @@ const notify = () => listeners.forEach((l) => l());
  * visitor lands on, not only once the login chunk has loaded.
  */
 if (typeof window !== "undefined") {
+  deferred = (window as { __installPrompt?: BeforeInstallPromptEvent }).__installPrompt ?? null;
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     deferred = e as BeforeInstallPromptEvent;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatForeign, fxToBaht, isFxCurrency } from "@/lib/currencies";
+import { formatForeign, formatRate, fxToBaht, isFxCurrency } from "@/lib/currencies";
 
 describe("trip currencies", () => {
   it("formats with the currency's symbol and decimals", () => {
@@ -13,6 +13,13 @@ describe("trip currencies", () => {
     expect(fxToBaht(3000, 0.21398)).toBe(641.94);
     expect(fxToBaht(3000, 0.21398, 2.5)).toBe(657.99);
     expect(fxToBaht(45000, 0.02461)).toBe(1107.45);
+  });
+
+  it("shows enough digits of the rate for small currencies", () => {
+    expect(formatRate(33.48)).toBe("33.48");
+    expect(formatRate(4.5678)).toBe("4.57");
+    expect(formatRate(0.21398)).toBe("0.2140");
+    expect(formatRate(0.0020123)).toBe("0.002012");
   });
 
   it("knows which currencies have a published rate", () => {
