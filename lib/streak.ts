@@ -1,4 +1,6 @@
-import { addDays, diffDays, monthKey, toISO } from "./format";
+import { addDays, diffDays, fromISO, shiftMonth, toISO } from "./format";
+import { periodOf } from "./period";
+import { summarize } from "./selectors";
 import type { ISODate, Transaction } from "./types";
 
 /*
@@ -6,8 +8,12 @@ import type { ISODate, Transaction } from "./types";
  * day (auto-logged subscription charges don't count) or confirms they spent
  * nothing. A missed day can be restored within RESTORE_WINDOW days by going
  * back and logging that day's entries (or confirming no spending that day),
- * up to a monthly quota that grows with the streak. Everything is derived
- * from the entries and no-spend confirmations, so nothing else is stored.
+ * up to a monthly quota that grows with the streak, plus one more in a month
+ * that follows a month kept within the overall budget. Months are the user's
+ * own (lib/period.ts: payday to payday when set). A calendar week (Sunday to
+ * Saturday, as the calendar shows it) with every day logged on the day itself
+ * is a perfect week. Everything is derived from the entries and no-spend
+ * confirmations, so nothing else is stored.
  */
 
 /** A "spent nothing" confirmation: for day `d`, made on day `at`. */
@@ -45,11 +51,41 @@ export function tierFor(days: number) {
   return { tier: TIERS[i], next: TIERS[i + 1] ?? null };
 }
 
+/**
+ * Months (period keys) that get an extra restore: those right after a month
+ * with entries whose spending stayed within the overall budget. Needs an
+ * overall budget; the month in progress hasn't earned anything yet.
+ */
+export function budgetBonus(expenseBudget: number, txs: Transaction[], startDay: number, today: ISODate): Set<string> {
+  const out = new Set<string>();
+  if (!(expenseBudget > 0)) return out;
+  const current = periodOf(today, startDay).key;
+  const byMonth = new Map<string, Transaction[]>();
+  for (const t of txs) {
+    const key = periodOf(t.date, startDay).key;
+    if (key >= current) continue;
+    const list = byMonth.get(key);
+    if (list) list.push(t);
+    else byMonth.set(key, [t]);
+  }
+  for (const [key, list] of byMonth) if (summarize(list).expense <= expenseBudget) out.add(shiftMonth(key, 1));
+  return out;
+}
+
+/** The Sunday that starts the week holding `d`. */
+export function weekStart(d: ISODate): ISODate {
+  return addDays(d, -fromISO(d).getDay());
+}
+
 export interface StreakInput {
   /** When each entry was made (local day) and the day it is for; manual entries only. */
   logs: { at: ISODate; d: ISODate }[];
   noSpend: NoSpend[];
   today: ISODate;
+  /** First day of the user's month (lib/period.ts); 1 when unset. */
+  startDay?: number;
+  /** Months with an extra restore for keeping the one before within budget (budgetBonus). */
+  bonus?: Set<string>;
 }
 
 export interface StreakStatus {
@@ -67,9 +103,15 @@ export interface StreakStatus {
   /** Restores left this month for the current streak, and the month's allowance. */
   quotaLeft: number;
   quota: number;
+  /** This month has an extra restore for keeping last month within budget. */
+  bonus: boolean;
   /** Days that count, and which of them were restored (for the calendar). */
   onTime: Set<ISODate>;
   restored: Set<ISODate>;
+  /** This week, Sunday to Saturday. */
+  week: ISODate[];
+  /** Weeks (their Sundays) with every day logged on the day; restored days don't make one. */
+  perfectWeeks: Set<ISODate>;
 }
 
 /** Manual entries as streak logs: the local day each was made and the day it's for. */
@@ -79,7 +121,9 @@ export function streakLogs(txs: Transaction[]): StreakInput["logs"] {
   return out;
 }
 
-export function streakStatus({ logs, noSpend, today }: StreakInput): StreakStatus {
+export function streakStatus({ logs, noSpend, today, startDay = 1, bonus = new Set() }: StreakInput): StreakStatus {
+  const monthOf = (d: ISODate) => periodOf(d, startDay).key;
+  const quotaFor = (streak: number, d: ISODate) => restoreQuota(streak) + (bonus.has(monthOf(d)) ? 1 : 0);
   const onTime = new Set<ISODate>();
   // Days with a late entry made within the restore window.
   const late = new Set<ISODate>();
@@ -103,11 +147,11 @@ export function streakStatus({ logs, noSpend, today }: StreakInput): StreakStatu
         current++;
       } else if (d === today) {
         // Still time to log today.
-      } else if (current > 0 && late.has(d) && (used.get(monthKey(d)) ?? 0) < restoreQuota(current)) {
-        used.set(monthKey(d), (used.get(monthKey(d)) ?? 0) + 1);
+      } else if (current > 0 && late.has(d) && (used.get(monthOf(d)) ?? 0) < quotaFor(current, d)) {
+        used.set(monthOf(d), (used.get(monthOf(d)) ?? 0) + 1);
         restored.add(d);
         current++;
-      } else if (current > 0 && diffDays(today, d) <= RESTORE_WINDOW && (used.get(monthKey(d)) ?? 0) + missed.filter((m) => monthKey(m) === monthKey(d)).length < restoreQuota(current)) {
+      } else if (current > 0 && diffDays(today, d) <= RESTORE_WINDOW && (used.get(monthOf(d)) ?? 0) + missed.filter((m) => monthOf(m) === monthOf(d)).length < quotaFor(current, d)) {
         // Missed, but can still be restored: hold the streak for now.
         missed.push(d);
       } else {
@@ -118,10 +162,30 @@ export function streakStatus({ logs, noSpend, today }: StreakInput): StreakStatu
     }
   }
 
-  const quota = restoreQuota(current);
-  const month = monthKey(today);
+  const quota = quotaFor(current, today);
+  const month = monthOf(today);
   const quotaLeft = Math.max(0, quota - (used.get(month) ?? 0));
   const counted = [...onTime, ...restored].filter((d) => d <= today).sort();
   const last = counted[counted.length - 1] ?? null;
-  return { current, best, total: onTime.size + restored.size, last, doneToday: onTime.has(today), missed, quotaLeft, quota, onTime, restored };
+  const perfectWeeks = new Set<ISODate>();
+  const weeks = new Set([...onTime].filter((d) => d <= today).map(weekStart));
+  for (const sun of weeks) {
+    if (Array.from({ length: 7 }, (_, i) => addDays(sun, i)).every((x) => x <= today && onTime.has(x))) perfectWeeks.add(sun);
+  }
+  const week = Array.from({ length: 7 }, (_, i) => addDays(weekStart(today), i));
+  return {
+    current,
+    best,
+    total: onTime.size + restored.size,
+    last,
+    doneToday: onTime.has(today),
+    missed,
+    quotaLeft,
+    quota,
+    bonus: bonus.has(month),
+    onTime,
+    restored,
+    week,
+    perfectWeeks,
+  };
 }
