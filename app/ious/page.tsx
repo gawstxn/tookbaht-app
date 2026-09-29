@@ -13,6 +13,7 @@ import { expenseCategories } from "@/lib/constants";
 import { baht, baht2, shortDate, todayISO } from "@/lib/format";
 import { debtsByPerson, knownPeople, owedTotal } from "@/lib/ious";
 import { useGoBack } from "@/lib/nav";
+import type { PayItem } from "@/lib/payShare";
 import { useStore } from "@/lib/store";
 import type { Iou, IouDirection } from "@/lib/types";
 
@@ -25,7 +26,7 @@ export default function IousPage() {
   const [adding, setAdding] = useState(false);
   const [selected, setSelected] = useState<Iou | null>(null);
   // Kept after closing so the sheet doesn't change while it slides away.
-  const [payMe, setPayMe] = useState<{ person: string; amount: number; open: boolean }>({ person: "", amount: 0, open: false });
+  const [payMe, setPayMe] = useState<{ person: string; amount: number; items: PayItem[]; open: boolean }>({ person: "", amount: 0, items: [], open: false });
   const iOwe = dir === "i_owe";
   const people = useMemo(() => debtsByPerson(ious, dir), [ious, dir]);
   const total = useMemo(() => owedTotal(ious, dir), [ious, dir]);
@@ -78,7 +79,14 @@ export default function IousPage() {
                 <button
                   type="button"
                   aria-label={t("promptpay.open", { name: p.person })}
-                  onClick={() => setPayMe({ person: p.person, amount: p.total, open: true })}
+                  onClick={() =>
+                    setPayMe({
+                      person: p.person,
+                      amount: p.total,
+                      items: p.items.map((i) => ({ label: `${i.note || t("ious.noNote")} · ${shortDate(i.date, false)}`, amount: i.amount })),
+                      open: true,
+                    })
+                  }
                   className="flex h-9 shrink-0 items-center gap-1 rounded-full border border-line bg-card px-3 text-xs font-semibold"
                 >
                   <Icon name="qr" size={16} strokeWidth={2} />
@@ -110,7 +118,7 @@ export default function IousPage() {
 
       <AddIouSheet open={adding} direction={dir} onClose={() => setAdding(false)} />
       <IouSheet iou={selected} onClose={() => setSelected(null)} />
-      <PayMeSheet open={payMe.open} person={payMe.person} amount={payMe.amount} onClose={() => setPayMe((x) => ({ ...x, open: false }))} />
+      <PayMeSheet open={payMe.open} person={payMe.person} amount={payMe.amount} items={payMe.items} onClose={() => setPayMe((x) => ({ ...x, open: false }))} />
     </PushScreen>
   );
 }
