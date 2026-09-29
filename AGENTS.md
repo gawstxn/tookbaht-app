@@ -28,9 +28,10 @@ Personal-finance PWA used on an iPhone as an installed app. Thai-first (English 
 - **Layout:** mobile first at 390–430px wide (the shell caps at 430px); verify at 414×896.
 - **Data flow:** the Zustand store updates the screen first, then writes to Supabase and rolls back on failure (`save()` in `lib/store.ts`). Money maths, dates, schedules and filters live in pure functions in `lib/` with unit tests.
 - **Database:** new tables start with no API access (default privileges are revoked): grant exactly what the app uses, never `all`, and never TRUNCATE (it skips RLS). Every table has `user_id` plus RLS; cross-row references use composite `(id, user_id)` foreign keys. Scheduled work (auto-log, reminders, alerts) belongs in SQL functions with DB tests in `tests/db`. A new migration must also be applied to production with `npx supabase db push` when its PR is merged.
+- **Database size:** production is on the Supabase free tier, 500 MB for the whole database (indexes, `auth` and `cron` included). A transaction costs about 330 bytes with its indexes. Every new user table gets a row cap (`enforce_row_cap`); a table that only remembers what was already sent or done gets purged in `purge_old_logs()`; don't store what can be worked out from rows already kept; prefer partial indexes (`where x is not null`) on mostly-empty columns. Check the size (Supabase dashboard → Database → Database size) before merging anything that stores a new row per user per day.
 - **Navigation:** route changes animate with React `ViewTransition` (`PageTransition` in `components/AppShell.tsx`): deeper paths slide in, shallower ones slide back, tab roots switch instantly. For close / back buttons use `useGoBack(fallback)` from `lib/nav.ts`, not `router.back()`, which doesn't animate.
 - **Per-device settings** (theme, language before sign-in, app lock) live in localStorage; account-wide settings live in `profiles.settings`.
-- **Legal pages:** when a change affects what data is kept, why, where, or for how long (new fields, retention, notifications, on-device storage), update `components/legal/PrivacyContent.tsx` / `TermsContent.tsx` in both languages and bump `TERMS_VERSION` in `lib/legal.ts` so users accept the new version.
+- **Legal pages:** when a change affects what data is kept, why, where, or for how long (new fields, retention, notifications, on-device storage), update `components/legal/PrivacyContent.tsx` / `TermsContent.tsx` in both languages and bump `TERMS_VERSION` in `lib/legal.ts` so users accept the new version. Set `TERMS_UPDATED` to the day you make the change, read from the clock (`TZ=Asia/Bangkok date +%F`); `TERMS_VERSION` is a label, not a date (see the comment in `lib/legal.ts`).
 
 ## Performance
 
@@ -51,6 +52,25 @@ Personal-finance PWA used on an iPhone as an installed app. Thai-first (English 
 
 - Branch from `main` (`feat/…`, `fix/…`), Conventional Commits, bump the version (below), open a PR with a test plan.
 - Merge only when the user asks, after CI is green; confirm the Vercel production deploy afterwards.
+
+# Dates
+
+Never invent or count forward a date: take it from the clock (`TZ=Asia/Bangkok date +%F`) or from git. The terms page showed 16 Oct on 29 Sep because `TERMS_VERSION` was bumped a day per change and later copied from a migration name.
+
+- `TERMS_UPDATED` is the day the legal text changed; a unit test fails if it's in the future.
+- Migration file names only set the order. The newest ones are already dated ahead of the calendar and can't be renamed (production has applied them), and `db push` refuses a file that sorts before the last one applied. Name a new migration after the newest file: today's timestamp if that is later, otherwise the newest name plus one second (`20261017000000` → `20261017000001`), never plus a day. Never use a migration name as "today".
+- Tests that depend on today use `current_date` / `user_today()` in SQL or build dates from `new Date()`, never hard-coded days that go stale.
+
+# Mistakes that keep coming back
+
+Each of these reached users at least once; check them before opening a PR.
+
+- **Fixing one place only.** A behaviour lives in several screens (hiding amounts on Home but not in the account picker; delete confirmations; pickers). Grep for every place that does the same thing and change them together, or move it into one shared component.
+- **iOS Safari, not only Chromium.** Headless Chromium hides WebKit layout bugs: an element that takes its height from an image (round avatars turned into ovals), and Face ID in home-screen apps. Give sized boxes an explicit size, and say in the PR when something needs a check on a real iPhone.
+- **Thai text length.** Thai labels are often longer than the English ones: check both languages at 390px wide for wrapping and cramped rows (onboarding balance label, split rows, tier labels).
+- **Callbacks in effect dependencies.** A parent that passes a new function each render re-runs the child's effect (the sheet that pulled focus off the text field after every keystroke). Read callbacks through a ref inside effects.
+- **End states only.** Transitions that looked fine before and after but ghosted or didn't slide mid-flight: see "Verifying changes".
+- **Rules already listed above** (native pickers, emoji, `confirm()`, hard-coded copy or colours) each needed a fix PR before they became rules; search the diff for them.
 
 # Versioning
 
