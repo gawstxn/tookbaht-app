@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { baht, daysInMonth, displayYear, monthLabel, monthNamesShort, shortDate, todayISO, weekdayNamesShort } from "@/lib/format";
+import { addDays, baht, daysInMonth, displayYear, monthLabel, monthNamesShort, shortDate, todayISO, weekdayNamesShort } from "@/lib/format";
 import type { MonthForecast } from "@/lib/forecast";
+import type { Period } from "@/lib/period";
 import { compact, dailySpend, netWorthSeries, niceTicks } from "@/lib/insights";
 import { useStore } from "@/lib/store";
 import { TxRow } from "./app";
@@ -182,14 +183,14 @@ export function NetWorthChart() {
 }
 
 /** Where this month's spending is heading: the running total so far, then dashed to month end, against the budget. */
-export function ForecastCard({ forecast: f, month }: { forecast: MonthForecast; month: string }) {
+export function ForecastCard({ forecast: f, period }: { forecast: MonthForecast; period: Period }) {
   const { t } = useTranslation();
   const days = f.actual.length + f.ahead.length;
   const ticks = niceTicks(Math.max(f.projected, f.budget), 3);
   const hi = ticks[ticks.length - 1] || 1;
   const plotH = H - TOP - BOTTOM;
   const band = (W - LEFT) / days;
-  const x = (d: number) => LEFT + band * (d - 0.5); // d = day of month
+  const x = (d: number) => LEFT + band * (d - 0.5); // d = day of the user's month (1 = its first day)
   const y = (v: number) => TOP + plotH - (v / hi) * plotH;
   const today = f.actual.length;
   const over = f.budget > 0 ? f.projected - f.budget : 0;
@@ -229,7 +230,7 @@ export function ForecastCard({ forecast: f, month }: { forecast: MonthForecast; 
         <circle cx={x(today)} cy={y(f.actual[today - 1])} r={4} fill="var(--color-chart-out)" stroke="var(--color-card)" strokeWidth={2} />
         {[1, today, days].filter((d, i, a) => a.indexOf(d) === i && (d === today || Math.abs(d - today) > 4)).map((d) => (
           <text key={d} x={x(d)} y={H - 5} textAnchor={d === 1 ? "start" : d === days ? "end" : "middle"} fontSize={10} fontWeight={d === today ? 600 : 400} fill={d === today ? "var(--color-ink)" : "var(--color-muted)"}>
-            {d === today ? t("forecast.today") : `${d} ${monthNamesShort()[Number(month.slice(5, 7)) - 1]}`}
+            {d === today ? t("forecast.today") : shortDate(addDays(period.start, d - 1), false)}
           </text>
         ))}
       </svg>

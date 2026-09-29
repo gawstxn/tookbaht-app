@@ -8,7 +8,8 @@ import { PrimaryButton, Sheet, SwitchRow } from "./ui/primitives";
 import { categoryLabel } from "@/lib/constants";
 import { monthLabel } from "@/lib/format";
 import { cardBaht, cardPct, monthCard, type MonthCard } from "@/lib/monthCard";
-import { useStore } from "@/lib/store";
+import { periodFor } from "@/lib/period";
+import { useStartDay, useStore } from "@/lib/store";
 
 /* Story-sized image (9:16). */
 const W = 1080;
@@ -101,7 +102,8 @@ export function MonthCardSheet({ open, onClose, month }: { open: boolean; onClos
   const { t } = useTranslation();
   const txs = useStore((s) => s.transactions);
   const wishes = useStore((s) => s.wishes);
-  const card = useMemo(() => monthCard(txs, wishes, month), [txs, wishes, month]);
+  const startDay = useStartDay();
+  const card = useMemo(() => monthCard(txs, wishes, periodFor(month, startDay)), [txs, wishes, month, startDay]);
   // Percentages by default: real amounts only when the user asks for them.
   const [amounts, setAmounts] = useState(false);
   const [image, setImage] = useState<{ key: string; blob: Blob; url: string } | null>(null);

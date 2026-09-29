@@ -1,4 +1,5 @@
-import { daysInMonth, dueDatesUntil, monthKey } from "./format";
+import { dueDatesUntil } from "./format";
+import { dayOfPeriod, inPeriod, periodDays, type Period } from "./period";
 import { monthTransactions, summarize } from "./selectors";
 import type { Subscription, Transaction } from "./types";
 
@@ -15,13 +16,13 @@ export interface MonthForecast {
   projected: number;
   /** Overall monthly budget, 0 when none is set. */
   budget: number;
-  /** Spent by the end of each day so far (index 0 = day 1, last = today). */
+  /** Spent by the end of each day so far (index 0 = the month's first day, last = today). */
   actual: number[];
   /** Projected running total for each day after today. */
   ahead: number[];
 }
 
-/** Forecasts show from this day of the month; before that one day's spending says too little. */
+/** Forecasts show from this day of the user's month; before that one day's spending says too little. */
 export const FORECAST_FROM_DAY = 3;
 
 /**
@@ -34,29 +35,28 @@ export function monthForecast(
   txs: Transaction[],
   subs: Subscription[],
   budget: number,
-  month: string,
+  month: Period,
   today: string,
   thb: (s: Subscription) => number = (s) => s.amount,
 ): MonthForecast | null {
-  if (monthKey(today) !== month) return null;
-  const day = Number(today.slice(8, 10));
+  if (!inPeriod(today, month)) return null;
+  const day = dayOfPeriod(today, month);
   if (day < FORECAST_FROM_DAY) return null;
-  const [y, m] = month.split("-").map(Number);
-  const days = daysInMonth(y, m - 1);
-  const end = `${month}-${String(days).padStart(2, "0")}`;
+  const days = periodDays(month);
+  const end = month.end;
 
   const inMonth = monthTransactions(txs, month).filter((t) => t.date <= today);
   const spent = summarize(inMonth).expense;
   if (spent <= 0) return null;
   const perDay = summarize(inMonth.filter((t) => !t.subscriptionId)).expense / day;
 
-  // Known charges by day of month, after today.
+  // Known charges by day of the month (1 = its first day), after today.
   const dueOn = new Map<number, number>();
   for (const s of subs) {
     if (s.paused || s.entryType !== "out") continue;
     dueDatesUntil(s.startDate, s.cycle, end).forEach((d, i) => {
       if (d <= today || (s.installments && i >= s.installments)) return;
-      const n = Number(d.slice(8, 10));
+      const n = dayOfPeriod(d, month);
       dueOn.set(n, (dueOn.get(n) ?? 0) + thb(s));
     });
   }
@@ -64,7 +64,7 @@ export function monthForecast(
 
   const byDay = new Map<number, Transaction[]>();
   for (const t of inMonth) {
-    const n = Number(t.date.slice(8, 10));
+    const n = dayOfPeriod(t.date, month);
     byDay.set(n, [...(byDay.get(n) ?? []), t]);
   }
   const actual: number[] = [];

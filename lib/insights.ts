@@ -1,4 +1,5 @@
 import { daysInMonth, shiftMonth } from "./format";
+import { periodFor, shiftPeriod, type Period } from "./period";
 import { MASK, isMasked } from "./money";
 import { monthTransactions, spendByCategory, summarize } from "./selectors";
 import type { Account, Transaction } from "./types";
@@ -10,16 +11,16 @@ export interface MonthTotals {
 }
 
 /** Income and expense for the `count` months ending with `lastMonth`, oldest first. Transfers are left out. */
-export function monthlySeries(txs: Transaction[], lastMonth: string, count = 6): MonthTotals[] {
+export function monthlySeries(txs: Transaction[], lastMonth: Period, count = 6): MonthTotals[] {
   return Array.from({ length: count }, (_, i) => {
-    const month = shiftMonth(lastMonth, i - count + 1);
-    const { income, expense } = summarize(monthTransactions(txs, month));
-    return { month, income, expense };
+    const p = shiftPeriod(lastMonth, i - count + 1);
+    const { income, expense } = summarize(monthTransactions(txs, p));
+    return { month: p.key, income, expense };
   });
 }
 
 /** A month's spending by category, largest first, with each one's share of the total. */
-export function categoryBreakdown(txs: Transaction[], month: string): { key: string; amount: number; share: number }[] {
+export function categoryBreakdown(txs: Transaction[], month: Period): { key: string; amount: number; share: number }[] {
   const byCat = spendByCategory(monthTransactions(txs, month));
   const total = Object.values(byCat).reduce((a, b) => a + b, 0);
   return Object.entries(byCat)
@@ -27,10 +28,10 @@ export function categoryBreakdown(txs: Transaction[], month: string): { key: str
     .sort((a, b) => b.amount - a.amount);
 }
 
-/** Spending per day of a month ("YYYY-MM-DD" → amount), repayments taken off like summarize(). */
+/** Spending per day of a calendar month ("YYYY-MM-DD" → amount), repayments taken off like summarize(). */
 export function dailySpend(txs: Transaction[], month: string): Record<string, number> {
   const byDay = new Map<string, Transaction[]>();
-  for (const t of monthTransactions(txs, month)) byDay.set(t.date, [...(byDay.get(t.date) ?? []), t]);
+  for (const t of monthTransactions(txs, periodFor(month, 1))) byDay.set(t.date, [...(byDay.get(t.date) ?? []), t]);
   const out: Record<string, number> = {};
   for (const [day, list] of byDay) {
     const spent = summarize(list).expense;
@@ -107,7 +108,7 @@ export function yearsWithData(txs: Transaction[]): number[] {
 export function yearSummary(txs: Transaction[], year: number): YearSummary {
   const inYear = txs.filter((t) => t.date.startsWith(`${year}-`));
   const { income, expense } = summarize(inYear);
-  const months = monthlySeries(txs, `${year}-12`, 12);
+  const months = monthlySeries(txs, periodFor(`${year}-12`, 1), 12);
   const active = months.filter((m) => m.income || m.expense);
   const byNet = [...active].sort((a, b) => b.income - b.expense - (a.income - a.expense));
   const cats = spendByCategory(inYear);

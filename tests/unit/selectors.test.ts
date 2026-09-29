@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { accountBalance, accountDeleteBlock, accountDue, chargesSoFar, creditSummary, daysLeftInMonth, planInterest, planReserved, filterTransactions, monthPace, nextCharge, reconcileEntry, spendByCategory, subscriptionTotals, summarize, upcomingSubscriptions } from "@/lib/selectors";
 import type { Account, Subscription, Transaction } from "@/lib/types";
+import { periodFor } from "@/lib/period";
+
+/** A calendar month as a period (start day 1). */
+const cal = (key: string) => periodFor(key, 1);
 
 let n = 0;
 const tx = (p: Partial<Transaction> & Pick<Transaction, "type" | "amount">): Transaction => ({ id: `t${n++}`, date: "2026-09-10", title: "", createdAt: 0, ...p });
@@ -60,11 +64,11 @@ describe("subscription totals", () => {
 
 describe("month progress", () => {
   it("tracks how far into the month we are", () => {
-    expect(monthPace("2026-09", "2026-09-15")).toBe(0.5);
-    expect(monthPace("2026-08", "2026-09-15")).toBe(1);
-    expect(monthPace("2026-10", "2026-09-15")).toBe(0);
-    expect(daysLeftInMonth("2026-09", "2026-09-25")).toBe(5);
-    expect(daysLeftInMonth("2026-08", "2026-09-25")).toBe(0);
+    expect(monthPace(cal("2026-09"), "2026-09-15")).toBe(0.5);
+    expect(monthPace(cal("2026-08"), "2026-09-15")).toBe(1);
+    expect(monthPace(cal("2026-10"), "2026-09-15")).toBe(0);
+    expect(daysLeftInMonth(cal("2026-09"), "2026-09-25")).toBe(5);
+    expect(daysLeftInMonth(cal("2026-08"), "2026-09-25")).toBe(0);
   });
 });
 

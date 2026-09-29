@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { recurringCandidates, runway, unusualCategories } from "@/lib/habits";
 import type { Account, Subscription, Transaction } from "@/lib/types";
+import { periodFor } from "@/lib/period";
+
+/** A calendar month as a period (start day 1). */
+const cal = (key: string) => periodFor(key, 1);
 
 let seq = 0;
 const tx = (p: Partial<Transaction>): Transaction => ({ id: `t${++seq}`, type: "out", amount: 100, date: "2026-09-01", title: "x", category: "food", accountId: "a1", createdAt: seq, ...p });
@@ -58,18 +62,18 @@ describe("categories above usual", () => {
 
   it("compares with the earlier months scaled to the days gone", () => {
     // 20 of 30 days → usual so far 2,000; spent 3,000 = 50% more.
-    const u = unusualCategories([...hist, tx({ amount: 3000, date: "2026-09-12" })], "2026-09", TODAY);
+    const u = unusualCategories([...hist, tx({ amount: 3000, date: "2026-09-12" })], cal("2026-09"), TODAY);
     expect(u).toEqual([{ key: "food", spent: 3000, usual: 2000, over: 0.5 }]);
   });
 
   it("stays quiet for small or early differences and thin history", () => {
-    expect(unusualCategories([...hist, tx({ amount: 2200, date: "2026-09-12" })], "2026-09", TODAY)).toEqual([]);
-    expect(unusualCategories([...hist, tx({ amount: 3000, date: "2026-09-02" })], "2026-09", "2026-09-05")).toEqual([]);
-    expect(unusualCategories([hist[2], tx({ amount: 9000, date: "2026-09-12" })], "2026-09", TODAY)).toEqual([]);
+    expect(unusualCategories([...hist, tx({ amount: 2200, date: "2026-09-12" })], cal("2026-09"), TODAY)).toEqual([]);
+    expect(unusualCategories([...hist, tx({ amount: 3000, date: "2026-09-02" })], cal("2026-09"), "2026-09-05")).toEqual([]);
+    expect(unusualCategories([hist[2], tx({ amount: 9000, date: "2026-09-12" })], cal("2026-09"), TODAY)).toEqual([]);
   });
 
   it("uses the whole month for past months", () => {
-    const u = unusualCategories([tx({ amount: 1000, date: "2026-05-05" }), ...hist, tx({ amount: 5000, date: "2026-08-20" })], "2026-08", TODAY);
+    const u = unusualCategories([tx({ amount: 1000, date: "2026-05-05" }), ...hist, tx({ amount: 5000, date: "2026-08-20" })], cal("2026-08"), TODAY);
     // Aug = 3,000 + 5,000 against the May–Jul average of (1,000 + 3,000 + 3,000) / 3.
     expect(u[0]).toMatchObject({ key: "food", spent: 8000, usual: 2333.33 });
   });

@@ -10,17 +10,18 @@ import { baht, todayISO } from "@/lib/format";
 import { rolloverCarry } from "@/lib/budget";
 import { daysLeftInMonth, monthPace, monthTransactions, spendByCategory, summarize } from "@/lib/selectors";
 import { useTranslation } from "react-i18next";
-import { useStore } from "@/lib/store";
+import { useStore, useViewPeriod } from "@/lib/store";
 
 export default function GoalsPage() {
-  const { transactions, goals, viewMonth } = useStore();
+  const { transactions, goals } = useStore();
+  const period = useViewPeriod();
   const { t: tr } = useTranslation();
   const today = todayISO();
-  const month = monthTransactions(transactions, viewMonth);
+  const month = monthTransactions(transactions, period);
   const sum = summarize(month);
   const byCat = spendByCategory(month);
-  const pace = monthPace(viewMonth, today);
-  const left = daysLeftInMonth(viewMonth, today);
+  const pace = monthPace(period, today);
+  const left = daysLeftInMonth(period, today);
 
   const incomePct = goals.incomeTarget ? sum.income / goals.incomeTarget : 0;
   const expensePct = goals.expenseBudget ? sum.expense / goals.expenseBudget : 0;
@@ -29,7 +30,7 @@ export default function GoalsPage() {
   const remaining = goals.expenseBudget - sum.expense;
   const perDay = left > 0 ? Math.max(0, remaining) / left : 0;
 
-  const carry = rolloverCarry(goals, transactions, viewMonth);
+  const carry = rolloverCarry(goals, transactions, period);
   const cats = Object.entries(goals.categoryBudgets)
     .filter(([, b]) => b > 0)
     .map(([key, base]) => {

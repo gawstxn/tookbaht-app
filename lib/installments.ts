@@ -1,4 +1,5 @@
 import { monthKey, shiftMonth, stepCycle } from "./format";
+import { periodFor } from "./period";
 import { monthTransactions, summarize } from "./selectors";
 import type { Subscription, Transaction } from "./types";
 
@@ -52,7 +53,7 @@ export function installmentOutlook(subs: Subscription[], txs: Transaction[], tod
     if (counted) planCount++;
   }
   if (!planCount) return null;
-  const past = [1, 2, 3].map((i) => summarize(monthTransactions(txs, shiftMonth(thisMonth, -i))).income).filter((v) => v > 0);
+  const past = [1, 2, 3].map((i) => summarize(monthTransactions(txs, periodFor(shiftMonth(thisMonth, -i), 1))).income).filter((v) => v > 0);
   return {
     months: months.map((m) => ({ ...m, amount: round2(m.amount) })),
     remaining: round2(remaining),

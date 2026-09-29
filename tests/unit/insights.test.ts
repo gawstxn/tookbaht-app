@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { categoryBreakdown, compact, dailySpend, monthlySeries, netWorthSeries, niceTicks, yearSummary, yearsWithData } from "@/lib/insights";
 import type { Transaction } from "@/lib/types";
+import { periodFor } from "@/lib/period";
+
+/** A calendar month as a period (start day 1). */
+const cal = (key: string) => periodFor(key, 1);
 
 let n = 0;
 const tx = (type: Transaction["type"], amount: number, date: string, category?: string): Transaction => ({
@@ -19,7 +23,7 @@ const txs = [
 
 describe("insights", () => {
   it("builds six months of income and expense, oldest first, without transfers", () => {
-    expect(monthlySeries(txs, "2026-09")).toEqual([
+    expect(monthlySeries(txs, cal("2026-09"))).toEqual([
       { month: "2026-04", income: 0, expense: 2000 },
       { month: "2026-05", income: 0, expense: 0 },
       { month: "2026-06", income: 0, expense: 0 },
@@ -30,15 +34,15 @@ describe("insights", () => {
   });
 
   it("crosses year boundaries", () => {
-    expect(monthlySeries([], "2026-02", 3).map((m) => m.month)).toEqual(["2025-12", "2026-01", "2026-02"]);
+    expect(monthlySeries([], cal("2026-02"), 3).map((m) => m.month)).toEqual(["2025-12", "2026-01", "2026-02"]);
   });
 
   it("ranks a month's spending by category with shares", () => {
-    expect(categoryBreakdown(txs, "2026-09")).toEqual([
+    expect(categoryBreakdown(txs, cal("2026-09"))).toEqual([
       { key: "bill", amount: 8500, share: 0.85 },
       { key: "food", amount: 1500, share: 0.15 },
     ]);
-    expect(categoryBreakdown(txs, "2026-05")).toEqual([]);
+    expect(categoryBreakdown(txs, cal("2026-05"))).toEqual([]);
   });
 
   it("picks clean axis ticks", () => {

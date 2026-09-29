@@ -11,7 +11,7 @@ import { baht, baht2, dayHeading, shortDate, todayISO } from "@/lib/format";
 import { filterTransactions, monthTransactions, summarize, type TxFilter } from "@/lib/selectors";
 import { useTranslation } from "react-i18next";
 import { txTitle } from "@/lib/txTitle";
-import { useStore } from "@/lib/store";
+import { useStore, useViewPeriod } from "@/lib/store";
 import { knownTags } from "@/lib/tags";
 import type { Transaction, TxType } from "@/lib/types";
 
@@ -21,7 +21,8 @@ const PAGE_DAYS = 10;
 type Filter = "all" | TxType;
 
 export default function TransactionsPage() {
-  const { transactions, viewMonth, accounts } = useStore();
+  const { transactions, accounts } = useStore();
+  const period = useViewPeriod();
   const { t: tr } = useTranslation();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
@@ -35,8 +36,8 @@ export default function TransactionsPage() {
   const ranged = !!(scope.from || scope.to || scope.tag);
 
   const month = useMemo(
-    () => filterTransactions(ranged ? transactions : monthTransactions(transactions, viewMonth), scope),
-    [transactions, viewMonth, scope, ranged],
+    () => filterTransactions(ranged ? transactions : monthTransactions(transactions, period), scope),
+    [transactions, period, scope, ranged],
   );
   const sum = useMemo(() => summarize(month), [month]);
   const active = [

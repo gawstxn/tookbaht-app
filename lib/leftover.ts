@@ -1,8 +1,8 @@
-import { monthKey, shiftMonth } from "./format";
+import { dayOfPeriod, periodOf, shiftPeriod, type Period } from "./period";
 import { monthTransactions, summarize } from "./selectors";
 import type { Account, Goals, Transaction } from "./types";
 
-/** The offer shows on the first days of a month only. */
+/** The offer shows on the first days of the user's month only. */
 export const LEFTOVER_DAYS = 7;
 /** Less than this isn't worth a prompt. */
 export const LEFTOVER_MIN = 100;
@@ -10,6 +10,7 @@ export const LEFTOVER_MIN = 100;
 export interface LeftoverOffer {
   /** The month that ended ("YYYY-MM"). */
   month: string;
+  period: Period;
   /** Whole baht left over. */
   amount: number;
   /** True when it's the budget that was left over (else income minus spending). */
@@ -24,25 +25,34 @@ export interface LeftoverOffer {
  * Null once the user saved or skipped that month (`handled`), after the
  * first LEFTOVER_DAYS days, without an open goal, or when little is left.
  */
-export function leftoverOffer(goals: Goals, txs: Transaction[], today: string, handled: string | undefined, hasOpenGoal: boolean): LeftoverOffer | null {
-  if (!hasOpenGoal || Number(today.slice(8, 10)) > LEFTOVER_DAYS) return null;
-  const month = shiftMonth(monthKey(today), -1);
+export function leftoverOffer(
+  goals: Goals,
+  txs: Transaction[],
+  today: string,
+  handled: string | undefined,
+  hasOpenGoal: boolean,
+  startDay: number,
+): LeftoverOffer | null {
+  const current = periodOf(today, startDay);
+  if (!hasOpenGoal || dayOfPeriod(today, current) > LEFTOVER_DAYS) return null;
+  const period = shiftPeriod(current, -1);
+  const month = period.key;
   if (handled && handled >= month) return null;
-  const list = monthTransactions(txs, month);
+  const list = monthTransactions(txs, period);
   if (!list.length) return null;
   const { income, expense } = summarize(list);
   const fromBudget = goals.expenseBudget > 0;
   let left = fromBudget ? goals.expenseBudget - expense : income - expense;
   if (fromBudget && income > 0) left = Math.min(left, income - expense);
   const amount = Math.floor(left);
-  return amount >= LEFTOVER_MIN ? { month, amount, fromBudget } : null;
+  return amount >= LEFTOVER_MIN ? { month, period, amount, fromBudget } : null;
 }
 
 /**
  * Where to move the money from: the account last month's income went into
  * most, else the first bank or cash account; never credit or the goal's own account.
  */
-export function leftoverSource(accounts: Account[], txs: Transaction[], month: string, goalAccountId?: string | null): string | null {
+export function leftoverSource(accounts: Account[], txs: Transaction[], month: Period, goalAccountId?: string | null): string | null {
   const ok = accounts.filter((a) => a.kind !== "credit" && a.id !== goalAccountId);
   const byIncome = new Map<string, number>();
   for (const t of monthTransactions(txs, month)) {

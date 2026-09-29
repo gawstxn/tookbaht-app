@@ -5,6 +5,7 @@ import { useMemo, useSyncExternalStore } from "react";
 import { todayISO } from "@/lib/format";
 import { buildNotifications, isUnread, type NotifKind } from "@/lib/notifications";
 import { useTranslation } from "react-i18next";
+import { cycleStartDay } from "@/lib/period";
 import { useStore } from "@/lib/store";
 import { Icon, type IconName } from "./ui/Icon";
 
@@ -20,8 +21,8 @@ export function useNotifications() {
   const { accounts, transactions, subscriptions, goals, settings, wishes } = useStore();
   const now = useSyncExternalStore(subscribeMinute, minuteNow, () => 0);
   const items = useMemo(
-    () => (now ? buildNotifications({ accounts, transactions, subscriptions, goals, wishes, today: todayISO(), now }) : []),
-    [accounts, transactions, subscriptions, goals, wishes, now],
+    () => (now ? buildNotifications({ accounts, transactions, subscriptions, goals, wishes, today: todayISO(), now, startDay: cycleStartDay(settings) }) : []),
+    [accounts, transactions, subscriptions, goals, wishes, now, settings],
   );
   const unread = items.filter((n) => isUnread(n, settings));
   return { items, unread, settings };

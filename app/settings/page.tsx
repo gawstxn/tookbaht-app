@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PushScreen } from "@/components/app";
+import { CycleDaySheet } from "@/components/CycleDaySheet";
 import { LockSettings } from "@/components/LockSettings";
 import { PushToggle } from "@/components/PushToggle";
 import { ChoiceSheet, Group, NavRow } from "@/components/settingsUi";
@@ -10,15 +11,16 @@ import { PushHeader, SwitchRow } from "@/components/ui/primitives";
 import { readLock } from "@/lib/appLock";
 import { currentLang, type Lang } from "@/lib/i18n";
 import { useGoBack } from "@/lib/nav";
-import { useStore } from "@/lib/store";
+import { useStartDay, useStore } from "@/lib/store";
 import { setThemePref, themePref, type ThemePref } from "@/lib/theme";
 
-/** Everything about how the app behaves: display, app lock and notifications. */
+/** Everything about how the app behaves: display, when the month starts, app lock and notifications. */
 export default function SettingsPage() {
   const { t: tr } = useTranslation();
   const goBack = useGoBack("/profile");
   const { settings, setLanguage, setSettings, notify } = useStore();
-  const [sheet, setSheet] = useState<"" | "lang" | "theme" | "lock">("");
+  const [sheet, setSheet] = useState<"" | "lang" | "theme" | "lock" | "cycle">("");
+  const startDay = useStartDay();
   // Per-device settings, read after mount.
   const [lock, setLock] = useState(readLock);
   const [theme, setTheme] = useState<ThemePref>(themePref);
@@ -48,6 +50,10 @@ export default function SettingsPage() {
             notify(on ? tr("profile.keypadMathOn") : tr("profile.keypadMathOff"));
           }}
         />
+      </Group>
+
+      <Group title={tr("payCycle.group")}>
+        <NavRow label={tr("payCycle.row")} value={startDay === 1 ? tr("payCycle.calendar") : String(startDay)} onClick={() => setSheet("cycle")} />
       </Group>
 
       <Group title={tr("lock.group")}>
@@ -104,6 +110,16 @@ export default function SettingsPage() {
         }}
       />
 
+      <CycleDaySheet
+        open={sheet === "cycle"}
+        value={startDay}
+        onClose={() => setSheet("")}
+        onSave={(day) => {
+          setSheet("");
+          setSettings({ cycleStartDay: day });
+          notify(tr("payCycle.saved", { day }));
+        }}
+      />
       <LockSettings open={sheet === "lock"} onClose={() => setSheet("")} onChange={setLock} />
     </PushScreen>
   );

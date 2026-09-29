@@ -19,12 +19,13 @@ import { baht, splitDecimals, todayISO } from "@/lib/format";
 import { debtsByPerson } from "@/lib/ious";
 import { isService, monthTransactions, summarize, upcomingSubscriptions } from "@/lib/selectors";
 import { useTranslation } from "react-i18next";
-import { useStore } from "@/lib/store";
+import { useStore, useViewPeriod } from "@/lib/store";
 import { setAmountsHidden, useAmountsHidden } from "@/lib/hideAmounts";
 import type { Transaction } from "@/lib/types";
 
 export default function OverviewPage() {
-  const { transactions, subscriptions, goals, viewMonth, ious } = useStore();
+  const { transactions, subscriptions, goals, ious } = useStore();
+  const period = useViewPeriod();
   const owed = useMemo(() => debtsByPerson(ious), [ious]);
   const owing = useMemo(() => debtsByPerson(ious, "i_owe"), [ious]);
   const [selected, setSelected] = useState<Transaction | null>(null);
@@ -32,16 +33,16 @@ export default function OverviewPage() {
   const hidden = useAmountsHidden();
   const today = todayISO();
 
-  const month = useMemo(() => monthTransactions(transactions, viewMonth), [transactions, viewMonth]);
+  const month = useMemo(() => monthTransactions(transactions, period), [transactions, period]);
   const sum = useMemo(() => summarize(month), [month]);
   const upcoming = useMemo(() => upcomingSubscriptions(subscriptions.filter((s) => s.entryType !== "in"), today).slice(0, 3), [subscriptions, today]);
   const recent = useMemo(
     () => [...month].sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt).slice(0, 5),
     [month],
   );
-  const monthGoals = useMemo(() => withCarry(goals, rolloverCarry(goals, transactions, viewMonth)), [goals, transactions, viewMonth]);
-  const banner = budgetBanner(monthGoals, month, viewMonth, today);
-  const allowance = useMemo(() => dailyAllowance(goals, month, viewMonth, today), [goals, month, viewMonth, today]);
+  const monthGoals = useMemo(() => withCarry(goals, rolloverCarry(goals, transactions, period)), [goals, transactions, period]);
+  const banner = budgetBanner(monthGoals, month, period, today);
+  const allowance = useMemo(() => dailyAllowance(goals, month, period, today), [goals, month, period, today]);
   const [whole, dec] = splitDecimals(sum.net);
   const incomePct = goals.incomeTarget ? sum.income / goals.incomeTarget : 0;
   const expensePct = goals.expenseBudget ? sum.expense / goals.expenseBudget : 0;

@@ -1,5 +1,6 @@
 import { categoryLabel } from "./constants";
-import { baht, monthKey, shiftMonth } from "./format";
+import { baht } from "./format";
+import { inPeriod, shiftPeriod, type Period } from "./period";
 import { t } from "./i18n";
 import { daysLeftInMonth, monthTransactions, spendByCategory, summarize } from "./selectors";
 import type { Goals, Transaction } from "./types";
@@ -16,10 +17,10 @@ export interface BudgetLine {
  * What each rollover category carries into `month`: last month's budget
  * minus what it spent, never below zero (one month back only).
  */
-export function rolloverCarry(goals: Goals, txs: Transaction[], month: string): Record<string, number> {
+export function rolloverCarry(goals: Goals, txs: Transaction[], month: Period): Record<string, number> {
   const keys = (goals.rolloverKeys ?? []).filter((k) => (goals.categoryBudgets[k] ?? 0) > 0);
   if (!keys.length) return {};
-  const spent = spendByCategory(monthTransactions(txs, shiftMonth(month, -1)));
+  const spent = spendByCategory(monthTransactions(txs, shiftPeriod(month, -1)));
   return Object.fromEntries(keys.map((k) => [k, Math.max(0, goals.categoryBudgets[k] - (spent[k] ?? 0))]));
 }
 
@@ -53,8 +54,8 @@ export interface DailyAllowance {
 }
 
 /** Today's share of the monthly budget, for the current month only (null without an overall budget). */
-export function dailyAllowance(goals: Goals, monthTxs: Transaction[], month: string, today: string): DailyAllowance | null {
-  if (goals.expenseBudget <= 0 || monthKey(today) !== month) return null;
+export function dailyAllowance(goals: Goals, monthTxs: Transaction[], month: Period, today: string): DailyAllowance | null {
+  if (goals.expenseBudget <= 0 || !inPeriod(today, month)) return null;
   const before = summarize(monthTxs.filter((t) => t.date < today)).expense;
   const spentToday = summarize(monthTxs.filter((t) => t.date === today)).expense;
   const perDay = Math.max(0, goals.expenseBudget - before) / (daysLeftInMonth(month, today) + 1);
@@ -79,7 +80,7 @@ const pct = (l: BudgetLine) => `${Math.round(l.pct * 100)}%`;
  * One-line budget status for the overview, most urgent first:
  * total over → several over → one over (+ near) → several near → one near → on plan → no budget.
  */
-export function budgetBanner(goals: Goals, monthTxs: Transaction[], month: string, today: string): BudgetBanner {
+export function budgetBanner(goals: Goals, monthTxs: Transaction[], month: Period, today: string): BudgetBanner {
   const { cats, total } = budgetLines(goals, monthTxs);
   if (!total && !cats.length) {
     return { tone: "setup", title: t("banner.setupTitle"), detail: t("banner.setupDetail") };
