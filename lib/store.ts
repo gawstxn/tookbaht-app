@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { create } from "zustand";
 import { TYPE_META, registerCustomCategories } from "./constants";
 import { fetchAll, fromRow, toRow, type IouRow, type TransactionRow } from "./db";
@@ -7,6 +8,7 @@ import { applyLang, currentLang, t, type Lang } from "./i18n";
 import { TERMS_VERSION } from "./legal";
 import { baht, shortDate, toISO, todayISO } from "./format";
 import { impliedFeePct, type UsdRate } from "./fx";
+import { cycleStartDay, periodFor, periodOf, type Period } from "./period";
 import { clearTripDrafts } from "./tripSplit";
 import { isDuplicate, isNetworkError, online, outbox, runOp, snapshot, type Op } from "./offline";
 import { getSupabase } from "./supabase/client";
@@ -811,6 +813,25 @@ if (typeof window !== "undefined") {
       if (now.userId === userId && now.status === "ready") snapshot<Snapshot>(userId).save(toSnapshot(now));
     }, 800);
   });
+}
+
+// Show the user's current month again when their month's start day changes (also once their settings load).
+let lastStartDay = 1;
+useStore.subscribe((s) => {
+  const day = cycleStartDay(s.settings);
+  if (day === lastStartDay) return;
+  lastStartDay = day;
+  useStore.setState({ viewMonth: periodOf(todayISO(), day).key });
+});
+
+/** First day of the user's month (settings.cycleStartDay, 1 when unset). */
+export const useStartDay = () => useStore((s) => cycleStartDay(s.settings));
+
+/** The month on screen (viewMonth) as the user's period. */
+export function useViewPeriod(): Period {
+  const key = useStore((s) => s.viewMonth);
+  const day = useStartDay();
+  return useMemo(() => periodFor(key, day), [key, day]);
 }
 
 // Keep the user's own category names resolvable everywhere (lib/constants.ts).

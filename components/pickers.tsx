@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useStore } from "@/lib/store";
+import { useStartDay, useStore } from "@/lib/store";
+import { periodFor, periodOf, periodRange } from "@/lib/period";
 import { useTranslation } from "react-i18next";
 import { daysInMonth, displayYear, monthLabel, monthNamesShort, shiftMonth, todayISO, toISO, monthKey, weekdayNamesShort, shortDate } from "@/lib/format";
 import { accountSubtitle } from "@/lib/selectors";
@@ -320,13 +321,16 @@ export function MonthSwitcher() {
   const viewMonth = useStore((s) => s.viewMonth);
   const setViewMonth = useStore((s) => s.setViewMonth);
   const [open, setOpen] = useState(false);
-  const current = monthKey(todayISO());
+  const startDay = useStartDay();
+  const current = periodOf(todayISO(), startDay).key;
   const months = Array.from({ length: 12 }, (_, i) => shiftMonth(current, -i));
   const { t } = useTranslation();
   return (
     <>
       <button type="button" aria-haspopup="dialog" onClick={() => setOpen(true)} className="flex min-h-6 items-center gap-1 text-[13px] text-muted">
         {monthLabel(viewMonth)}
+        {/* A month that doesn't start on the 1st shows its dates. */}
+        {startDay !== 1 ? <span className="text-faint">· {periodRange(periodFor(viewMonth, startDay))}</span> : null}
         <Icon name="chevronDown" size={14} strokeWidth={2} />
       </button>
       <Sheet open={open} onClose={() => setOpen(false)} title={t("picker.pickMonth")}>

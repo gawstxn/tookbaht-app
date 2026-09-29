@@ -10,7 +10,7 @@ import { baht, monthNamesShort, todayISO } from "@/lib/format";
 import { leftoverOffer, leftoverSource, type LeftoverOffer } from "@/lib/leftover";
 import { savingsProgress } from "@/lib/savings";
 import { accountBalance } from "@/lib/selectors";
-import { useStore } from "@/lib/store";
+import { useStartDay, useStore } from "@/lib/store";
 import type { SavingsGoal } from "@/lib/types";
 
 const shortMonth = (key: string) => monthNamesShort()[Number(key.slice(5, 7)) - 1];
@@ -37,7 +37,8 @@ export function LeftoverCard() {
   const handled = useStore((s) => s.settings.leftoverMonth);
   const open = useOpenGoals();
   const today = todayISO();
-  const offer = useMemo(() => leftoverOffer(goals, txs, today, handled, open.length > 0), [goals, txs, today, handled, open.length]);
+  const startDay = useStartDay();
+  const offer = useMemo(() => leftoverOffer(goals, txs, today, handled, open.length > 0, startDay), [goals, txs, today, handled, open.length, startDay]);
   const [editing, setEditing] = useState(false);
   const [round, setRound] = useState(0);
   const save = useSaveLeftover();
@@ -100,7 +101,7 @@ function useSaveLeftover() {
   return (offer: LeftoverOffer, goal: SavingsGoal, amount: number, fromId?: string | null): boolean => {
     const { accounts, transactions, addTransaction, addToSavings, setSettings } = useStore.getState();
     if (goal.accountId) {
-      const from = fromId ?? leftoverSource(accounts, transactions, offer.month, goal.accountId);
+      const from = fromId ?? leftoverSource(accounts, transactions, offer.period, goal.accountId);
       if (!from) return false;
       addTransaction(
         { type: "move", amount, date: todayISO(), title: "", fromId: from, toId: goal.accountId, note: t("leftover.note", { month: shortMonth(offer.month), name: goal.name }) },
@@ -123,7 +124,7 @@ function LeftoverSheet({ open, onClose, offer, goals }: { open: boolean; onClose
   const [goalId, setGoalId] = useState(goals[0]?.id ?? "");
   const [amount, setAmount] = useState(String(offer.amount));
   const goal = goals.find((g) => g.id === goalId);
-  const [fromId, setFromId] = useState<string | null>(() => leftoverSource(accounts, txs, offer.month, goals[0]?.accountId));
+  const [fromId, setFromId] = useState<string | null>(() => leftoverSource(accounts, txs, offer.period, goals[0]?.accountId));
   const [picking, setPicking] = useState(false);
   const value = parseFloat(amount) || 0;
   const from = accounts.find((a) => a.id === fromId);
@@ -144,7 +145,7 @@ function LeftoverSheet({ open, onClose, offer, goals }: { open: boolean; onClose
                 on={g.id === goalId}
                 onClick={() => {
                   setGoalId(g.id);
-                  if (g.accountId && fromId === g.accountId) setFromId(leftoverSource(accounts, txs, offer.month, g.accountId));
+                  if (g.accountId && fromId === g.accountId) setFromId(leftoverSource(accounts, txs, offer.period, g.accountId));
                 }}
               >
                 {g.name}

@@ -1,9 +1,11 @@
-import { baht, daysInMonth, diffDays, dueDatesUntil, monthKey, monthlyEquivalent, stepCycle } from "./format";
+import { baht, daysInMonth, diffDays, dueDatesUntil, monthlyEquivalent, stepCycle } from "./format";
+import { dayOfPeriod, inPeriod, periodDays, type Period } from "./period";
 import { t } from "./i18n";
 import type { Account, Subscription, Transaction } from "./types";
 
-export function monthTransactions(txs: Transaction[], key: string) {
-  return txs.filter((t) => monthKey(t.date) === key);
+/** Entries dated in the user's month `p` (lib/period.ts). */
+export function monthTransactions(txs: Transaction[], p: Period) {
+  return txs.filter((t) => inPeriod(t.date, p));
 }
 
 /** Money friends paid back ("ได้เงินคืน"): it lowers what the user spent rather than counting as income. */
@@ -109,18 +111,14 @@ export function subscriptionTotals(subs: Subscription[], today: string, thb: (s:
 }
 
 /** Fraction of the month elapsed (for "should have spent by now" markers). */
-export function monthPace(key: string, today: string): number {
-  const [y, m] = key.split("-").map(Number);
-  const tk = monthKey(today);
-  if (key < tk) return 1;
-  if (key > tk) return 0;
-  const day = Number(today.slice(8, 10));
-  return day / daysInMonth(y, m - 1);
+export function monthPace(p: Period, today: string): number {
+  if (today > p.end) return 1;
+  if (today < p.start) return 0;
+  return dayOfPeriod(today, p) / periodDays(p);
 }
-export function daysLeftInMonth(key: string, today: string): number {
-  const [y, m] = key.split("-").map(Number);
-  if (monthKey(today) !== key) return 0;
-  return daysInMonth(y, m - 1) - Number(today.slice(8, 10));
+export function daysLeftInMonth(p: Period, today: string): number {
+  if (!inPeriod(today, p)) return 0;
+  return periodDays(p) - dayOfPeriod(today, p);
 }
 
 export interface TxFilter {

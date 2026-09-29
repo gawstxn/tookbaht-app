@@ -9,7 +9,8 @@ import { ForecastCard, NetWorthChart, SpendCalendar } from "@/components/insight
 import { Icon } from "@/components/ui/Icon";
 import { Card, Empty, PushHeader, Segmented } from "@/components/ui/primitives";
 import { categoryLabel } from "@/lib/constants";
-import { baht, displayYear, monthKey, monthLabel, monthNamesShort, todayISO } from "@/lib/format";
+import { baht, displayYear, monthLabel, monthNamesShort, todayISO } from "@/lib/format";
+import { periodFor, periodOf } from "@/lib/period";
 import { categoryBreakdown, compact, monthlySeries, niceTicks, yearSummary } from "@/lib/insights";
 import { runway, unusualCategories } from "@/lib/habits";
 import { installmentOutlook } from "@/lib/installments";
@@ -17,7 +18,7 @@ import { monthForecast } from "@/lib/forecast";
 import { taxYear } from "@/lib/tax";
 import { subTHB } from "@/lib/fx";
 import { tagSummaries } from "@/lib/tags";
-import { useStore } from "@/lib/store";
+import { useStartDay, useStore } from "@/lib/store";
 
 type Tab = "month" | "overview";
 const TAB_KEY = "tookbaht-insights-tab";
@@ -45,8 +46,10 @@ export default function InsightsPage() {
   const transactions = useStore((s) => s.transactions);
   const accounts = useStore((s) => s.accounts);
   const today = todayISO();
-  const current = monthKey(todayISO());
-  const series = useMemo(() => monthlySeries(transactions, current), [transactions, current]);
+  const startDay = useStartDay();
+  const period = useMemo(() => periodOf(today, startDay), [today, startDay]);
+  const current = period.key;
+  const series = useMemo(() => monthlySeries(transactions, period), [transactions, period]);
   const [selected, setSelected] = useState(current);
   const [tab, setTab] = useState<Tab>(readTab);
   const [sharing, setSharing] = useState(false);
@@ -58,21 +61,22 @@ export default function InsightsPage() {
       // Not remembered; fine.
     }
   };
-  const year = Number(current.slice(0, 4));
+  const year = Number(today.slice(0, 4));
   const thisYear = useMemo(() => yearSummary(transactions, year), [transactions, year]);
   const tags = useMemo(() => tagSummaries(transactions).slice(0, 3), [transactions]);
   const sel = series.find((m) => m.month === selected) ?? series[series.length - 1];
-  const cats = useMemo(() => categoryBreakdown(transactions, sel.month), [transactions, sel.month]);
+  const selPeriod = useMemo(() => periodFor(sel.month, startDay), [sel.month, startDay]);
+  const cats = useMemo(() => categoryBreakdown(transactions, selPeriod), [transactions, selPeriod]);
   const net = sel.income - sel.expense;
-  const unusual = useMemo(() => unusualCategories(transactions, sel.month, today), [transactions, sel.month, today]);
-  const cushion = useMemo(() => runway(accounts, transactions, today), [accounts, transactions, today]);
+  const unusual = useMemo(() => unusualCategories(transactions, selPeriod, today), [transactions, selPeriod, today]);
+  const cushion = useMemo(() => runway(accounts, transactions, today, startDay), [accounts, transactions, today, startDay]);
   const subscriptions = useStore((s) => s.subscriptions);
   const taxTotal = useMemo(() => taxYear(transactions, String(year)).total, [transactions, year]);
   const usdRate = useStore((s) => s.usdRate);
   const expenseBudget = useStore((s) => s.goals.expenseBudget);
   const forecast = useMemo(
-    () => monthForecast(transactions, subscriptions, expenseBudget, current, today, (s) => subTHB(s, accounts, usdRate) ?? s.amount),
-    [transactions, subscriptions, expenseBudget, current, today, accounts, usdRate],
+    () => monthForecast(transactions, subscriptions, expenseBudget, period, today, (s) => subTHB(s, accounts, usdRate) ?? s.amount),
+    [transactions, subscriptions, expenseBudget, period, today, accounts, usdRate],
   );
   const outlook = useMemo(
     () => installmentOutlook(subscriptions, transactions, today, 6, (s) => subTHB(s, accounts, usdRate) ?? s.amount),
@@ -155,7 +159,7 @@ export default function InsightsPage() {
       ) : null}
       <MonthCardSheet open={sharing} onClose={() => setSharing(false)} month={sel.month} />
 
-      {forecast && sel.month === current ? <ForecastCard forecast={forecast} month={current} /> : null}
+      {forecast && sel.month === current ? <ForecastCard forecast={forecast} period={period} /> : null}
 
       {unusual.length ? (
         <Card className="flex flex-col gap-2 px-4 py-3.5">

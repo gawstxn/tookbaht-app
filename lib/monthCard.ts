@@ -1,3 +1,4 @@
+import type { Period } from "./period";
 import { monthTransactions, summarize } from "./selectors";
 import { categoryBreakdown } from "./insights";
 import { heldBack } from "./wishes";
@@ -20,8 +21,9 @@ export interface MonthCard {
 }
 
 /** A month in numbers for the shareable summary image; null for a month with nothing logged. */
-export function monthCard(txs: Transaction[], wishes: Wish[], month: string): MonthCard | null {
-  const list = monthTransactions(txs, month);
+export function monthCard(txs: Transaction[], wishes: Wish[], period: Period): MonthCard | null {
+  const month = period.key;
+  const list = monthTransactions(txs, period);
   if (!list.length) return null;
   const { income, expense, net } = summarize(list);
   return {
@@ -31,8 +33,8 @@ export function monthCard(txs: Transaction[], wishes: Wish[], month: string): Mo
     net,
     keptPct: income > 0 ? net / income : null,
     spentPct: income > 0 ? expense / income : null,
-    top: categoryBreakdown(txs, month)[0] ?? null,
-    heldBack: heldBack(wishes, month),
+    top: categoryBreakdown(txs, period)[0] ?? null,
+    heldBack: heldBack(wishes, period),
   };
 }
 

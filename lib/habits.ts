@@ -1,5 +1,6 @@
 import { accountBalance, monthTransactions, monthPace, spendByCategory, summarize } from "./selectors";
 import { daysInMonth, monthKey, shiftMonth } from "./format";
+import { dayOfPeriod, periodOf, shiftPeriod, type Period } from "./period";
 import type { Account, Subscription, Transaction } from "./types";
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -77,10 +78,10 @@ export interface Runway {
 }
 
 /** Money on hand divided by average monthly spending over the last `lookback` full months. */
-export function runway(accounts: Account[], txs: Transaction[], today: string, lookback = 3): Runway | null {
+export function runway(accounts: Account[], txs: Transaction[], today: string, startDay = 1, lookback = 3): Runway | null {
   const cash = round2(accounts.filter((a) => a.kind !== "credit").reduce((s, a) => s + accountBalance(a, txs), 0));
-  const thisMonth = monthKey(today);
-  const spent = Array.from({ length: lookback }, (_, i) => summarize(monthTransactions(txs, shiftMonth(thisMonth, -1 - i))).expense).filter((v) => v > 0);
+  const thisMonth = periodOf(today, startDay);
+  const spent = Array.from({ length: lookback }, (_, i) => summarize(monthTransactions(txs, shiftPeriod(thisMonth, -1 - i))).expense).filter((v) => v > 0);
   if (!spent.length || cash <= 0) return null;
   const monthly = round2(spent.reduce((a, b) => a + b, 0) / spent.length);
   return { cash, monthly, months: Math.floor((cash / monthly) * 10) / 10, basis: spent.length };
@@ -103,11 +104,11 @@ export interface UnusualCategory {
  * the share of the month gone, and only from the 7th on (too noisy before).
  * Needs at least two earlier months with spending in the category.
  */
-export function unusualCategories(txs: Transaction[], month: string, today: string, lookback = 3, minRatio = 1.3, minDiff = 300): UnusualCategory[] {
+export function unusualCategories(txs: Transaction[], month: Period, today: string, lookback = 3, minRatio = 1.3, minDiff = 300): UnusualCategory[] {
   const pace = monthPace(month, today);
-  if (pace === 0 || (pace < 1 && Number(today.slice(8, 10)) < 7)) return [];
+  if (pace === 0 || (pace < 1 && dayOfPeriod(today, month) < 7)) return [];
   const now = spendByCategory(monthTransactions(txs, month));
-  const history = Array.from({ length: lookback }, (_, i) => spendByCategory(monthTransactions(txs, shiftMonth(month, -1 - i))));
+  const history = Array.from({ length: lookback }, (_, i) => spendByCategory(monthTransactions(txs, shiftPeriod(month, -1 - i))));
   const out: UnusualCategory[] = [];
   for (const [key, spent] of Object.entries(now)) {
     const past = history.map((h) => h[key] ?? 0);

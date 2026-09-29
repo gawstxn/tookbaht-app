@@ -1,5 +1,6 @@
 import { budgetLines, rolloverCarry, withCarry } from "./budget";
-import { baht, addDays, fromISO, monthKey, monthLabel, relativeDue, shiftMonth, toISO } from "./format";
+import { baht, addDays, fromISO, monthLabel, relativeDue, toISO } from "./format";
+import { periodOf, shiftPeriod } from "./period";
 import { formatForeign } from "./currencies";
 import { formatMoney } from "./fx";
 import { t } from "./i18n";
@@ -48,8 +49,10 @@ export function buildNotifications(input: {
   today: string;
   now: number;
   wishes?: Wish[];
+  /** First day of the user's month (settings.cycleStartDay). */
+  startDay?: number;
 }): AppNotification[] {
-  const { accounts, transactions, subscriptions, goals, today, now, wishes = [] } = input;
+  const { accounts, transactions, subscriptions, goals, today, now, wishes = [], startDay = 1 } = input;
   const accName = (id?: string) => accounts.find((a) => a.id === id)?.name ?? "";
   const out: AppNotification[] = [];
 
@@ -85,10 +88,11 @@ export function buildNotifications(input: {
   }
 
   // Budget alerts for this month, timed at the transaction that crossed the line.
-  const month = monthKey(today);
-  const monthTxs = monthTransactions(transactions, month);
-  const { cats, total } = budgetLines(withCarry(goals, rolloverCarry(goals, transactions, month)), monthTxs);
-  const daysLeft = daysLeftInMonth(month, today);
+  const period = periodOf(today, startDay);
+  const month = period.key;
+  const monthTxs = monthTransactions(transactions, period);
+  const { cats, total } = budgetLines(withCarry(goals, rolloverCarry(goals, transactions, period)), monthTxs);
+  const daysLeft = daysLeftInMonth(period, today);
   for (const line of [...(total ? [total] : []), ...cats]) {
     const pick = (t: Transaction) => (t.type === "out" && (line.key === "total" || t.category === line.key) ? t.amount : 0);
     const overAt = crossedAt(monthTxs, line.budget, pick);
@@ -183,12 +187,13 @@ export function buildNotifications(input: {
     });
   }
 
-  // Last month's summary on the 1st at 08:00 (the same as the push, for anyone without notifications on).
-  const lastMonth = shiftMonth(month, -1);
-  const lastTxs = monthTransactions(transactions, lastMonth);
+  // Last month's summary on its first day at 08:00 (the same as the push, for anyone without notifications on).
+  const lastPeriod = shiftPeriod(period, -1);
+  const lastMonth = lastPeriod.key;
+  const lastTxs = monthTransactions(transactions, lastPeriod);
   if (lastTxs.length) {
     const sum = summarize(lastTxs);
-    const over = budgetLines(withCarry(goals, rolloverCarry(goals, transactions, lastMonth)), lastTxs);
+    const over = budgetLines(withCarry(goals, rolloverCarry(goals, transactions, lastPeriod)), lastTxs);
     const overLabels = [...(over.total && over.total.spent > over.total.budget ? [over.total] : []), ...over.cats.filter((c) => c.spent > c.budget)].map((l) => l.label);
     const body = t(sum.net < 0 ? "notif.summaryShort" : "notif.summaryBody", {
       income: baht(sum.income),
@@ -198,7 +203,7 @@ export function buildNotifications(input: {
     out.push({
       id: `summary:${lastMonth}`,
       kind: "summary",
-      at: at(`${month}-01`, 8),
+      at: at(period.start, 8),
       title: t("notif.summary", { month: monthLabel(lastMonth) }),
       body: overLabels.length ? `${body} · ${t("notif.summaryOver", { list: overLabels.join(", ") })}` : body,
       href: "/insights",

@@ -822,9 +822,19 @@ const en: Messages = {
     on: "Evening reminder on",
     off: "Evening reminder off",
   },
+  payCycle: {
+    group: "My month",
+    row: "Month starts on",
+    calendar: "1 (calendar)",
+    title: "Month starts on",
+    lead: "Set it to your payday. Budgets, what's left, rollover and the monthly summary count from this day to the day before the next one. Tax and the spending calendar stay on calendar months.",
+    preview: "Your month now: {{range}}",
+    shortMonths: "Months without this day start on their last day instead.",
+    saved: "Your month now starts on day {{day}}",
+  },
   summary: {
     label: "Monthly summary",
-    hint: "On the 1st: last month's income, spending, savings and budgets that went over",
+    hint: "On the first day of your month: last month's income, spending, savings and budgets that went over",
     on: "Monthly summary turned on",
     off: "Monthly summary turned off",
   },
@@ -1145,6 +1155,7 @@ const en: Messages = {
   },
   whatsNew: {
     title: "What's new in v{{version}}",
+    payCycle: { title: "Start your month on payday", body: "Profile → Settings → Month starts on. Pick the day your salary comes in, say the 25th, and what's left, budgets, rollover and the monthly summary count from then until the day before your next payday." },
     cashflow: { title: "Will it cover?", body: "My accounts → Will it cover? shows each account day by day for the next 30 days, from salary, bills, installments and card bills. If an account will run short, Home warns you ahead of time." },
     tierArt: { title: "New tiers: from Coin to Safe", body: "Streak tiers have new names and icons, and the money grows as you log: Coin, Note, Small wad, Thick stack, Money bag, then Safe, coloured from bronze, silver and gold up to gems." },
     tiers: { title: "See every money tier", body: "On the streak screen, tap your tier to see all six, from Coin to the 1,000-baht note, how many days each takes, and where you are." },
