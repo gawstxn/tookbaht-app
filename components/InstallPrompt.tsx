@@ -59,7 +59,17 @@ export function InstallPrompt() {
             ))}
           </ol>
         ) : null}
-        {help === "inApp" && isLineApp(navigator.userAgent) ? (
+        {help === "android" && mode === "native" ? (
+          // Chrome offered its prompt while the steps were open (it waits for some use of the page first).
+          <PrimaryButton
+            onClick={async () => {
+              setHelp(null);
+              await promptInstall();
+            }}
+          >
+            {tr("install.installNow")}
+          </PrimaryButton>
+        ) : help === "inApp" && isLineApp(navigator.userAgent) ? (
           <PrimaryButton onClick={openInBrowser}>{tr("install.openInBrowser")}</PrimaryButton>
         ) : (
           <PrimaryButton onClick={() => setHelp(null)}>{tr("common.gotIt")}</PrimaryButton>

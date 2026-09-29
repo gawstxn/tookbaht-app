@@ -10,6 +10,8 @@ import type { Account, AccountKind } from "@/lib/types";
 import { BahtInput } from "./BahtInput";
 import { ConfirmSheet } from "./ConfirmSheet";
 
+/** Same as accounts_row_cap in the database, so the limit shows before a save fails. */
+export const MAX_ACCOUNTS = 100;
 export type AccountDraft = Omit<Account, "id">;
 
 const KINDS: AccountKind[] = ["bank", "saving", "credit", "cash"];

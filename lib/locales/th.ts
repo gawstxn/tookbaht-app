@@ -99,6 +99,7 @@ const th = {
     inAppTitle: "เปิดในเบราว์เซอร์ก่อน",
     inAppLead: "ลิงก์นี้เปิดอยู่ในแอปแชทหรือโซเชียล ซึ่งเพิ่มลงหน้าจอหลักไม่ได้ ต้องเปิดใน Chrome หรือ Safari ก่อน",
     openInBrowser: "เปิดในเบราว์เซอร์",
+    installNow: "ติดตั้งเลย",
   },
   shell: { loadFailed: "โหลดข้อมูลไม่สำเร็จ", checkConnection: "ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต แล้วลองอีกครั้ง" },
   overview: {
@@ -216,7 +217,7 @@ const th = {
     editTitle: "แก้ไขรายการ",
     saveEdit: "บันทึกการแก้ไข",
     original: "ยอดต้นทาง",
-    originalValue: "{{amount}} × {{rate}} บาท/USD",
+    originalValue: "{{amount}} × {{rate}} บาท/{{currency}}",
     fixHint: "ถ้ายอดในสเตทเมนต์ต่างจากนี้ แก้ยอดได้ แอปจะปรับค่าธรรมเนียมบัตรให้ตรงขึ้นเอง",
     filters: "ตัวกรอง",
     allAccounts: "ทุกบัญชี",
@@ -585,6 +586,7 @@ const th = {
   accounts: {
     title: "บัญชีของฉัน",
     add: "เพิ่มบัญชี",
+    full: "มีได้สูงสุด {{count}} บัญชี ลบบัญชีที่ไม่ใช้ก่อน",
     edit: "แก้ไขบัญชี",
     deleteHint: "ลบได้เฉพาะบัญชีที่ยังไม่มีรายการหรือ subscription",
     name: "ชื่อบัญชี",

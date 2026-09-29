@@ -97,6 +97,7 @@ const en: Messages = {
     inAppTitle: "Open in your browser first",
     inAppLead: "This link opened inside a chat or social app, which can't add it to your home screen. Open it in Chrome or Safari first.",
     openInBrowser: "Open in browser",
+    installNow: "Install now",
   },
   shell: { loadFailed: "Couldn't load your data", checkConnection: "Check your internet connection and try again." },
   overview: {
@@ -214,7 +215,7 @@ const en: Messages = {
     editTitle: "Edit transaction",
     saveEdit: "Save changes",
     original: "Original",
-    originalValue: "{{amount}} × {{rate}} THB/USD",
+    originalValue: "{{amount}} × {{rate}} THB/{{currency}}",
     fixHint: "If your statement shows a different amount, edit it — the card's fee will be adjusted to match",
     filters: "Filters",
     allAccounts: "All accounts",
@@ -584,6 +585,7 @@ const en: Messages = {
   accounts: {
     title: "My accounts",
     add: "Add account",
+    full: "Up to {{count}} accounts. Delete one you don't use first.",
     edit: "Edit account",
     deleteHint: "Only accounts without transactions or subscriptions can be deleted",
     name: "Account name",
