@@ -737,7 +737,7 @@ export const useStore = create<State & Actions>()((set, get) => {
         });
       if (error) {
         console.error(error);
-        get().notify(t(error.hint === "feedback_limit" ? "feedback.limit" : "feedback.failed"), { tone: "error" });
+        get().notify(t(error.hint === "feedback_limit" ? "feedback.limit" : error.hint === "row_limit" ? "toast.rowLimit" : "feedback.failed"), { tone: "error" });
         return false;
       }
       ok(t("feedback.sent"));
