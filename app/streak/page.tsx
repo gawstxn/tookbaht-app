@@ -63,6 +63,7 @@ export default function StreakPage() {
             <span className="text-[15px] font-semibold">{t("streak.missedTitle", { day: dayHeading(d, s.today) })}</span>
             <span className="text-xs leading-relaxed text-muted">
               {s.quotaLeft > 0 ? t("streak.missedLead", { left: s.quotaLeft, quota: s.quota }) : t("streak.noQuota")}
+              {s.quotaLeft > 0 && s.bonus ? ` ${t("streak.bonusNote")}` : null}
             </span>
           </div>
           {s.quotaLeft > 0 ? (
@@ -88,6 +89,8 @@ export default function StreakPage() {
         </Card>
       ) : null}
 
+      <WeekCard week={s.week} today={s.today} onTime={s.onTime} restored={s.restored} perfect={s.perfectWeeks} />
+
       <div className="grid grid-cols-2 gap-2.5">
         <Stat label={t("streak.best")} count={s.best} />
         <Stat label={t("streak.total")} count={s.total} />
@@ -99,6 +102,8 @@ export default function StreakPage() {
         <h2 className="text-sm font-semibold text-ink">{t("streak.rulesTitle")}</h2>
         <p>{t("streak.ruleCount")}</p>
         <p>{t("streak.ruleRestore")}</p>
+        <p>{t("streak.ruleBudget")}</p>
+        <p>{t("streak.rulePerfect")}</p>
         <p>{t("streak.ruleTier")}</p>
       </section>
       <TierSheet open={tiersOpen} onClose={() => setTiersOpen(false)} total={s.total} current={s.tier.key} />
@@ -140,6 +145,51 @@ function TierSheet({ open, onClose, total, current }: { open: boolean; onClose: 
         })}
       </ol>
     </Sheet>
+  );
+}
+
+/** Sunday to Saturday: which days count, and how many perfect weeks so far. */
+function WeekCard({ week, today, onTime, restored, perfect }: { week: string[]; today: string; onTime: Set<string>; restored: Set<string>; perfect: Set<string> }) {
+  const { t } = useTranslation();
+  const names = weekdayNamesShort();
+  const done = week.filter((d) => onTime.has(d)).length;
+  const isPerfect = perfect.has(week[0]);
+  return (
+    <Card className="flex flex-col gap-3 px-4 py-3.5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <span className="text-[15px] font-semibold">{t("streak.weekTitle")}</span>
+          <span className="text-xs leading-relaxed text-muted">{isPerfect ? t("streak.weekDone") : t("streak.weekLead")}</span>
+        </div>
+        <span className={cx("shrink-0 rounded-full px-2.5 py-1 font-mono text-xs font-semibold", isPerfect ? "bg-lime text-on-lime" : "bg-divider text-muted")}>{done}/7</span>
+      </div>
+      <ol className="grid grid-cols-7 gap-1">
+        {week.map((d, i) => {
+          const on = onTime.has(d);
+          const back = restored.has(d);
+          return (
+            <li key={d} className="flex flex-col items-center gap-1" aria-label={`${shortDate(d)}${on ? ` · ${t("streak.dayDone")}` : back ? ` · ${t("streak.dayRestored")}` : ""}`}>
+              <span aria-hidden="true" className="text-[11px] text-muted">{names[i]}</span>
+              <span
+                aria-hidden="true"
+                className={cx(
+                  "flex h-8 w-8 items-center justify-center rounded-full border-2",
+                  on ? "border-transparent bg-lime text-on-lime" : back ? "border-lime-ink text-lime-ink" : d === today ? "border-line-strong" : "border-divider",
+                )}
+              >
+                {on || back ? <Icon name="check" size={14} strokeWidth={2.6} /> : null}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+      {perfect.size ? (
+        <span className="flex items-center gap-1.5 border-t border-divider pt-2.5 text-xs text-muted">
+          <Icon name="flame" size={13} strokeWidth={2.2} className="text-lime-ink" />
+          {t("streak.perfectWeeks", { count: perfect.size })}
+        </span>
+      ) : null}
+    </Card>
   );
 }
 

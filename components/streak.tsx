@@ -7,18 +7,22 @@ import { Icon } from "@/components/ui/Icon";
 import { cx } from "@/components/ui/primitives";
 import { todayISO } from "@/lib/format";
 import { useStore } from "@/lib/store";
-import { MILESTONES, streakLogs, streakStatus, tierFor } from "@/lib/streak";
+import { cycleStartDay } from "@/lib/period";
+import { MILESTONES, budgetBonus, streakLogs, streakStatus, tierFor, weekStart } from "@/lib/streak";
 
 /** The user's streak and tier, from their entries and no-spend confirmations. */
 export function useStreak() {
   const transactions = useStore((s) => s.transactions);
   const noSpend = useStore((s) => s.settings.noSpend);
+  const startDay = useStore((s) => cycleStartDay(s.settings));
+  const expenseBudget = useStore((s) => s.goals.expenseBudget);
   const today = todayISO();
   const logs = useMemo(() => streakLogs(transactions), [transactions]);
+  const bonus = useMemo(() => budgetBonus(expenseBudget, transactions, startDay, today), [expenseBudget, transactions, startDay, today]);
   return useMemo(() => {
-    const status = streakStatus({ logs, noSpend: noSpend ?? [], today });
+    const status = streakStatus({ logs, noSpend: noSpend ?? [], today, startDay, bonus });
     return { ...status, ...tierFor(status.total), today };
-  }, [logs, noSpend, today]);
+  }, [logs, noSpend, today, startDay, bonus]);
 }
 
 /** Flame with the streak count for the home header; lit once today counts. */
@@ -41,12 +45,13 @@ export function StreakChip() {
 
 /**
  * Keeps the profile's streak summary current (the evening reminder reads it)
- * and toasts once when the streak reaches a new milestone.
+ * and toasts once when the streak reaches a new milestone or a perfect week.
  */
 export function StreakSync() {
-  const { current, last, quotaLeft } = useStreak();
+  const { current, last, quotaLeft, perfectWeeks, today } = useStreak();
   const saved = useStore((s) => s.settings.streak);
   const celebrated = useStore((s) => s.settings.streakMilestone ?? 0);
+  const weekCelebrated = useStore((s) => s.settings.perfectWeek);
   const setSettings = useStore((s) => s.setSettings);
   const notify = useStore((s) => s.notify);
   const { t } = useTranslation();
@@ -66,5 +71,14 @@ export function StreakSync() {
     setSettings({ streakMilestone: reached });
     notify(t("streak.milestone", { count: reached }));
   }, [ready, reached, celebrated, setSettings, notify, t]);
+
+  // Only this week's: older ones weren't finished today.
+  const thisWeek = weekStart(today);
+  const perfectNow = perfectWeeks.has(thisWeek);
+  useEffect(() => {
+    if (!ready || !perfectNow || weekCelebrated === thisWeek) return;
+    setSettings({ perfectWeek: thisWeek });
+    notify(t("streak.perfectWeekToast"));
+  }, [ready, perfectNow, thisWeek, weekCelebrated, setSettings, notify, t]);
   return null;
 }
