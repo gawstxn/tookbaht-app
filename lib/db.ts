@@ -48,6 +48,7 @@ interface SubscriptionRow {
   currency: Currency;
   cycle: Subscription["cycle"];
   start_date: string;
+  trial_from: string | null;
   account_id: string;
   category: string;
   remind: boolean;
@@ -146,6 +147,7 @@ export const fromRow = {
     currency: r.currency ?? "THB",
     cycle: r.cycle,
     startDate: r.start_date,
+    trialFrom: r.trial_from ?? null,
     accountId: r.account_id,
     category: r.category,
     remind: r.remind,
@@ -242,6 +244,7 @@ export const toRow = {
       currency: s.currency,
       cycle: s.cycle,
       start_date: s.startDate,
+      trial_from: s.trialFrom,
       account_id: s.accountId,
       category: s.category,
       remind: s.remind,

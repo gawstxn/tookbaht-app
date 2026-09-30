@@ -64,7 +64,13 @@ const validIou = (i: Iou) => str(i?.id) && str(i.person) && positive(i.amount) &
 const validWish = (w: Wish) => str(w?.id) && str(w.name) && positive(w.price) && oneOf(w.status, ["waiting", "bought", "skipped"]) && DATE.test(w.decideOn ?? "");
 const validSavingsGoal = (g: SavingsGoal) => str(g?.id) && str(g.name) && positive(g.target) && typeof g.saved === "number";
 const validSubscription = (s: Subscription) =>
-  str(s?.id) && str(s.name) && positive(s.amount) && oneOf(s.cycle, ["week", "month", "year"]) && DATE.test(s.startDate ?? "") && str(s.accountId);
+  str(s?.id) &&
+  str(s.name) &&
+  positive(s.amount) &&
+  oneOf(s.cycle, ["week", "month", "year"]) &&
+  DATE.test(s.startDate ?? "") &&
+  str(s.accountId) &&
+  (s.trialFrom == null || (DATE.test(s.trialFrom) && s.trialFrom < s.startDate));
 
 /**
  * Read a backup file. Rejects the whole file rather than restoring part of

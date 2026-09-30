@@ -70,7 +70,10 @@ export interface Subscription {
   amount: number;
   currency: Currency;
   cycle: Cycle;
+  /** First billing date; for a free trial, the day it ends and the first charge falls. */
   startDate: ISODate;
+  /** Services only: the day a free trial began (before `startDate`); nothing is charged in between. */
+  trialFrom?: ISODate | null;
   /** Paying account; the source of a recurring transfer. */
   accountId: string;
   /** Destination of a recurring transfer. */

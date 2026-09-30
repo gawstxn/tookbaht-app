@@ -28,7 +28,7 @@ function PrivacyTh() {
           </li>
           <li>
             <b>ข้อมูลการเงินที่คุณบันทึกเอง</b> — บัญชี ยอดเริ่มต้น วงเงินและวันครบกำหนดชำระของบัตร/PayLater รายรับ รายจ่าย การโอน โน้ต
-            subscriptions รายการประจำ รายการผ่อน (ราคาสินค้า จำนวนงวด ยอดต่องวด) เป้าหมาย งบประมาณ เป้าหมายเก็บเงิน แท็กทริป/โปรเจกต์ที่คุณตั้งเอง และประเภทค่าลดหย่อนภาษีที่คุณติดป้ายไว้กับรายจ่าย
+            subscriptions (รวมช่วงทดลองฟรี) รายการประจำ รายการผ่อน (ราคาสินค้า จำนวนงวด ยอดต่องวด) เป้าหมาย งบประมาณ เป้าหมายเก็บเงิน แท็กทริป/โปรเจกต์ที่คุณตั้งเอง และประเภทค่าลดหย่อนภาษีที่คุณติดป้ายไว้กับรายจ่าย
           </li>
           <li>
             <b>รายการติดเงินกับเพื่อน</b> — ชื่อเพื่อนที่คุณพิมพ์เอง จำนวนเงิน โน้ต ทิศทาง (เพื่อนติดคุณ หรือคุณติดเพื่อน) วันที่คืน และชื่อเพื่อนที่หาร subscription หรือรายการประจำกับคุณ ใช้เพื่อจดการยืม-คืนเท่านั้น
@@ -70,7 +70,7 @@ function PrivacyTh() {
           <li>ให้คุณเข้าสู่ระบบ และเห็นข้อมูลเดียวกันในทุกอุปกรณ์</li>
           <li>คำนวณยอดคงเหลือ สรุปรายเดือน งบประมาณ และเป้าหมาย</li>
           <li>บันทึก subscriptions รายการประจำ และงวดผ่อนให้อัตโนมัติเมื่อถึงกำหนด</li>
-          <li>แจ้งเตือนก่อนตัดบัญชี ก่อนวันครบกำหนดชำระ เมื่องบใกล้เต็มหรือเกิน สรุปของเดือนที่แล้วในต้นเดือน และเตือนให้จดรายการตอนค่ำถ้าวันนั้นยังไม่ได้จด (เฉพาะเมื่อคุณเปิดไว้)</li>
+          <li>แจ้งเตือนก่อนตัดบัญชี ก่อนช่วงทดลองฟรีหมด ก่อนวันครบกำหนดชำระ เมื่องบใกล้เต็มหรือเกิน สรุปของเดือนที่แล้วในต้นเดือน และเตือนให้จดรายการตอนค่ำถ้าวันนั้นยังไม่ได้จด (เฉพาะเมื่อคุณเปิดไว้)</li>
           <li>อ่านข้อความแจ้งปัญหาเพื่อแก้ไขและปรับปรุงแอป</li>
         </ul>
         <p>
@@ -174,7 +174,7 @@ function PrivacyEn() {
           </li>
           <li>
             <b>Money data you enter</b> — accounts, opening balances, card / pay-later limits and due days, income, expenses, transfers, notes,
-            subscriptions, recurring entries, installment purchases (price, number and amount of installments), goals, budgets, savings goals, the trip / project tags you create, and the tax deduction kinds you mark on expenses.
+            subscriptions (including free trials), recurring entries, installment purchases (price, number and amount of installments), goals, budgets, savings goals, the trip / project tags you create, and the tax deduction kinds you mark on expenses.
           </li>
           <li>
             <b>Money owed with friends</b> — the names you type, amounts, notes, who owes whom, when it was paid back, and the friends you share a subscription or recurring bill with, used only to track what&apos;s lent and borrowed. We never
@@ -218,7 +218,7 @@ function PrivacyEn() {
           <li>To calculate balances, monthly summaries, budgets and goals</li>
           <li>To log subscriptions, recurring entries and installments automatically when they fall due</li>
           <li>
-            With notifications on, to remind you before bills and payment due dates, when a budget nears or passes its limit, and with last
+            With notifications on, to remind you before bills, before free trials end, and before payment due dates, when a budget nears or passes its limit, and with last
             month&apos;s summary early in the month, and an evening reminder to log when you haven&apos;t that day (only if you turn it on)
           </li>
           <li>To read problem reports so we can fix and improve the app</li>

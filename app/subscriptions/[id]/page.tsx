@@ -10,6 +10,7 @@ import { SUB_CATEGORIES, TYPE_META, categoryLabel } from "@/lib/constants";
 import { baht2, cycleLabel, cyclePer, diffDays, dueDatesUntil, fromISO, relativeDue, shortDate, todayISO } from "@/lib/format";
 import { renewalNotifId, spentSoFar, upcomingRenewal, yearlyCost } from "@/lib/renewals";
 import { chargesSoFar, nextCharge, planInterest } from "@/lib/selectors";
+import { inTrial } from "@/lib/trial";
 import { useTranslation } from "react-i18next";
 import { formatMoney, subTHB } from "@/lib/fx";
 import { useStore } from "@/lib/store";
@@ -56,6 +57,7 @@ export default function SubscriptionDetailPage() {
   const reviewId = renewal ? renewalNotifId(renewal) : null;
   const askReview = renewal && reviewId && !(renewKept ?? []).includes(reviewId);
   const spent = recurring ? null : spentSoFar(sub, transactions, today);
+  const trial = inTrial(sub, today);
   const dayRule =
     sub.cycle === "week"
       ? tr("subs.everyWeek")
@@ -92,7 +94,7 @@ export default function SubscriptionDetailPage() {
             ? tr("subs.pausedNow")
             : !next
               ? tr("rec.paidOff")
-              : tr(recurring ? "rec.next" : "subs.next", { date: shortDate(next.due), rel: relativeDue(days) })}
+              : tr(recurring ? "rec.next" : trial ? "subs.trialNext" : "subs.next", { date: shortDate(next.due), rel: relativeDue(days) })}
         </span>
         {sub.installments ? (
           <span className="text-[13px] text-muted">
@@ -109,9 +111,9 @@ export default function SubscriptionDetailPage() {
               <Icon name="calendar" size={20} strokeWidth={2} />
             </span>
             <div className="flex min-w-0 flex-col gap-0.5">
-              <span className="font-semibold">{tr("subs.reviewTitle", { count: renewal.days })}</span>
+              <span className="font-semibold">{tr(renewal.trial ? "subs.trialReviewTitle" : "subs.reviewTitle", { count: renewal.days })}</span>
               <span className="text-sm leading-relaxed text-muted">
-                {tr("subs.reviewLead", { date: shortDate(renewal.due), amount: formatMoney(sub.amount, sub.currency), name: sub.name })}
+                {tr(renewal.trial ? "subs.trialReviewLead" : "subs.reviewLead", { date: shortDate(renewal.due), amount: formatMoney(sub.amount, sub.currency), name: sub.name })}
               </span>
             </div>
           </div>
@@ -120,7 +122,7 @@ export default function SubscriptionDetailPage() {
               onClick={() => {
                 setSettings({ renewKept: [...(renewKept ?? []), reviewId].slice(-20) });
                 markRead(reviewId);
-                notify(tr("subs.reviewKept"));
+                notify(renewal.trial ? tr("subs.trialKept", { date: shortDate(renewal.due) }) : tr("subs.reviewKept"));
               }}
             >
               {tr("subs.reviewKeep")}
@@ -135,6 +137,7 @@ export default function SubscriptionDetailPage() {
       <ListCard>
         {sub.principal ? <Row label={tr("rec.price")} value={baht2(sub.principal)} /> : null}
         {interest ? <Row label={tr("rec.interest")} value={interest.total > 0 ? `${baht2(interest.total)} · ${interest.monthlyPct}%/${tr("cycle.month")}` : tr("pay.noInterest")} /> : null}
+        {sub.trialFrom ? <Row label={tr("subs.trialPeriod")} value={`${shortDate(sub.trialFrom)} – ${shortDate(sub.startDate)}`} /> : null}
         <Row label={tr("subs.cycle")} value={cycleLabel(sub.cycle)} />
         <Row label={tr("subs.billingDay")} value={dayRule} />
         {!recurring && sub.cycle !== "year" ? <Row label={tr("subs.perYear")} value={formatMoney(yearlyCost(sub.amount, sub.cycle), sub.currency)} /> : null}
@@ -155,7 +158,7 @@ export default function SubscriptionDetailPage() {
 
       <ListCard>
         {sub.entryType !== "in" ? (
-          <SwitchRow label={tr(recurring ? "rec.remind" : "subs.remind")} hint={recurring ? undefined : tr(sub.cycle === "year" ? "subs.remindHintYear" : "subs.remindHint")} checked={sub.remind} onChange={(remind) => update(sub.id, { remind })} />
+          <SwitchRow label={tr(recurring ? "rec.remind" : "subs.remind")} hint={recurring ? undefined : tr(trial ? "subs.remindHintTrial" : sub.cycle === "year" ? "subs.remindHintYear" : "subs.remindHint")} checked={sub.remind} onChange={(remind) => update(sub.id, { remind })} />
         ) : null}
         <SwitchRow
           label={tr(!recurring ? "subs.autoLog" : sub.entryType === "in" ? "rec.autoLogIn" : sub.entryType === "move" ? "rec.autoLogMove" : "rec.autoLogOut")}

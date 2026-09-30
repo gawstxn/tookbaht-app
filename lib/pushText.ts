@@ -16,6 +16,8 @@ export interface PendingReminder {
   kind: "subscription" | "recurring";
   installment_no: number;
   installments: number | null;
+  /** The first charge after a free trial. */
+  trial?: boolean;
 }
 export interface PendingDue {
   account_id: string;
@@ -47,6 +49,8 @@ export interface PendingRenewal {
   currency: "THB" | "USD";
   due_date: string;
   days: number;
+  /** A free trial ending rather than a yearly renewal. */
+  trial?: boolean;
 }
 /* Push text in the user's language (the cron route has no i18n instance). */
 
@@ -58,14 +62,24 @@ export function chargeText(lang: Lang, r: PendingReminder) {
       ? { title: `${r.name}${plan} is due tomorrow`, body: `${amount} from ${r.account_name}` }
       : { title: `${r.name}${plan} ถึงกำหนดพรุ่งนี้`, body: `${amount} จาก${r.account_name}` };
   }
+  if (r.trial) {
+    return lang === "en"
+      ? { title: `${r.name} free trial ends tomorrow`, body: `Billing ${amount} from ${r.account_name} starts tomorrow` }
+      : { title: `ช่วงทดลองฟรี ${r.name} หมดพรุ่งนี้`, body: `จะเริ่มตัด ${amount} จาก${r.account_name}` };
+  }
   return lang === "en"
     ? { title: `${r.name} bills tomorrow`, body: `${amount} from ${r.account_name}` }
     : { title: `${r.name} ตัดบัญชีพรุ่งนี้`, body: `${amount} จาก${r.account_name}` };
 }
 
-/** A week before a yearly service renews: still using it? */
+/** A week before a yearly service renews, or a few days before a free trial ends: still using it? */
 export function renewText(lang: Lang, r: PendingRenewal) {
   const amount = formatMoney(Number(r.amount), r.currency ?? "THB");
+  if (r.trial) {
+    return lang === "en"
+      ? { title: `${r.name} free trial ends in ${r.days} days`, body: `Then it bills ${amount}. Keeping it?` }
+      : { title: `ช่วงทดลองฟรี ${r.name} จะหมดในอีก ${r.days} วัน`, body: `จากนั้นจะเริ่มตัด ${amount} ยังใช้ต่อไหม` };
+  }
   return lang === "en"
     ? { title: `${r.name} renews in ${r.days} days`, body: `${amount} for another year. Still using it?` }
     : { title: `${r.name} จะต่ออายุในอีก ${r.days} วัน`, body: `${amount} สำหรับอีก 1 ปี ยังใช้อยู่ไหม` };
