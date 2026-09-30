@@ -22,8 +22,14 @@ export interface OpResult {
   status: number;
 }
 
-/** Run one write against the database. */
-export function runOp(sb: SupabaseClient, op: Op): PromiseLike<OpResult> {
+/**
+ * How long a write may take before it's given up on and queued. A write that
+ * landed anyway is harmless to replay: inserts come back as duplicates, the
+ * rest set the same values again.
+ */
+export const WRITE_TIMEOUT = 15_000;
+
+function query(sb: SupabaseClient, op: Op) {
   if (op.kind === "rpc") return sb.rpc(op.fn, op.args);
   const from = sb.from(op.table);
   if (op.kind === "insert") return from.insert(op.rows);
@@ -32,11 +38,33 @@ export function runOp(sb: SupabaseClient, op: Op): PromiseLike<OpResult> {
   return "in" in op.match ? q.in(op.match.col, op.match.in) : q.eq(op.match.col, op.match.eq);
 }
 
-/** The request never reached the server (or its answer never came back): worth retrying later. */
-export function isNetworkError(r: OpResult): boolean {
+/** Run one write against the database; a request that hangs is aborted after `timeout` (status 0). */
+export function runOp(sb: SupabaseClient, op: Op, timeout = WRITE_TIMEOUT): Promise<OpResult> {
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), timeout);
+  return Promise.resolve(query(sb, op).abortSignal(abort.signal)).finally(() => clearTimeout(timer));
+}
+
+/**
+ * The server never took the write: no connection, a timeout, or the backend
+ * down or overloaded (5xx, 408, 429). Worth retrying later. A refused write
+ * (constraint, RLS, row cap) comes back as 4xx and is not.
+ */
+export function isRetryable(r: OpResult): boolean {
   if (!r.error) return false;
-  // supabase-js reports a failed fetch with status 0; an expired session (401) also clears up after reconnecting.
-  return r.status === 0 || r.status === 401 || /failed to fetch|networkerror|load failed|network request failed/i.test(r.error.message ?? "");
+  // supabase-js reports a failed or aborted fetch with status 0; an expired session (401) also clears up after reconnecting.
+  if (r.status === 0 || r.status === 401 || r.status === 408 || r.status === 429 || r.status >= 500) return true;
+  return /failed to fetch|networkerror|load failed|network request failed/i.test(r.error.message ?? "");
+}
+
+/** A server error that outlasts this is a write the server can't take, not an outage. */
+export const OUTAGE_LIMIT = 3 * 24 * 60 * 60 * 1000;
+
+/** Whether a queued write that just failed should stay at the head of the queue and be tried again later. */
+export function keepQueued(r: OpResult, queuedAt: number, now = Date.now()): boolean {
+  if (!isRetryable(r)) return false;
+  // Don't let one write the server keeps failing on hold back everything behind it forever.
+  return r.status < 500 || now - queuedAt < OUTAGE_LIMIT;
 }
 
 /** A replayed insert that had already landed before the connection dropped. */

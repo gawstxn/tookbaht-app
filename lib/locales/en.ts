@@ -852,11 +852,13 @@ const en: Messages = {
   },
   offline: {
     label: "Offline",
+    noServer: "Can't reach the server",
     pending: "{{count}} waiting to sync",
-    synced: "Synced what you logged offline",
-    dropped: "{{count}} offline changes couldn't be saved",
+    synced: "Synced your waiting changes",
+    dropped: "{{count}} waiting changes couldn't be saved",
     needsConnection: "You need a connection for this",
-    logoutPending: "{{count}} changes made offline haven't synced yet. Signing out now loses them.",
+    serverDown: "Can't reach the server. Try again in a moment.",
+    logoutPending: "{{count}} changes haven't synced yet. Signing out now loses them.",
   },
   allowance: {
     left: "Left to spend today",

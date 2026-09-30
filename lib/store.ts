@@ -10,7 +10,7 @@ import { baht, shortDate, toISO, todayISO } from "./format";
 import { impliedFeePct, type UsdRate } from "./fx";
 import { cycleStartDay, periodFor, periodOf, type Period } from "./period";
 import { clearTripDrafts } from "./tripSplit";
-import { isDuplicate, isNetworkError, online, outbox, runOp, snapshot, type Op } from "./offline";
+import { isDuplicate, isRetryable, keepQueued, online, outbox, runOp, snapshot, type Op } from "./offline";
 import { getSupabase } from "./supabase/client";
 import type { Account, Goals, Iou, SavingsGoal, Settings, Subscription, Transaction, User, Wish } from "./types";
 
@@ -200,26 +200,35 @@ export const useStore = create<State & Actions>()((set, get) => {
     return n > 0;
   };
 
-  /**
-   * Run a write; on failure undo the optimistic change and show an error toast.
-   * Without a connection the write waits in the outbox instead and the change
-   * stays on screen (unless `queueable` is false: the server must answer now).
-   */
-  const save = async (op: Op, undo: () => void, message = SAVE_FAILED(), { queueable = true } = {}) => {
+  const send = async (op: Op, undo: () => void, message: string, queueable: boolean) => {
     // Keep writes in order: once anything is queued, later writes queue behind it.
     if (queueable && (get().pending > 0 || !online()) && queue(op)) return true;
     const res = await runOp(sb(), op);
     if (!res.error || isDuplicate(res)) return true;
-    if (isNetworkError(res)) {
+    if (isRetryable(res)) {
       if (queueable && queue(op)) return true;
       undo();
-      get().notify(t("offline.needsConnection"), { tone: "error" });
+      get().notify(t(online() ? "offline.serverDown" : "offline.needsConnection"), { tone: "error" });
       return false;
     }
     console.error(res.error);
     undo();
     get().notify(res.error.hint === "row_limit" ? t("toast.rowLimit") : message, { tone: "error" });
     return false;
+  };
+  let lastSave: Promise<unknown> = Promise.resolve();
+  /**
+   * Run a write; on failure undo the optimistic change and show an error toast.
+   * Without a connection, or while the server is down or not answering, the
+   * write waits in the outbox instead and the change stays on screen (unless
+   * `queueable` is false: the server must answer now).
+   * Writes go out one at a time, so one that hangs and ends up queued still
+   * stays ahead of the writes made after it.
+   */
+  const save = (op: Op, undo: () => void, message = SAVE_FAILED(), { queueable = true } = {}) => {
+    const run = lastSave.then(() => send(op, undo, message, queueable));
+    lastSave = run.catch(() => {});
+    return run;
   };
   let flushing = false;
   let syncing = false;
@@ -317,7 +326,7 @@ export const useStore = create<State & Actions>()((set, get) => {
         await sb().auth.getSession();
         for (let next = box.list()[0]; next; next = box.list()[0]) {
           const res = await runOp(sb(), next.op);
-          if (res.error && isNetworkError(res)) {
+          if (res.error && keepQueued(res, next.at)) {
             stalled = true;
             break;
           }
