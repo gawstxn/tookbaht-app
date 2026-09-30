@@ -1,5 +1,6 @@
 import { addDays, diffDays, monthlyEquivalent } from "./format";
 import { chargesSoFar, isService, nextCharge } from "./selectors";
+import { TRIAL_NOTICE_DAYS, trialNoticeDay } from "./trial";
 import type { Currency, Cycle, Subscription, Transaction } from "./types";
 
 /** How many days before a yearly renewal the app asks whether it's still used. */
@@ -8,21 +9,26 @@ export const RENEW_NOTICE_DAYS = 7;
 export interface Renewal {
   sub: Subscription;
   due: string;
-  /** Days until it renews (1…RENEW_NOTICE_DAYS). */
+  /** Days until it renews (1…RENEW_NOTICE_DAYS, or 1…TRIAL_NOTICE_DAYS when a trial ends). */
   days: number;
+  /** The first charge after a free trial rather than a yearly renewal. */
+  trial: boolean;
 }
 
 /**
  * A yearly service (not salary, rent or an installment plan) renewing in the
- * next week, early enough to cancel with the provider. The day before is
- * left to the usual "bills tomorrow" reminder.
+ * next week, or a free trial of any cycle ending in the next few days, early
+ * enough to cancel with the provider. The day before is left to the usual
+ * "bills tomorrow" reminder.
  */
 export function upcomingRenewal(s: Subscription, today: string): Renewal | null {
-  if (!isService(s) || s.cycle !== "year" || s.paused) return null;
+  if (!isService(s) || s.paused) return null;
   const next = nextCharge(s, today);
   if (!next) return null;
   const days = diffDays(next.due, today);
-  return days >= 1 && days <= RENEW_NOTICE_DAYS ? { sub: s, due: next.due, days } : null;
+  const trial = !!s.trialFrom && next.n === 1;
+  if (!trial && s.cycle !== "year") return null;
+  return days >= 1 && days <= (trial ? TRIAL_NOTICE_DAYS : RENEW_NOTICE_DAYS) ? { sub: s, due: next.due, days, trial } : null;
 }
 
 export function upcomingRenewals(subs: Subscription[], today: string): Renewal[] {
@@ -32,7 +38,7 @@ export function upcomingRenewals(subs: Subscription[], today: string): Renewal[]
 /** The notification (and review card) for one renewal; read once the user answers it. */
 export const renewalNotifId = (r: Pick<Renewal, "sub" | "due">) => `renew:${r.sub.id}:${r.due}`;
 /** The day the review is brought up. */
-export const renewalNoticeDay = (due: string) => addDays(due, -RENEW_NOTICE_DAYS);
+export const renewalNoticeDay = (r: Pick<Renewal, "due" | "trial">) => (r.trial ? trialNoticeDay(r.due) : addDays(r.due, -RENEW_NOTICE_DAYS));
 
 /** A year of the price, in the subscription's own currency. */
 export const yearlyCost = (amount: number, cycle: Cycle) => monthlyEquivalent(amount, cycle) * 12;

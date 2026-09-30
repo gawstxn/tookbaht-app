@@ -46,6 +46,8 @@ export function seedData() {
     sub({ name: "YouTube Premium", amount: 179, currency: "THB", cycle: "month", startDate: addDays(today, 14 - 60), accountId: "acc-salary", category: "fun", remind: false, autoLog: true, paused: false, tone: "#6e3a1c" }),
     sub({ name: "สมาชิกฟิตเนส", amount: 1290, currency: "THB", cycle: "month", startDate: addDays(today, 21 - 180), accountId: "acc-salary", category: "fit", remind: true, autoLog: true, paused: false, tone: "#1c1e1b" }),
     sub({ name: "Claude Pro", amount: 21.4, currency: "USD", cycle: "month", startDate: addDays(today, 12 - 60), accountId: "acc-credit", category: "tools", remind: true, autoLog: true, paused: false, tone: "#D97757" }),
+    // A free trial ending in 3 days: shows the "still want it?" review.
+    sub({ name: "Google AI Pro", amount: 750, currency: "THB", cycle: "month", startDate: addDays(today, 3), trialFrom: addDays(today, 3 - 365), accountId: "acc-credit", category: "tools", remind: true, autoLog: true, paused: false, tone: "#8E75B2" }),
     sub({ name: "Google One", amount: 700, currency: "THB", cycle: "year", startDate: addDays(today, 110 - 365), accountId: "acc-credit", category: "cloud", remind: true, autoLog: false, paused: false, tone: "#5b4a7a" }),
     recurring({ entryType: "in", name: "เงินเดือน", amount: 45000, cycle: "month", startDate: monthStart, accountId: "acc-salary", category: "salary", remind: false, autoLog: true, paused: false }),
     recurring({ entryType: "move", name: "ออมทุกเดือน", amount: 5000, cycle: "month", startDate: inMonth(2), accountId: "acc-salary", toAccountId: "acc-saving", category: "other", remind: false, autoLog: true, paused: false }),

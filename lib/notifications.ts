@@ -74,14 +74,15 @@ export function buildNotifications(input: {
     });
   }
 
-  // Yearly services renewing within a week: still used? (09:00, a week before.)
+  // Yearly services renewing within a week, and free trials ending within a few
+  // days: still used? (09:00, a week / TRIAL_NOTICE_DAYS before.)
   for (const r of upcomingRenewals(subscriptions, today)) {
     out.push({
       id: renewalNotifId(r),
       kind: "renew",
-      at: Math.min(now, at(renewalNoticeDay(r.due), 9)),
-      title: t("notif.renew", { name: r.sub.name, count: r.days }),
-      body: t("notif.renewBody", { amount: formatMoney(r.sub.amount, r.sub.currency) }),
+      at: Math.min(now, at(renewalNoticeDay(r), 9)),
+      title: t(r.trial ? "notif.trialEnds" : "notif.renew", { name: r.sub.name, count: r.days }),
+      body: t(r.trial ? "notif.trialEndsBody" : "notif.renewBody", { amount: formatMoney(r.sub.amount, r.sub.currency) }),
       href: `/subscriptions/${r.sub.id}`,
     });
   }

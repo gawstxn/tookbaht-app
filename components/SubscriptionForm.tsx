@@ -9,9 +9,10 @@ import { findBrand, normalizeName, suggestCategory } from "@/lib/brands";
 import { MONO_TONES, POPULAR_SUBS, SUB_CATALOG, SUB_CATEGORIES } from "@/lib/constants";
 import { SplitWithField } from "./SplitWithField";
 import { useTranslation } from "react-i18next";
-import { baht, cyclePer, fromISO, monthlyEquivalent, shortDate, todayISO } from "@/lib/format";
+import { addDays, baht, cyclePer, fromISO, monthlyEquivalent, shortDate, todayISO } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import { formatMoney, toTHB } from "@/lib/fx";
+import { TRIAL_LENGTHS, trialEnd, trialLengthOf, type TrialLength } from "@/lib/trial";
 import type { Currency, Cycle, Subscription } from "@/lib/types";
 import { BahtInput } from "./BahtInput";
 
@@ -64,7 +65,7 @@ export function SubscriptionForm({
   const [amountText, setAmountText] = useState(initial ? String(initial.amount) : "");
   // The field holds the listed price; +VAT is a toggle on top of it, so tapping it twice doesn't add 7% twice.
   const [vat, setVat] = useState(false);
-  const [sheet, setSheet] = useState<"" | "date" | "account" | "category" | "catalog">("");
+  const [sheet, setSheet] = useState<"" | "date" | "trialFrom" | "account" | "category" | "catalog">("");
   const [categoryTouched, setCategoryTouched] = useState(!!initial);
   const pick = (n: string) => set({ name: n, category: suggestCategory(n) ?? d.category });
   const set = (p: Partial<SubDraft>) => setD((x) => ({ ...x, ...p }));
@@ -85,7 +86,24 @@ export function SubscriptionForm({
     setVat(!vat);
     set({ amount: priced(amountText, !vat) });
   };
-  const canSave = d.name.trim().length > 0 && d.amount > 0 && !!d.accountId;
+  // A free trial runs from trialFrom until the first charge (startDate).
+  const trialFrom = d.trialFrom ?? null;
+  const trialLength = trialFrom ? trialLengthOf(trialFrom, d.startDate) : null;
+  const toggleTrial = (on: boolean) => {
+    if (!on) return set({ trialFrom: null, startDate: trialFrom ?? d.startDate });
+    // Trials start on the day chosen so far, or today (never in the future).
+    const from = d.startDate > today ? today : d.startDate;
+    set({ trialFrom: from, startDate: trialEnd(from, "1m") });
+  };
+  const pickLength = (length: TrialLength) => {
+    if (trialFrom) set({ startDate: trialEnd(trialFrom, length) });
+  };
+  const moveTrialStart = (from: string) => {
+    // Keep a preset length when the start moves; a custom end stays unless it would come first.
+    const end = trialLength ? trialEnd(from, trialLength) : d.startDate > from ? d.startDate : trialEnd(from, "1m");
+    set({ trialFrom: from, startDate: end });
+  };
+  const canSave = d.name.trim().length > 0 && d.amount > 0 && !!d.accountId && (!trialFrom || trialFrom < d.startDate);
   const start = fromISO(d.startDate);
   const hint =
     d.cycle === "week"
@@ -227,7 +245,27 @@ export function SubscriptionForm({
       </Card>
 
       <ListCard>
-        <PickerRow label={t("subs.start")} value={shortDate(d.startDate)} onClick={() => setSheet("date")} />
+        <SwitchRow label={t("subs.trial")} hint={t("subs.trialHint")} checked={!!trialFrom} onChange={toggleTrial} />
+        {trialFrom ? (
+          <div className="flex flex-col gap-2 py-3">
+            <span className="text-[13px] text-muted">{t("subs.trialLength")}</span>
+            <div className="flex flex-wrap gap-1.5">
+              {TRIAL_LENGTHS.map((l) => (
+                <Chip key={l} size="sm" on={trialLength === l} onClick={() => pickLength(l)}>
+                  {t(`subs.trialLen_${l}`)}
+                </Chip>
+              ))}
+              <Chip size="sm" on={trialLength === null} onClick={() => setSheet("date")}>
+                {t("subs.trialCustom")}
+              </Chip>
+            </div>
+          </div>
+        ) : null}
+      </ListCard>
+
+      <ListCard>
+        {trialFrom ? <PickerRow label={t("subs.trialFrom")} value={shortDate(trialFrom)} onClick={() => setSheet("trialFrom")} /> : null}
+        <PickerRow label={t(trialFrom ? "subs.firstCharge" : "subs.start")} value={shortDate(d.startDate)} onClick={() => setSheet("date")} />
         <PickerRow label={t("subs.payFrom")} value={accounts.find((a) => a.id === d.accountId)?.name ?? t("common.selectAccount")} onClick={() => setSheet("account")} />
         <PickerRow label={t("common.category")} value={SUB_CATEGORIES.find((c) => c.key === d.category)?.label ?? ""} onClick={() => setSheet("category")} />
       </ListCard>
@@ -261,10 +299,19 @@ export function SubscriptionForm({
       <DateSheet
         open={sheet === "date"}
         onClose={() => setSheet("")}
-        title={t("subs.start")}
+        title={t(trialFrom ? "subs.firstCharge" : "subs.start")}
         value={d.startDate}
         onChange={(startDate) => set({ startDate })}
-        hint={d.startDate < today ? hint + t("subs.noBackfill") : hint}
+        min={trialFrom ? addDays(trialFrom, 1) : undefined}
+        hint={trialFrom ? `${t("subs.firstChargeHint")} · ${hint}` : d.startDate < today ? hint + t("subs.noBackfill") : hint}
+      />
+      <DateSheet
+        open={sheet === "trialFrom"}
+        onClose={() => setSheet("")}
+        title={t("subs.trialFrom")}
+        value={trialFrom ?? today}
+        onChange={moveTrialStart}
+        max={today}
       />
       <AccountSheet open={sheet === "account"} onClose={() => setSheet("")} title={t("subs.payFrom")} value={d.accountId} onPick={(accountId) => set({ accountId })} />
       <CatalogSheet
