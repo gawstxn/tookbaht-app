@@ -256,7 +256,7 @@ function LoadError() {
   );
 }
 
-/** Small pill above the tab bar while offline or while changes wait to be sent (tab screens only). */
+/** Small pill above the tab bar while offline, while the server can't be reached, or while changes wait to be sent (tab screens only). */
 function OfflinePill() {
   const { t } = useTranslation();
   const pending = useStore((s) => s.pending);
@@ -275,7 +275,8 @@ function OfflinePill() {
     };
   }, []);
   if (toast || (online && !offline && pending === 0)) return null;
-  const text = pending > 0 ? t("offline.pending", { count: pending }) : t("offline.label");
+  // Online but the data couldn't be fetched: the server is down, not the connection.
+  const text = pending > 0 ? t("offline.pending", { count: pending }) : t("offline.noServer");
   return (
     <div
       role="status"

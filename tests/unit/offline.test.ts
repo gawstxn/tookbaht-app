@@ -1,6 +1,18 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { isDuplicate, isNetworkError, outbox, runOp, snapshot, type KeyValueStore, type Op } from "@/lib/offline";
+import {
+  OUTAGE_LIMIT,
+  WRITE_TIMEOUT,
+  isDuplicate,
+  isRetryable,
+  keepQueued,
+  outbox,
+  runOp,
+  snapshot,
+  type KeyValueStore,
+  type Op,
+  type OpResult,
+} from "@/lib/offline";
 
 const memory = (): KeyValueStore & { data: Map<string, string> } => {
   const data = new Map<string, string>();
@@ -17,6 +29,7 @@ function fakeClient() {
       return builder;
     };
   }
+  builder.abortSignal = () => builder;
   const sb = { from: (t: string) => (calls.push(["from", t]), builder), rpc: (...a: unknown[]) => (calls.push(["rpc", ...a]), builder) } as unknown as SupabaseClient;
   return { sb, calls };
 }
@@ -79,12 +92,53 @@ describe("replaying writes", () => {
     ]);
   });
 
-  it("tells a lost connection from a refused write", () => {
-    expect(isNetworkError({ error: { message: "TypeError: Failed to fetch" }, status: 0 })).toBe(true);
-    expect(isNetworkError({ error: { message: "TypeError: Load failed" }, status: 400 })).toBe(true);
-    expect(isNetworkError({ error: { message: "JWT expired" }, status: 401 })).toBe(true);
-    expect(isNetworkError({ error: { message: "violates check constraint", code: "23514" }, status: 400 })).toBe(false);
-    expect(isNetworkError({ error: null, status: 201 })).toBe(false);
+  it("tells a lost connection or a down server from a refused write", () => {
+    expect(isRetryable({ error: { message: "TypeError: Failed to fetch" }, status: 0 })).toBe(true);
+    expect(isRetryable({ error: { message: "TypeError: Load failed" }, status: 400 })).toBe(true);
+    expect(isRetryable({ error: { message: "AbortError: signal is aborted without reason" }, status: 0 })).toBe(true);
+    expect(isRetryable({ error: { message: "JWT expired" }, status: 401 })).toBe(true);
+    for (const status of [408, 429, 500, 502, 503, 504, 520, 544]) expect(isRetryable({ error: { message: "" }, status })).toBe(true);
+    expect(isRetryable({ error: { message: "violates check constraint", code: "23514" }, status: 400 })).toBe(false);
+    expect(isRetryable({ error: { message: "row limit reached", code: "P0001", hint: "row_limit" }, status: 400 })).toBe(false);
+    expect(isRetryable({ error: { message: "permission denied", code: "42501" }, status: 403 })).toBe(false);
+    expect(isRetryable({ error: null, status: 201 })).toBe(false);
+    expect(isRetryable({ error: null, status: 503 })).toBe(false);
+  });
+
+  it("holds the queue through an outage, but not forever for one broken write", () => {
+    const now = Date.UTC(2026, 8, 30);
+    const down = { error: { message: "Service Unavailable" }, status: 503 };
+    const offline = { error: { message: "TypeError: Failed to fetch" }, status: 0 };
+    const refused = { error: { message: "violates check constraint", code: "23514" }, status: 400 };
+    expect(keepQueued(down, now - 60_000, now)).toBe(true);
+    expect(keepQueued(down, now - OUTAGE_LIMIT + 1, now)).toBe(true);
+    expect(keepQueued(down, now - OUTAGE_LIMIT, now)).toBe(false);
+    // A phone can be offline for weeks: those writes are never given up on.
+    expect(keepQueued(offline, now - 30 * OUTAGE_LIMIT, now)).toBe(true);
+    expect(keepQueued(refused, now, now)).toBe(false);
+  });
+
+  it("gives up on a write that doesn't answer, as a lost connection", async () => {
+    vi.useFakeTimers();
+    try {
+      let signal: AbortSignal | undefined;
+      const hanging = {
+        abortSignal: (s: AbortSignal) => ((signal = s), hanging),
+        then: (resolve: (r: unknown) => void) => {
+          signal?.addEventListener("abort", () => resolve({ error: { message: "AbortError: aborted" }, status: 0 }));
+        },
+      };
+      const sb = { from: () => ({ insert: () => hanging }) } as unknown as SupabaseClient;
+      let result: unknown;
+      void runOp(sb, { table: "transactions", kind: "insert", rows: {} }).then((r) => (result = r));
+      await vi.advanceTimersByTimeAsync(WRITE_TIMEOUT - 1);
+      expect(result).toBeUndefined();
+      await vi.advanceTimersByTimeAsync(1);
+      expect(result).toEqual({ error: { message: "AbortError: aborted" }, status: 0 });
+      expect(isRetryable(result as OpResult)).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("treats a replayed insert that already landed as done", () => {
