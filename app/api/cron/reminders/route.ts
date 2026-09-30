@@ -1,12 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { pusherFor, setUpVapid } from "@/lib/push";
-import { budgetText, chargeText, dueText, summaryText, type PendingBudget, type PendingDue, type PendingReminder, type PendingSummary } from "@/lib/pushText";
+import { budgetText, chargeText, dueText, renewText, summaryText, type PendingBudget, type PendingDue, type PendingReminder, type PendingRenewal, type PendingSummary } from "@/lib/pushText";
 import { refreshUsdRate } from "@/lib/rates";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 
 /**
  * Daily job (vercel.json, 09:00 Bangkok): push reminders for charges due
- * tomorrow, card / pay-later payments due tomorrow, and budgets that reached
+ * tomorrow, yearly services renewing within a week (still used?), card /
+ * pay-later payments due tomorrow, and budgets that reached
  * 80% or went over, and last month's summary early in a new month. Called
  * by Vercel Cron with `Authorization: Bearer $CRON_SECRET`.
  * Each kind is recorded once delivered, so a retried run doesn't repeat it.
@@ -22,19 +23,21 @@ export async function GET(request: NextRequest) {
   const db = createSupabaseAdmin();
   // Daily job: also keep the USD rate fresh for auto-logging foreign subscriptions.
   await refreshUsdRate(db).catch((e) => console.error("rate refresh failed", e));
-  const [charges, dues, budgets, summaries] = await Promise.all([
+  const [charges, renewals, dues, budgets, summaries] = await Promise.all([
     db.rpc("pending_reminders"),
+    db.rpc("pending_renewal_reviews"),
     db.rpc("pending_due_reminders"),
     db.rpc("pending_budget_alerts"),
     db.rpc("pending_month_summaries"),
   ]);
-  for (const r of [charges, dues, budgets, summaries]) if (r.error) return NextResponse.json({ error: r.error.message }, { status: 500 });
+  for (const r of [charges, renewals, dues, budgets, summaries]) if (r.error) return NextResponse.json({ error: r.error.message }, { status: 500 });
   const pending = (charges.data ?? []) as PendingReminder[];
+  const pendingRenewal = (renewals.data ?? []) as PendingRenewal[];
   const pendingDue = (dues.data ?? []) as PendingDue[];
   const pendingBudget = (budgets.data ?? []) as PendingBudget[];
   const pendingSummary = (summaries.data ?? []) as PendingSummary[];
 
-  const userIds = [...new Set([...pending, ...pendingDue, ...pendingBudget, ...pendingSummary].map((r) => r.user_id))];
+  const userIds = [...new Set([...pending, ...pendingRenewal, ...pendingDue, ...pendingBudget, ...pendingSummary].map((r) => r.user_id))];
   if (!userIds.length) return NextResponse.json({ reminders: 0, sent: 0 });
 
   let pusher: Awaited<ReturnType<typeof pusherFor>>;
@@ -49,6 +52,11 @@ export async function GET(request: NextRequest) {
   for (const r of pending) {
     const ok = await push(r.user_id, { ...chargeText(lang(r.user_id), r), url: `/subscriptions/${r.subscription_id}`, tag: `due-${r.subscription_id}-${r.due_date}` });
     if (ok) deliveredCharges.push({ subscription_id: r.subscription_id, due_date: r.due_date });
+  }
+  const deliveredRenewals: { subscription_id: string; due_date: string }[] = [];
+  for (const r of pendingRenewal) {
+    const ok = await push(r.user_id, { ...renewText(lang(r.user_id), r), url: `/subscriptions/${r.subscription_id}`, tag: `renew-${r.subscription_id}-${r.due_date}` });
+    if (ok) deliveredRenewals.push({ subscription_id: r.subscription_id, due_date: r.due_date });
   }
   const deliveredDue: { account_id: string; due_date: string }[] = [];
   for (const r of pendingDue) {
@@ -70,10 +78,11 @@ export async function GET(request: NextRequest) {
   const { sent, removed } = await pusher.finish();
   const logs = await Promise.all([
     deliveredCharges.length ? db.from("reminders_sent").upsert(deliveredCharges, { ignoreDuplicates: true }) : null,
+    deliveredRenewals.length ? db.from("renewal_reviews_sent").upsert(deliveredRenewals, { ignoreDuplicates: true }) : null,
     deliveredDue.length ? db.from("due_reminders_sent").upsert(deliveredDue, { ignoreDuplicates: true }) : null,
     deliveredBudget.length ? db.from("budget_alerts_sent").upsert(deliveredBudget, { ignoreDuplicates: true }) : null,
     deliveredSummary.length ? db.from("month_summaries_sent").upsert(deliveredSummary, { ignoreDuplicates: true }) : null,
   ]);
   for (const l of logs) if (l?.error) console.error(l.error);
-  return NextResponse.json({ reminders: pending.length, due: pendingDue.length, budgets: pendingBudget.length, summaries: pendingSummary.length, sent, removed });
+  return NextResponse.json({ reminders: pending.length, renewals: pendingRenewal.length, due: pendingDue.length, budgets: pendingBudget.length, summaries: pendingSummary.length, sent, removed });
 }

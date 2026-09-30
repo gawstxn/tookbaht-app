@@ -173,6 +173,8 @@ export interface Settings {
   tripCurrencies?: Record<string, import("./currencies").FxCurrency>;
   /** Day of the month the user's month starts (payday), 1–31; 1 or unset is the calendar month (lib/period.ts). */
   cycleStartDay?: number;
+  /** Yearly renewals the user said they still use (lib/renewals.ts ids), so the review card stays away. */
+  renewKept?: string[];
   /** Last month ("YYYY-MM") whose leftover the user saved or skipped (lib/leftover.ts). */
   leftoverMonth?: string;
   /** Picked profile picture (lib/avatars.ts key); the initial shows when unset. */

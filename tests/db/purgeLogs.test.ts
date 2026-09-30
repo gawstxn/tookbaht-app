@@ -17,6 +17,7 @@ describe.sequential("purging old push logs", () => {
         values ('${SUB}', '${A}', 'Netflix', 419, 'month', current_date - 400, '${ACC}', 'fun');
       insert into public.reminders_sent (subscription_id, due_date) values ('${SUB}', current_date - 30), ('${SUB}', current_date + 1);
       insert into public.due_reminders_sent (account_id, due_date) values ('${ACC}', current_date - 30), ('${ACC}', current_date + 1);
+      insert into public.renewal_reviews_sent (subscription_id, due_date) values ('${SUB}', current_date - 30), ('${SUB}', current_date + 5);
       insert into public.log_reminders_sent (user_id, date) values ('${A}', current_date - 30), ('${A}', current_date);
       insert into public.budget_alerts_sent (user_id, month, budget_key, level) values
         ('${A}', to_char(current_date - 365, 'YYYY-MM'), 'total', 80), ('${A}', to_char(current_date, 'YYYY-MM'), 'total', 80),
@@ -29,6 +30,7 @@ describe.sequential("purging old push logs", () => {
   it("drops rows no reminder check reads any more", async () => {
     expect(await count("reminders_sent")).toBe(1);
     expect(await count("due_reminders_sent")).toBe(1);
+    expect(await count("renewal_reviews_sent")).toBe(1);
     expect(await count("log_reminders_sent")).toBe(1);
   });
 
