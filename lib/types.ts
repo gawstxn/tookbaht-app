@@ -70,7 +70,10 @@ export interface Subscription {
   amount: number;
   currency: Currency;
   cycle: Cycle;
+  /** First billing date; for a free trial, the day it ends and the first charge falls. */
   startDate: ISODate;
+  /** Services only: the day a free trial began (before `startDate`); nothing is charged in between. */
+  trialFrom?: ISODate | null;
   /** Paying account; the source of a recurring transfer. */
   accountId: string;
   /** Destination of a recurring transfer. */
@@ -173,6 +176,8 @@ export interface Settings {
   tripCurrencies?: Record<string, import("./currencies").FxCurrency>;
   /** Day of the month the user's month starts (payday), 1–31; 1 or unset is the calendar month (lib/period.ts). */
   cycleStartDay?: number;
+  /** Yearly renewals the user said they still use (lib/renewals.ts ids), so the review card stays away. */
+  renewKept?: string[];
   /** Last month ("YYYY-MM") whose leftover the user saved or skipped (lib/leftover.ts). */
   leftoverMonth?: string;
   /** Picked profile picture (lib/avatars.ts key); the initial shows when unset. */

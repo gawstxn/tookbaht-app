@@ -11,6 +11,7 @@ import { baht, cyclePer, shortDate, todayISO } from "@/lib/format";
 import { formatMoney, subTHB } from "@/lib/fx";
 import type { Subscription } from "@/lib/types";
 import { chargesSoFar, isService, subscriptionTotals, upcomingSubscriptions } from "@/lib/selectors";
+import { inTrial } from "@/lib/trial";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/lib/store";
 
@@ -87,6 +88,23 @@ export default function SubscriptionsPage() {
           <span className="grow">{tr("subs.next7")}</span>
           <span className="font-mono text-[13px] font-semibold text-lime">{baht(totals.next7)}</span>
         </div>
+        {totals.count ? (
+          <div className="-mt-2 flex min-h-9 items-center gap-2 text-xs text-on-ink-muted">
+            <Icon name="repeat" size={14} strokeWidth={2} className="text-lime" />
+            <span className="grow">{tr("subs.perYearAll")}</span>
+            <span className="font-mono text-[13px] font-semibold">{baht(totals.perMonth * 12 + totals.perYearExtra)}</span>
+          </div>
+        ) : null}
+        {totals.trialCount ? (
+          <div className="-mt-2 flex min-h-9 items-center gap-2 text-xs text-on-ink-muted">
+            <Icon name="gift" size={14} strokeWidth={2} className="text-lime" />
+            <span className="grow">{tr("subs.trialsAfter", { count: totals.trialCount })}</span>
+            <span className="font-mono text-[13px] font-semibold">
+              +{baht(totals.trialPerMonth)}
+              <span className="font-sans text-[11px] font-normal"> {tr("common.perMonth")}</span>
+            </span>
+          </div>
+        ) : null}
       </HeroCard>
 
       <RecurringSuggestions />
@@ -106,7 +124,7 @@ export default function SubscriptionsPage() {
                 <div className="flex min-w-0 grow flex-col">
                   <span className="truncate text-[15px] font-medium">{sub.name}</span>
                   <span className="truncate text-xs text-muted">
-                    {shortDate(due, false)} · {accName(sub.accountId)}
+                    {inTrial(sub, today) ? tr("subs.trialUntil", { date: shortDate(due, false) }) : shortDate(due, false)} · {accName(sub.accountId)}
                   </span>
                 </div>
                 <div className="flex flex-col items-end gap-0.5">

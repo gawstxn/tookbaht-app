@@ -4,10 +4,13 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { PushScreen, SubMono, TxIcon, TxRow } from "@/components/app";
-import { Empty, ListCard, PrimaryButton, PushHeader, SecondaryButton, Sheet, SwitchRow } from "@/components/ui/primitives";
+import { Icon } from "@/components/ui/Icon";
+import { Card, Empty, ListCard, PrimaryButton, PushHeader, SecondaryButton, Sheet, SwitchRow } from "@/components/ui/primitives";
 import { SUB_CATEGORIES, TYPE_META, categoryLabel } from "@/lib/constants";
 import { baht2, cycleLabel, cyclePer, diffDays, dueDatesUntil, fromISO, relativeDue, shortDate, todayISO } from "@/lib/format";
+import { renewalNotifId, spentSoFar, upcomingRenewal, yearlyCost } from "@/lib/renewals";
 import { chargesSoFar, nextCharge, planInterest } from "@/lib/selectors";
+import { inTrial } from "@/lib/trial";
 import { useTranslation } from "react-i18next";
 import { formatMoney, subTHB } from "@/lib/fx";
 import { useStore } from "@/lib/store";
@@ -21,6 +24,10 @@ export default function SubscriptionDetailPage() {
   const update = useStore((s) => s.updateSubscription);
   const remove = useStore((s) => s.deleteSubscription);
   const usdRate = useStore((s) => s.usdRate);
+  const renewKept = useStore((s) => s.settings.renewKept);
+  const setSettings = useStore((s) => s.setSettings);
+  const markRead = useStore((s) => s.markNotificationRead);
+  const notify = useStore((s) => s.notify);
   const { t: tr } = useTranslation();
   const [confirm, setConfirm] = useState(false);
   const today = todayISO();
@@ -45,6 +52,12 @@ export default function SubscriptionDetailPage() {
   const accName = (id?: string | null) => accounts.find((a) => a.id === id)?.name ?? "—";
   const start = fromISO(sub.startDate);
   const estimate = subTHB(sub, accounts, usdRate);
+  // A yearly renewal coming up asks whether it's still used, until the user answers.
+  const renewal = upcomingRenewal(sub, today);
+  const reviewId = renewal ? renewalNotifId(renewal) : null;
+  const askReview = renewal && reviewId && !(renewKept ?? []).includes(reviewId);
+  const spent = recurring ? null : spentSoFar(sub, transactions, today);
+  const trial = inTrial(sub, today);
   const dayRule =
     sub.cycle === "week"
       ? tr("subs.everyWeek")
@@ -81,7 +94,7 @@ export default function SubscriptionDetailPage() {
             ? tr("subs.pausedNow")
             : !next
               ? tr("rec.paidOff")
-              : tr(recurring ? "rec.next" : "subs.next", { date: shortDate(next.due), rel: relativeDue(days) })}
+              : tr(recurring ? "rec.next" : trial ? "subs.trialNext" : "subs.next", { date: shortDate(next.due), rel: relativeDue(days) })}
         </span>
         {sub.installments ? (
           <span className="text-[13px] text-muted">
@@ -91,11 +104,44 @@ export default function SubscriptionDetailPage() {
         ) : null}
       </section>
 
+      {askReview ? (
+        <Card className="flex flex-col gap-3 p-4">
+          <div className="flex items-start gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-warn-tint text-warn-ink">
+              <Icon name="calendar" size={20} strokeWidth={2} />
+            </span>
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <span className="font-semibold">{tr(renewal.trial ? "subs.trialReviewTitle" : "subs.reviewTitle", { count: renewal.days })}</span>
+              <span className="text-sm leading-relaxed text-muted">
+                {tr(renewal.trial ? "subs.trialReviewLead" : "subs.reviewLead", { date: shortDate(renewal.due), amount: formatMoney(sub.amount, sub.currency), name: sub.name })}
+              </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <SecondaryButton
+              onClick={() => {
+                setSettings({ renewKept: [...(renewKept ?? []), reviewId].slice(-20) });
+                markRead(reviewId);
+                notify(renewal.trial ? tr("subs.trialKept", { date: shortDate(renewal.due) }) : tr("subs.reviewKept"));
+              }}
+            >
+              {tr("subs.reviewKeep")}
+            </SecondaryButton>
+            <SecondaryButton tone="danger" onClick={() => setConfirm(true)}>
+              {tr("subs.reviewDrop")}
+            </SecondaryButton>
+          </div>
+        </Card>
+      ) : null}
+
       <ListCard>
         {sub.principal ? <Row label={tr("rec.price")} value={baht2(sub.principal)} /> : null}
         {interest ? <Row label={tr("rec.interest")} value={interest.total > 0 ? `${baht2(interest.total)} · ${interest.monthlyPct}%/${tr("cycle.month")}` : tr("pay.noInterest")} /> : null}
+        {sub.trialFrom ? <Row label={tr("subs.trialPeriod")} value={`${shortDate(sub.trialFrom)} – ${shortDate(sub.startDate)}`} /> : null}
         <Row label={tr("subs.cycle")} value={cycleLabel(sub.cycle)} />
         <Row label={tr("subs.billingDay")} value={dayRule} />
+        {!recurring && sub.cycle !== "year" ? <Row label={tr("subs.perYear")} value={formatMoney(yearlyCost(sub.amount, sub.cycle), sub.currency)} /> : null}
+        {spent?.count ? <Row label={tr("subs.spentSoFar")} value={tr("subs.spentCount", { amount: formatMoney(spent.amount, spent.currency), count: spent.count })} /> : null}
         {sub.entryType === "move" ? (
           <>
             <Row label={tr("rec.from")} value={accName(sub.accountId)} />
@@ -112,7 +158,7 @@ export default function SubscriptionDetailPage() {
 
       <ListCard>
         {sub.entryType !== "in" ? (
-          <SwitchRow label={tr(recurring ? "rec.remind" : "subs.remind")} hint={recurring ? undefined : tr("subs.remindHint")} checked={sub.remind} onChange={(remind) => update(sub.id, { remind })} />
+          <SwitchRow label={tr(recurring ? "rec.remind" : "subs.remind")} hint={recurring ? undefined : tr(trial ? "subs.remindHintTrial" : sub.cycle === "year" ? "subs.remindHintYear" : "subs.remindHint")} checked={sub.remind} onChange={(remind) => update(sub.id, { remind })} />
         ) : null}
         <SwitchRow
           label={tr(!recurring ? "subs.autoLog" : sub.entryType === "in" ? "rec.autoLogIn" : sub.entryType === "move" ? "rec.autoLogMove" : "rec.autoLogOut")}

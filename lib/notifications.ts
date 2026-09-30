@@ -3,11 +3,12 @@ import { baht, addDays, fromISO, monthLabel, relativeDue, toISO } from "./format
 import { periodOf, shiftPeriod } from "./period";
 import { formatForeign } from "./currencies";
 import { formatMoney } from "./fx";
+import { renewalNoticeDay, renewalNotifId, upcomingRenewals } from "./renewals";
 import { t } from "./i18n";
 import { REPAY_CATEGORY, accountDue, daysLeftInMonth, monthTransactions, nextCharge, summarize } from "./selectors";
 import type { Account, Goals, Settings, Subscription, Transaction, Wish } from "./types";
 
-export type NotifKind = "due" | "over" | "near" | "autolog" | "income" | "weekly" | "summary" | "price" | "wish";
+export type NotifKind = "due" | "over" | "near" | "autolog" | "income" | "weekly" | "summary" | "price" | "wish" | "renew";
 
 export interface AppNotification {
   id: string;
@@ -70,6 +71,19 @@ export function buildNotifications(input: {
       title: t(due === today ? "notif.dueToday" : "notif.dueTomorrow", { name: s.name }),
       body: t("notif.fromAccount", { amount: formatMoney(s.amount, s.currency), account: accName(s.accountId) }),
       href: `/subscriptions/${s.id}`,
+    });
+  }
+
+  // Yearly services renewing within a week, and free trials ending within a few
+  // days: still used? (09:00, a week / TRIAL_NOTICE_DAYS before.)
+  for (const r of upcomingRenewals(subscriptions, today)) {
+    out.push({
+      id: renewalNotifId(r),
+      kind: "renew",
+      at: Math.min(now, at(renewalNoticeDay(r), 9)),
+      title: t(r.trial ? "notif.trialEnds" : "notif.renew", { name: r.sub.name, count: r.days }),
+      body: t(r.trial ? "notif.trialEndsBody" : "notif.renewBody", { amount: formatMoney(r.sub.amount, r.sub.currency) }),
+      href: `/subscriptions/${r.sub.id}`,
     });
   }
 

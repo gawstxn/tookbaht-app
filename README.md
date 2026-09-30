@@ -41,7 +41,7 @@
 
 ### Every month
 - **Shared subscriptions:** add the friends who share a subscription or recurring bill; each charge the database logs also records what they owe.
-- **Subscriptions** with service logos, priced in baht or USD (converted at that day's rate plus the card's fee, optional +7% VAT).
+- **Subscriptions** with service logos, priced in baht or USD (converted at that day's rate plus the card's fee, optional +7% VAT); a week before a yearly one renews the app asks whether it's still used, and each shows what it has cost so far.
 - **Recurring entries** (salary, rent, monthly saving) logged by the database on schedule, even when the app is closed.
 - **Installments** counted in the month each one is paid, stopping after the last.
 

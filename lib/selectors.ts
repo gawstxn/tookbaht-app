@@ -1,6 +1,7 @@
 import { baht, daysInMonth, diffDays, dueDatesUntil, monthlyEquivalent, stepCycle } from "./format";
 import { dayOfPeriod, inPeriod, periodDays, type Period } from "./period";
 import { t } from "./i18n";
+import { inTrial } from "./trial";
 import type { Account, Subscription, Transaction } from "./types";
 
 /** Entries dated in the user's month `p` (lib/period.ts). */
@@ -95,11 +96,17 @@ export function upcomingSubscriptions(subs: Subscription[], today: string): Upco
 /** Services (Netflix, Spotify…) as opposed to salary, rent, transfers and installments. */
 export const isService = (s: Pick<Subscription, "kind">) => s.kind !== "recurring";
 
-/** Totals in baht; `thb` converts a subscription's price (USD ones are estimates, 0 when no rate yet). */
+/**
+ * Totals in baht; `thb` converts a subscription's price (USD ones are estimates, 0 when no rate yet).
+ * Services still in a free trial aren't paid for yet: they're left out of the
+ * per-month and per-year totals and counted in `trialPerMonth` instead.
+ */
 export function subscriptionTotals(subs: Subscription[], today: string, thb: (s: Subscription) => number = (s) => s.amount) {
   const active = subs.filter((s) => !s.paused && isService(s));
-  const monthlyOnly = active.filter((s) => s.cycle !== "year");
-  const yearly = active.filter((s) => s.cycle === "year");
+  const trials = active.filter((s) => inTrial(s, today));
+  const paying = active.filter((s) => !inTrial(s, today));
+  const monthlyOnly = paying.filter((s) => s.cycle !== "year");
+  const yearly = paying.filter((s) => s.cycle === "year");
   const perMonth = monthlyOnly.reduce((a, s) => a + monthlyEquivalent(thb(s), s.cycle), 0);
   const perYearExtra = yearly.reduce((a, s) => a + thb(s), 0);
   const next7 = upcomingSubscriptions(active, today)
@@ -107,7 +114,8 @@ export function subscriptionTotals(subs: Subscription[], today: string, thb: (s:
     .reduce((a, u) => a + thb(u.sub), 0);
   const byCategory: Record<string, number> = {};
   for (const s of monthlyOnly) byCategory[s.category] = (byCategory[s.category] ?? 0) + monthlyEquivalent(thb(s), s.cycle);
-  return { perMonth, perYearExtra, next7, byCategory, count: active.length };
+  const trialPerMonth = trials.reduce((a, s) => a + monthlyEquivalent(thb(s), s.cycle), 0);
+  return { perMonth, perYearExtra, next7, byCategory, count: active.length, trialCount: trials.length, trialPerMonth };
 }
 
 /** Fraction of the month elapsed (for "should have spent by now" markers). */
