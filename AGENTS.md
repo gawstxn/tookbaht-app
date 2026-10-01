@@ -14,7 +14,7 @@ Personal-finance PWA used on an iPhone as an installed app. Thai-first (English 
 
 ## Commands
 
-- `npm run dev` · `npm test` · `npm run lint` · `npm run build` (also type-checks)
+- `npm run dev` · `npm test` · `npm run lint` · `npm run format` (Prettier; CI runs `npm run format:check`) · `npm run build` (also type-checks)
 - Local database: `npx supabase start` (Docker Desktop must be running), `npx supabase migration up` after adding a migration.
 - Local sign-in: the one-tap "dev@tookbaht.local" button on /login (needs `NEXT_PUBLIC_DEV_LOGIN=true` and a local Supabase URL). The onboarding "sample data" button fills a demo account.
 
@@ -44,7 +44,7 @@ Personal-finance PWA used on an iPhone as an installed app. Thai-first (English 
 
 ## Verifying changes
 
-- Always: `npm run lint`, `npm test`, `npx tsc --noEmit`, `npm run build`.
+- Always: `npm run format`, `npm run lint`, `npm test`, `npx tsc --noEmit`, `npm run build`.
 - UI changes: run the app against local Supabase and check the affected screens at 414×896 in light and dark. Headless Playwright works when the browser pane can't render.
 - Animations: check them mid-flight, not only before and after: slow them 10× with CDP `Animation.setPlaybackRate` and screenshot. Pages ghosting through each other and back buttons with no slide both reached users because only end states were checked.
 
