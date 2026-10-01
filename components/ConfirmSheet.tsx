@@ -1,7 +1,7 @@
-"use client";
+"use client"
 
-import { useTranslation } from "react-i18next";
-import { PrimaryButton, SecondaryButton, Sheet } from "./ui/primitives";
+import { useTranslation } from "react-i18next"
+import { PrimaryButton, SecondaryButton, Sheet } from "./ui/primitives"
 
 /**
  * "Delete …?" drawer: a short explanation, a red confirm button and a way
@@ -16,16 +16,16 @@ export function ConfirmSheet({
   onConfirm,
   tone = "danger",
 }: {
-  open: boolean;
-  onClose: () => void;
-  title: string;
-  lead: string;
-  confirmLabel: string;
-  onConfirm: () => void;
+  open: boolean
+  onClose: () => void
+  title: string
+  lead: string
+  confirmLabel: string
+  onConfirm: () => void
   /** "ink" for a plain "are you sure?" that isn't a delete. */
-  tone?: "danger" | "ink";
+  tone?: "danger" | "ink"
 }) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
   return (
     <Sheet open={open} onClose={onClose} title={title} titleClassName={tone === "danger" ? "text-danger" : undefined}>
       <p className="text-sm text-muted">{lead}</p>
@@ -34,5 +34,5 @@ export function ConfirmSheet({
       </PrimaryButton>
       <SecondaryButton onClick={onClose}>{t("common.cancel")}</SecondaryButton>
     </Sheet>
-  );
+  )
 }

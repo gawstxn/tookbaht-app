@@ -1,5 +1,5 @@
-import { enCat, enTransferTo } from "./en.titles";
-import type { Messages } from "./th";
+import { enCat, enTransferTo } from "./en.titles"
+import type { Messages } from "./th"
 
 /** English UI strings. Same keys as th.ts. */
 const en: Messages = {
@@ -43,17 +43,38 @@ const en: Messages = {
   },
   lang: { title: "Language", th: "ไทย", en: "English" },
   theme: { title: "Theme", light: "Light", dark: "Dark", system: "System" },
-  nav: { home: "Home", transactions: "Activity", monthly: "Monthly", profile: "Profile", menu: "Main menu", add: "Add transaction" },
+  nav: {
+    home: "Home",
+    transactions: "Activity",
+    monthly: "Monthly",
+    profile: "Profile",
+    menu: "Main menu",
+    add: "Add transaction",
+  },
   type: { in: "Income", out: "Expense", move: "Transfer", moveLong: "transfer" },
   cat: enCat,
   kind: { bank: "Bank", saving: "Savings", credit: "Credit card", cash: "Cash", savingLong: "Savings account" },
   cycle: { week: "Weekly", month: "Monthly", year: "Yearly", perWeek: "/ wk", perMonth: "/ mo", perYear: "/ yr" },
   catalog: {
-    video: "Video", music: "Music & audiobooks", net: "Home internet & mobile", ai: "AI & work",
-    cloud: "Cloud & security", web: "Domains & hosting", games: "Games", health: "Health & learning", other: "Other",
-    aisMonthly: "AIS postpaid", trueMonthly: "True postpaid", dtacMonthly: "dtac postpaid",
+    video: "Video",
+    music: "Music & audiobooks",
+    net: "Home internet & mobile",
+    ai: "AI & work",
+    cloud: "Cloud & security",
+    web: "Domains & hosting",
+    games: "Games",
+    health: "Health & learning",
+    other: "Other",
+    aisMonthly: "AIS postpaid",
+    trueMonthly: "True postpaid",
+    dtacMonthly: "dtac postpaid",
   },
-  balance: { left: "{{amount}} left", creditLeft: "{{amount}} credit left", limit: "Credit limit", opening: "Opening balance" },
+  balance: {
+    left: "{{amount}} left",
+    creditLeft: "{{amount}} credit left",
+    limit: "Credit limit",
+    opening: "Opening balance",
+  },
   login: {
     sampleLeft: "Left this month",
     sample: "Sample",
@@ -95,7 +116,8 @@ const en: Messages = {
       step3: "In the browser, tap <b>Add Tookbaht to Home Screen</b> again",
     },
     inAppTitle: "Open in your browser first",
-    inAppLead: "This link opened inside a chat or social app, which can't add it to your home screen. Open it in Chrome or Safari first.",
+    inAppLead:
+      "This link opened inside a chat or social app, which can't add it to your home screen. Open it in Chrome or Safari first.",
     openInBrowser: "Open in browser",
     installNow: "Install now",
   },
@@ -216,7 +238,7 @@ const en: Messages = {
     fromSub: "Logged automatically from a subscription",
     delete: "Delete transaction",
     deleteTitle: "Delete this entry?",
-    deleteLead: "Deletes \"{{name}}\" {{amount}}. Changed your mind? Tap undo right after.",
+    deleteLead: 'Deletes "{{name}}" {{amount}}. Changed your mind? Tap undo right after.',
     edit: "Edit transaction",
     editTitle: "Edit transaction",
     saveEdit: "Save changes",
@@ -270,7 +292,8 @@ const en: Messages = {
     spentCount: "{{amount}} · {{count}} bills",
     reviewTitle_one: "Renews tomorrow",
     reviewTitle: "Renews in {{count}} days",
-    reviewLead: "On {{date}} it bills {{amount}} for another year. Still using it? If not, cancel with {{name}} before then.",
+    reviewLead:
+      "On {{date}} it bills {{amount}} for another year. Still using it? If not, cancel with {{name}} before then.",
     reviewKeep: "Still using it",
     reviewDrop: "Not anymore",
     reviewKept: "Got it. We'll ask again next year",
@@ -589,7 +612,7 @@ const en: Messages = {
   goals: {
     rollover: "Roll over",
     rolloverFor: "Carry {{label}}'s unused budget into next month",
-    rolloverHint: "Categories set to \"Roll over\" get last month's unused budget added (one month back).",
+    rolloverHint: 'Categories set to "Roll over" get last month\'s unused budget added (one month back).',
     carried: "+ {{amount}} carried from last month",
     title: "Goals",
     set: "Set goals",
@@ -689,7 +712,8 @@ const en: Messages = {
     finish: "Done",
     next: "Next",
     notifyTitle: "Install the app and turn on reminders",
-    notifyLead: "Add Tookbaht to your home screen to open it in one tap, then turn on notifications to hear before charges, payment due dates and when a budget runs low.",
+    notifyLead:
+      "Add Tookbaht to your home screen to open it in one tap, then turn on notifications to hear before charges, payment due dates and when a budget runs low.",
   },
   profile: {
     title: "Profile",
@@ -713,8 +737,10 @@ const en: Messages = {
     signedInAs: "Email",
     signInWith: "Signed in with",
     emailProvider: "Email",
-    deleteIntro: "Deleting your account removes all your data for good after 30 days; sign in before then to restore it.",
-    currencyLead: "The app works in baht only for now; the main currency can't be changed. All accounts and entries are in baht. Services priced in dollars are converted at the rate on the billing date, plus your card's fee.",
+    deleteIntro:
+      "Deleting your account removes all your data for good after 30 days; sign in before then to restore it.",
+    currencyLead:
+      "The app works in baht only for now; the main currency can't be changed. All accounts and entries are in baht. Services priced in dollars are converted at the rate on the billing date, plus your card's fee.",
     currencyMain: "Main currency",
     usdRate: "1 US dollar (USD)",
     usdRateAsOf: "Latest working-day rate, {{date}} (European Central Bank)",
@@ -732,7 +758,8 @@ const en: Messages = {
     loggingOut: "Signing out…",
     delete: "Delete account",
     deleteTitle: "Delete account?",
-    deleteLead: "Your account closes now and all data is deleted for good after 30 days. Sign in before then to restore it.",
+    deleteLead:
+      "Your account closes now and all data is deleted for good after 30 days. Sign in before then to restore it.",
     deleteBackup: "Download a backup first",
     deleteConfirm: "I understand it can't be restored after 30 days",
     deleteGo: "Confirm with Google and delete",
@@ -760,7 +787,14 @@ const en: Messages = {
     on: "Notifications turned on for this device",
     off: "Notifications turned off for this device",
   },
-  picker: { prevYear: "Previous year", nextYear: "Next year", prevMonth: "Previous month", nextMonth: "Next month", pickMonth: "Choose month", otherSide: "Already chosen on the other side" },
+  picker: {
+    prevYear: "Previous year",
+    nextYear: "Next year",
+    prevMonth: "Previous month",
+    nextMonth: "Next month",
+    pickMonth: "Choose month",
+    otherSide: "Already chosen on the other side",
+  },
   ious: {
     title: "Owed & owing",
     add: "Add someone who owes you",
@@ -768,7 +802,7 @@ const en: Messages = {
     people_one: "{{count}} person hasn't paid back",
     people_other: "{{count}} people haven't paid back",
     allClear: "Everyone has paid back",
-    hint: "Split a bill from an expense (tap it, then \"Split with friends\") or tap + to add one yourself.",
+    hint: 'Split a bill from an expense (tap it, then "Split with friends") or tap + to add one yourself.',
     empty: "Nobody owes you anything",
     settledTitle: "Recently paid back",
     noNote: "No note",
@@ -841,7 +875,8 @@ const en: Messages = {
     edit: "Edit goal",
     delete: "Delete goal",
     deleteTitle: "Delete {{name}}?",
-    deleteLead: "Removes the goal and what you tracked towards it; account balances don't change. Changed your mind? Tap undo right after.",
+    deleteLead:
+      "Removes the goal and what you tracked towards it; account balances don't change. Changed your mind? Tap undo right after.",
     editTitle: "Edit goal",
     newTitle: "New savings goal",
     namePlaceholder: "What for, e.g. Japan trip",
@@ -852,7 +887,7 @@ const en: Messages = {
     keptIn: "Money is kept in",
     manual: "Track by hand",
     linkedLead: "Progress follows this account's balance; best for a savings account set aside for this goal.",
-    manualLead: "Tap \"Put in\" whenever you set money aside; balances don't change.",
+    manualLead: 'Tap "Put in" whenever you set money aside; balances don\'t change.',
   },
   reminder: {
     label: "Remind me at 8 pm",
@@ -881,7 +916,8 @@ const en: Messages = {
     title: "Report a problem",
     lead: "Tell us briefly what went wrong, or what you'd like the app to do.",
     placeholder: "e.g. the balance didn't change after saving",
-    attached: "Sent with the app version ({{version}}), the last screen you opened ({{page}}) and your browser, to help find the cause.",
+    attached:
+      "Sent with the app version ({{version}}), the last screen you opened ({{page}}) and your browser, to help find the cause.",
     send: "Send",
     sending: "Sending…",
     sent: "Sent. Thank you!",
@@ -933,7 +969,8 @@ const en: Messages = {
     filled: "Filled in from the slip: {{amount}} · {{date}}. Check before saving.",
     readingN: "Reading slip {{i}} of {{n}}",
     batchTitle: "{{count}} slips",
-    batchLead: "Pick the ones to save. They're saved as {{category}} expenses from {{account}} (change these on the add screen before picking photos).",
+    batchLead:
+      "Pick the ones to save. They're saved as {{category}} expenses from {{account}} (change these on the add screen before picking photos).",
     noAmount: "Couldn't read the amount",
     maybeLogged: "{{date}} · maybe logged already",
     batchSave: "Save {{count}} · {{amount}}",
@@ -987,10 +1024,12 @@ const en: Messages = {
     copied: "Message copied, paste it in the chat",
     copyFailed: "Couldn't copy. Try again.",
     shareFailed: "Couldn't share. Try again.",
-    setupLead: "Enter the mobile number or national ID linked to your PromptPay and the QR appears right away. Change it later in Profile → My PromptPay.",
+    setupLead:
+      "Enter the mobile number or national ID linked to your PromptPay and the QR appears right away. Change it later in Profile → My PromptPay.",
     setupSave: "Save and show QR",
     current: "Current",
-    lockedLead: "Confirm with Google before changing or removing it, so someone holding your phone can't swap in their own number.",
+    lockedLead:
+      "Confirm with Google before changing or removing it, so someone holding your phone can't swap in their own number.",
   },
   unusual: {
     title: "Above usual",
@@ -1106,7 +1145,8 @@ const en: Messages = {
     skip: "Not buying, {{amount}} held back",
     buy: "Buy",
     buyTitle: "Buy it",
-    buyEarly: "It isn't the day yet ({{count}} days to go). If you're sure, go ahead: it's logged as a shopping expense.",
+    buyEarly:
+      "It isn't the day yet ({{count}} days to go). If you're sure, go ahead: it's logged as a shopping expense.",
     buyLead: "Log {{name}} {{amount}} as a shopping expense today",
     buyConfirm: "Bought, log {{amount}}",
     boughtOn: "Bought on {{date}}",
@@ -1133,7 +1173,8 @@ const en: Messages = {
     lifeHealthOver: "Life and your own health insurance together count up to {{cap}}; you're over by {{amount}}",
     entries_one: "{{count}} entry",
     entries_other: "{{count}} entries",
-    disclaimer: "The app only adds up what you marked. Caps and rules can change every year: check with the Revenue Department before filing.",
+    disclaimer:
+      "The app only adds up what you marked. Caps and rules can change every year: check with the Revenue Department before filing.",
     linkTitle: "Tax deductions {{year}}",
     linkEmpty: "Mark deductible expenses like insurance, RMF or donations",
     type: {
@@ -1152,7 +1193,8 @@ const en: Messages = {
       rmf: "Up to 30% of income, and at most 500,000 baht together with other retirement savings (e.g. PVD, pension insurance)",
       thaiesg: "Up to 30% of income; the baht cap changes by tax year",
       donation: "Up to 10% of income after expenses and allowances",
-      donationDouble: "Education, sports or public hospital donations count twice, within 10% of income after expenses and allowances together with other donations",
+      donationDouble:
+        "Education, sports or public hospital donations count twice, within 10% of income after expenses and allowances together with other donations",
       easyReceipt: "Cap and dates follow each year's scheme; needs an e-tax invoice",
       other: "Check the conditions with the Revenue Department",
     },
@@ -1170,8 +1212,10 @@ const en: Messages = {
     toNext: "{{count}} more days to {{tier}}",
     topTier: "Top tier reached",
     tiersTitle: "All tiers",
-    tiersLead_one: "Tiers rise with the total days you've logged, streak or not, and never drop. You've logged {{count}} day so far.",
-    tiersLead_other: "Tiers rise with the total days you've logged, streak or not, and never drop. You've logged {{count}} days so far.",
+    tiersLead_one:
+      "Tiers rise with the total days you've logged, streak or not, and never drop. You've logged {{count}} day so far.",
+    tiersLead_other:
+      "Tiers rise with the total days you've logged, streak or not, and never drop. You've logged {{count}} days so far.",
     tierStart: "Starting tier",
     tierNeeds: "{{count}} days logged",
     tierYou: "You're here",
@@ -1179,7 +1223,8 @@ const en: Messages = {
     tierLeft_one: "{{count}} more day",
     tierLeft_other: "{{count}} more days",
     missedTitle: "{{day}}: nothing logged",
-    missedLead: "Log that day's entries, or confirm you spent nothing, to keep your streak. {{left}} of {{quota}} restores left this month.",
+    missedLead:
+      "Log that day's entries, or confirm you spent nothing, to keep your streak. {{left}} of {{quota}} restores left this month.",
     noQuota: "You've used this month's restores; your streak starts again.",
     logThatDay: "Log that day",
     noSpendThatDay: "Spent nothing",
@@ -1201,8 +1246,10 @@ const en: Messages = {
     perfectWeekToast: "Perfect week: all 7 days logged",
     bonusNote: "Includes one extra for keeping last month within budget.",
     rulesTitle: "How it works",
-    ruleCount: "Log at least one entry yourself, or confirm you spent nothing, and the day counts. Charges logged automatically don't count.",
-    ruleRestore: "Missed a day? Go back and log it within 2 days. One restore a month (two from a 30-day streak, three from 100 days); they reset when your month starts.",
+    ruleCount:
+      "Log at least one entry yourself, or confirm you spent nothing, and the day counts. Charges logged automatically don't count.",
+    ruleRestore:
+      "Missed a day? Go back and log it within 2 days. One restore a month (two from a 30-day streak, three from 100 days); they reset when your month starts.",
     ruleBudget: "Kept last month's spending within your overall budget? You get one extra restore this month.",
     rulePerfect: "Log every day of a week, Sunday to Saturday, on the day itself for a perfect week.",
     ruleTier: "Your tier rises with the total days you've logged and never drops, even if a streak ends.",
@@ -1210,46 +1257,154 @@ const en: Messages = {
   },
   whatsNew: {
     title: "What's new in v{{version}}",
-    trials: { title: "Free trials", body: "When adding a subscription, turn on \"Free trial\" and pick 7 days, 1 month, 3 months, 1 year or your own end date. It isn't counted as a cost until the trial ends, and you're reminded 3 days before, in time to cancel." },
-    renewReview: { title: "A nudge before yearly renewals", body: "For services you pay yearly, like a domain or iCloud, the app asks a week before renewal whether you still use it, in time to cancel. The service page also shows what it has cost so far." },
-    payShare: { title: "QR images that say what it's for", body: "The PromptPay QR you share now shows the amount and each debt it covers, so friends see what they're paying for. Can't share an image? Tap Copy message and paste it in the chat. On a trip split, tap QR next to anyone who owes you." },
-    perfectWeek: { title: "Perfect weeks, and a restore for staying on budget", body: "The streak screen shows this week, Sunday to Saturday: log every day on the day for a perfect week. Keep a month within your overall budget and the next month gives you one extra restore for a missed day." },
-    payCycle: { title: "Start your month on payday", body: "Profile → Settings → Month starts on. Pick the day your salary comes in, say the 25th, and what's left, budgets, rollover and the monthly summary count from then until the day before your next payday." },
-    cashflow: { title: "Will it cover?", body: "My accounts → Will it cover? shows each account day by day for the next 30 days, from salary, bills, installments and card bills. If an account will run short, Home warns you ahead of time." },
-    tierArt: { title: "New tiers: from Coin to Safe", body: "Streak tiers have new names and icons, and the money grows as you log: Coin, Note, Small wad, Thick stack, Money bag, then Safe, coloured from bronze, silver and gold up to gems." },
-    tiers: { title: "See every money tier", body: "On the streak screen, tap your tier to see all six, from Coin to the 1,000-baht note, how many days each takes, and where you are." },
-    monthCard: { title: "Share your month", body: "Insights → Monthly, tap \"Share summary\" for an image of what you kept, your top category and what you held back, ready for an IG story or LINE. Show percentages if you'd rather not share real amounts." },
-    tripCurrency: { title: "Log in yen, won or euros", body: "When adding an entry, tap \"Currency\" and type the amount in that currency. It's converted to baht at that day's rate and the original is kept. Tag the trip once and its next entries use the same currency." },
-    leftover: { title: "Save what's left", body: "In the first week of a month, Home shows what last month's budget left over. One tap puts it into a savings goal, logging the transfer to its account." },
-    forecast: { title: "Month-end forecast", body: "Insights → Monthly shows where this month's spending is heading and whether it will go over budget, from what you've spent, the bills and installments still to come, and your daily average." },
-    hideAmounts: { title: "Hide amounts", body: "Tap the eye on the Home card and every amount turns into ฿•••, handy in public or before sharing a screenshot. Tap again to show them. Set per device." },
-    streak: { title: "Streaks and money tiers", body: "Tap the flame on Home to see your logging streak, restore a missed day, and climb from Coin to the 1,000-baht note. Spent nothing today? Confirm it and the day still counts." },
-    profileLook: { title: "Your name and picture", body: "Tap the card at the top of Profile to change your display name and pick a picture: 16 people and animals to choose from." },
-    domains: { title: "Domains & hosting", body: "Cloudflare, Namecheap, Vercel and other domain and hosting services are now in the subscription list, with their logos. Set the cycle to yearly for domain renewals." },
-    tax: { title: "Track tax deductions", body: "Mark expenses like life insurance, RMF or donations while logging, then see each year's totals against the caps in Insights → Overview." },
-    wishlist: { title: "Wishlist", body: "Profile → Wishlist: note something you want and wait before buying. The app reminds you on the day; what you skip counts as money held back." },
-    outlook: { title: "Installments ahead", body: "Insights → Overview shows what your installment plans take next month and the five after, as a share of income, and when they end." },
-    sharedSubs: { title: "Share subscriptions with friends", body: "Add the friends who share a subscription or recurring bill. Each charge records what they owe, ready for a PromptPay QR." },
-    promptpaySafe: { title: "PromptPay ID protected", body: "Changing or removing your PromptPay ID now asks Google first, and the number is partly hidden on screen." },
-    trip: { title: "Split a trip with friends", body: "Insights → Trips, pick a trip and tap Split this trip. Every bill is added up into the fewest transfers." },
-    splitMore: { title: "Split by amount", body: "Type what each friend owes when shares aren't even, or tap \"Split with friends\" while adding an expense." },
-    insightsTabs: { title: "Insights in two tabs", body: "Monthly: charts, categories and the calendar · Overview: net worth, the year and trips." },
-    settings: { title: "Settings screen", body: "Language, theme, app lock and notifications moved to Profile → Settings." },
-    slip: { title: "Read a slip", body: "On the add screen, tap \"Read a slip\" and pick a photo: amount, date and memo are filled in. Read on your device only." },
-    tags: { title: "Trip tags", body: "Tag entries (e.g. Japan trip) and see the whole trip's total in Insights → Trips & projects." },
-    iOwe: { title: "What you owe friends", body: "Note it when a friend pays for you; log the expense when you pay them back." },
+    trials: {
+      title: "Free trials",
+      body: "When adding a subscription, turn on \"Free trial\" and pick 7 days, 1 month, 3 months, 1 year or your own end date. It isn't counted as a cost until the trial ends, and you're reminded 3 days before, in time to cancel.",
+    },
+    renewReview: {
+      title: "A nudge before yearly renewals",
+      body: "For services you pay yearly, like a domain or iCloud, the app asks a week before renewal whether you still use it, in time to cancel. The service page also shows what it has cost so far.",
+    },
+    payShare: {
+      title: "QR images that say what it's for",
+      body: "The PromptPay QR you share now shows the amount and each debt it covers, so friends see what they're paying for. Can't share an image? Tap Copy message and paste it in the chat. On a trip split, tap QR next to anyone who owes you.",
+    },
+    perfectWeek: {
+      title: "Perfect weeks, and a restore for staying on budget",
+      body: "The streak screen shows this week, Sunday to Saturday: log every day on the day for a perfect week. Keep a month within your overall budget and the next month gives you one extra restore for a missed day.",
+    },
+    payCycle: {
+      title: "Start your month on payday",
+      body: "Profile → Settings → Month starts on. Pick the day your salary comes in, say the 25th, and what's left, budgets, rollover and the monthly summary count from then until the day before your next payday.",
+    },
+    cashflow: {
+      title: "Will it cover?",
+      body: "My accounts → Will it cover? shows each account day by day for the next 30 days, from salary, bills, installments and card bills. If an account will run short, Home warns you ahead of time.",
+    },
+    tierArt: {
+      title: "New tiers: from Coin to Safe",
+      body: "Streak tiers have new names and icons, and the money grows as you log: Coin, Note, Small wad, Thick stack, Money bag, then Safe, coloured from bronze, silver and gold up to gems.",
+    },
+    tiers: {
+      title: "See every money tier",
+      body: "On the streak screen, tap your tier to see all six, from Coin to the 1,000-baht note, how many days each takes, and where you are.",
+    },
+    monthCard: {
+      title: "Share your month",
+      body: 'Insights → Monthly, tap "Share summary" for an image of what you kept, your top category and what you held back, ready for an IG story or LINE. Show percentages if you\'d rather not share real amounts.',
+    },
+    tripCurrency: {
+      title: "Log in yen, won or euros",
+      body: "When adding an entry, tap \"Currency\" and type the amount in that currency. It's converted to baht at that day's rate and the original is kept. Tag the trip once and its next entries use the same currency.",
+    },
+    leftover: {
+      title: "Save what's left",
+      body: "In the first week of a month, Home shows what last month's budget left over. One tap puts it into a savings goal, logging the transfer to its account.",
+    },
+    forecast: {
+      title: "Month-end forecast",
+      body: "Insights → Monthly shows where this month's spending is heading and whether it will go over budget, from what you've spent, the bills and installments still to come, and your daily average.",
+    },
+    hideAmounts: {
+      title: "Hide amounts",
+      body: "Tap the eye on the Home card and every amount turns into ฿•••, handy in public or before sharing a screenshot. Tap again to show them. Set per device.",
+    },
+    streak: {
+      title: "Streaks and money tiers",
+      body: "Tap the flame on Home to see your logging streak, restore a missed day, and climb from Coin to the 1,000-baht note. Spent nothing today? Confirm it and the day still counts.",
+    },
+    profileLook: {
+      title: "Your name and picture",
+      body: "Tap the card at the top of Profile to change your display name and pick a picture: 16 people and animals to choose from.",
+    },
+    domains: {
+      title: "Domains & hosting",
+      body: "Cloudflare, Namecheap, Vercel and other domain and hosting services are now in the subscription list, with their logos. Set the cycle to yearly for domain renewals.",
+    },
+    tax: {
+      title: "Track tax deductions",
+      body: "Mark expenses like life insurance, RMF or donations while logging, then see each year's totals against the caps in Insights → Overview.",
+    },
+    wishlist: {
+      title: "Wishlist",
+      body: "Profile → Wishlist: note something you want and wait before buying. The app reminds you on the day; what you skip counts as money held back.",
+    },
+    outlook: {
+      title: "Installments ahead",
+      body: "Insights → Overview shows what your installment plans take next month and the five after, as a share of income, and when they end.",
+    },
+    sharedSubs: {
+      title: "Share subscriptions with friends",
+      body: "Add the friends who share a subscription or recurring bill. Each charge records what they owe, ready for a PromptPay QR.",
+    },
+    promptpaySafe: {
+      title: "PromptPay ID protected",
+      body: "Changing or removing your PromptPay ID now asks Google first, and the number is partly hidden on screen.",
+    },
+    trip: {
+      title: "Split a trip with friends",
+      body: "Insights → Trips, pick a trip and tap Split this trip. Every bill is added up into the fewest transfers.",
+    },
+    splitMore: {
+      title: "Split by amount",
+      body: 'Type what each friend owes when shares aren\'t even, or tap "Split with friends" while adding an expense.',
+    },
+    insightsTabs: {
+      title: "Insights in two tabs",
+      body: "Monthly: charts, categories and the calendar · Overview: net worth, the year and trips.",
+    },
+    settings: {
+      title: "Settings screen",
+      body: "Language, theme, app lock and notifications moved to Profile → Settings.",
+    },
+    slip: {
+      title: "Read a slip",
+      body: 'On the add screen, tap "Read a slip" and pick a photo: amount, date and memo are filled in. Read on your device only.',
+    },
+    tags: {
+      title: "Trip tags",
+      body: "Tag entries (e.g. Japan trip) and see the whole trip's total in Insights → Trips & projects.",
+    },
+    iOwe: {
+      title: "What you owe friends",
+      body: "Note it when a friend pays for you; log the expense when you pay them back.",
+    },
     rollover: { title: "Roll unused budget over", body: "Pick the categories to roll over when setting your goals." },
     calendar: { title: "Spending calendar and net worth", body: "In Insights; tap a day to see its entries." },
-    year: { title: "Year in review", body: "What you saved, your best month and top categories, at the end of Insights." },
+    year: {
+      title: "Year in review",
+      body: "What you saved, your best month and top categories, at the end of Insights.",
+    },
     allowance: { title: "Left to spend today", body: "Home shows today's share of what's left in your budget." },
     reminder: { title: "8 pm reminder", body: "Turn it on in Settings; it only nudges on days you haven't logged." },
-    priceUp: { title: "Price rise alerts", body: "The notification center tells you when a subscription charged more than last time." },
-    keypad: { title: "Calculator keys on or off", body: "Tap the calculator button at the top right of the add screen." },
-    promptpay: { title: "PromptPay QR for friends", body: "Tap QR next to a friend on the money-owed screen (the first time, enter your PromptPay). They scan it to pay back." },
-    categories: { title: "Your own categories", body: "Add expense or income categories in Profile → My categories, or tap + Add category while logging." },
-    slips: { title: "Read several slips at once", body: "Tap Read slip and pick up to 10 photos, check them, save them together. Ones that look logged already start unticked." },
-    bills: { title: "Monthly bills spotted", body: "Log the same expense every month, like rent, and Subscriptions offers to make it a recurring entry." },
-    habits: { title: "Savings cushion and unusual spending", body: "Insights shows how many months your money would last, and which categories run above usual this month." },
+    priceUp: {
+      title: "Price rise alerts",
+      body: "The notification center tells you when a subscription charged more than last time.",
+    },
+    keypad: {
+      title: "Calculator keys on or off",
+      body: "Tap the calculator button at the top right of the add screen.",
+    },
+    promptpay: {
+      title: "PromptPay QR for friends",
+      body: "Tap QR next to a friend on the money-owed screen (the first time, enter your PromptPay). They scan it to pay back.",
+    },
+    categories: {
+      title: "Your own categories",
+      body: "Add expense or income categories in Profile → My categories, or tap + Add category while logging.",
+    },
+    slips: {
+      title: "Read several slips at once",
+      body: "Tap Read slip and pick up to 10 photos, check them, save them together. Ones that look logged already start unticked.",
+    },
+    bills: {
+      title: "Monthly bills spotted",
+      body: "Log the same expense every month, like rent, and Subscriptions offers to make it a recurring entry.",
+    },
+    habits: {
+      title: "Savings cushion and unusual spending",
+      body: "Insights shows how many months your money would last, and which categories run above usual this month.",
+    },
   },
   toast: {
     wishAdded: "Noted {{name}}, decide on {{date}}",
@@ -1270,7 +1425,7 @@ const en: Messages = {
     accountInUse: "Can't delete: transactions or subscriptions still use this account",
     accountDeleted: "Deleted {{name}}",
     txSaved: "Saved {{type}} {{amount}}",
-    deleted: "Deleted \"{{name}}\"",
+    deleted: 'Deleted "{{name}}"',
     subAdded: "Added {{name}}",
     subPaused: "Paused {{name}}",
     subResumed: "Resumed {{name}}",
@@ -1290,6 +1445,6 @@ const en: Messages = {
     gateLead: "Before you continue, please read and accept the Terms of Use and Privacy Policy.",
     accept: "Accept and continue",
   },
-};
+}
 
-export default en;
+export default en

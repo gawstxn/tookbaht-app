@@ -1,15 +1,23 @@
-import { Card } from "@/components/ui/primitives";
-import { BahtInput } from "./BahtInput";
+import { Card } from "@/components/ui/primitives"
+import { BahtInput } from "./BahtInput"
 
 /** Keep digits and one dot with up to two decimals ("12.345" → "12.34"). */
 export function cleanAmount(text: string): string {
-  const [int, ...rest] = text.replace(/[^0-9.]/g, "").split(".");
-  const dec = rest.join("").slice(0, 2);
-  return (int.slice(0, 9) || (rest.length ? "0" : "")) + (rest.length ? "." + dec : "");
+  const [int, ...rest] = text.replace(/[^0-9.]/g, "").split(".")
+  const dec = rest.join("").slice(0, 2)
+  return (int.slice(0, 9) || (rest.length ? "0" : "")) + (rest.length ? "." + dec : "")
 }
 
 /** Baht amount card with the system number pad (sheets and forms; the add screen has its own keypad). */
-export function AmountInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+export function AmountInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+}) {
   return (
     <Card className="px-4 py-3">
       <label className="flex items-baseline gap-2">
@@ -25,5 +33,5 @@ export function AmountInput({ label, value, onChange }: { label: string; value: 
         </span>
       </label>
     </Card>
-  );
+  )
 }

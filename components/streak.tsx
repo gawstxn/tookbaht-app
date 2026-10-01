@@ -1,46 +1,52 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { useEffect, useMemo } from "react";
-import { useTranslation } from "react-i18next";
-import { Icon } from "@/components/ui/Icon";
-import { cx } from "@/components/ui/primitives";
-import { todayISO } from "@/lib/format";
-import { useStore } from "@/lib/store";
-import { cycleStartDay } from "@/lib/period";
-import { MILESTONES, budgetBonus, streakLogs, streakStatus, tierFor, weekStart } from "@/lib/streak";
+import Link from "next/link"
+import { useEffect, useMemo } from "react"
+import { useTranslation } from "react-i18next"
+import { Icon } from "@/components/ui/Icon"
+import { cx } from "@/components/ui/primitives"
+import { todayISO } from "@/lib/format"
+import { useStore } from "@/lib/store"
+import { cycleStartDay } from "@/lib/period"
+import { MILESTONES, budgetBonus, streakLogs, streakStatus, tierFor, weekStart } from "@/lib/streak"
 
 /** The user's streak and tier, from their entries and no-spend confirmations. */
 export function useStreak() {
-  const transactions = useStore((s) => s.transactions);
-  const noSpend = useStore((s) => s.settings.noSpend);
-  const startDay = useStore((s) => cycleStartDay(s.settings));
-  const expenseBudget = useStore((s) => s.goals.expenseBudget);
-  const today = todayISO();
-  const logs = useMemo(() => streakLogs(transactions), [transactions]);
-  const bonus = useMemo(() => budgetBonus(expenseBudget, transactions, startDay, today), [expenseBudget, transactions, startDay, today]);
+  const transactions = useStore((s) => s.transactions)
+  const noSpend = useStore((s) => s.settings.noSpend)
+  const startDay = useStore((s) => cycleStartDay(s.settings))
+  const expenseBudget = useStore((s) => s.goals.expenseBudget)
+  const today = todayISO()
+  const logs = useMemo(() => streakLogs(transactions), [transactions])
+  const bonus = useMemo(
+    () => budgetBonus(expenseBudget, transactions, startDay, today),
+    [expenseBudget, transactions, startDay, today],
+  )
   return useMemo(() => {
-    const status = streakStatus({ logs, noSpend: noSpend ?? [], today, startDay, bonus });
-    return { ...status, ...tierFor(status.total), today };
-  }, [logs, noSpend, today, startDay, bonus]);
+    const status = streakStatus({ logs, noSpend: noSpend ?? [], today, startDay, bonus })
+    return { ...status, ...tierFor(status.total), today }
+  }, [logs, noSpend, today, startDay, bonus])
 }
 
 /** Flame with the streak count for the home header; lit once today counts. */
 export function StreakChip() {
-  const s = useStreak();
-  const { t } = useTranslation();
-  const lit = s.doneToday && !s.missed.length;
+  const s = useStreak()
+  const { t } = useTranslation()
+  const lit = s.doneToday && !s.missed.length
   return (
     <Link
       href="/streak"
       aria-label={t("streak.chipLabel", { count: s.current })}
-      className={cx("flex h-11 shrink-0 items-center gap-1 rounded-full border px-3.5", lit ? "border-transparent bg-lime text-on-lime" : "border-line bg-card text-muted")}
+      className={cx(
+        "flex h-11 shrink-0 items-center gap-1 rounded-full border px-3.5",
+        lit ? "border-transparent bg-lime text-on-lime" : "border-line bg-card text-muted",
+      )}
     >
       <Icon name="flame" size={18} strokeWidth={2} />
       <span className="font-mono text-[15px] font-semibold">{s.current}</span>
       {s.missed.length ? <span aria-hidden="true" className="ml-0.5 h-2 w-2 rounded-full bg-danger" /> : null}
     </Link>
-  );
+  )
 }
 
 /**
@@ -48,37 +54,37 @@ export function StreakChip() {
  * and toasts once when the streak reaches a new milestone or a perfect week.
  */
 export function StreakSync() {
-  const { current, last, quotaLeft, perfectWeeks, today } = useStreak();
-  const saved = useStore((s) => s.settings.streak);
-  const celebrated = useStore((s) => s.settings.streakMilestone ?? 0);
-  const weekCelebrated = useStore((s) => s.settings.perfectWeek);
-  const setSettings = useStore((s) => s.setSettings);
-  const notify = useStore((s) => s.notify);
-  const { t } = useTranslation();
-  const reached = [...MILESTONES].reverse().find((m) => current >= m) ?? 0;
+  const { current, last, quotaLeft, perfectWeeks, today } = useStreak()
+  const saved = useStore((s) => s.settings.streak)
+  const celebrated = useStore((s) => s.settings.streakMilestone ?? 0)
+  const weekCelebrated = useStore((s) => s.settings.perfectWeek)
+  const setSettings = useStore((s) => s.setSettings)
+  const notify = useStore((s) => s.notify)
+  const { t } = useTranslation()
+  const reached = [...MILESTONES].reverse().find((m) => current >= m) ?? 0
 
-  const ready = useStore((s) => s.status === "ready");
+  const ready = useStore((s) => s.status === "ready")
   useEffect(() => {
-    if (!ready || (saved?.n === current && saved.last === last && saved.left === quotaLeft)) return;
-    setSettings({ streak: { n: current, last, left: quotaLeft } });
-  }, [ready, current, last, quotaLeft, saved, setSettings]);
+    if (!ready || (saved?.n === current && saved.last === last && saved.left === quotaLeft)) return
+    setSettings({ streak: { n: current, last, left: quotaLeft } })
+  }, [ready, current, last, quotaLeft, saved, setSettings])
 
   useEffect(() => {
-    if (!ready) return;
+    if (!ready) return
     // A broken streak celebrates its milestones again next time.
-    if (reached < celebrated && reached === 0) setSettings({ streakMilestone: undefined });
-    if (reached <= celebrated) return;
-    setSettings({ streakMilestone: reached });
-    notify(t("streak.milestone", { count: reached }));
-  }, [ready, reached, celebrated, setSettings, notify, t]);
+    if (reached < celebrated && reached === 0) setSettings({ streakMilestone: undefined })
+    if (reached <= celebrated) return
+    setSettings({ streakMilestone: reached })
+    notify(t("streak.milestone", { count: reached }))
+  }, [ready, reached, celebrated, setSettings, notify, t])
 
   // Only this week's: older ones weren't finished today.
-  const thisWeek = weekStart(today);
-  const perfectNow = perfectWeeks.has(thisWeek);
+  const thisWeek = weekStart(today)
+  const perfectNow = perfectWeeks.has(thisWeek)
   useEffect(() => {
-    if (!ready || !perfectNow || weekCelebrated === thisWeek) return;
-    setSettings({ perfectWeek: thisWeek });
-    notify(t("streak.perfectWeekToast"));
-  }, [ready, perfectNow, thisWeek, weekCelebrated, setSettings, notify, t]);
-  return null;
+    if (!ready || !perfectNow || weekCelebrated === thisWeek) return
+    setSettings({ perfectWeek: thisWeek })
+    notify(t("streak.perfectWeekToast"))
+  }, [ready, perfectNow, thisWeek, weekCelebrated, setSettings, notify, t])
+  return null
 }

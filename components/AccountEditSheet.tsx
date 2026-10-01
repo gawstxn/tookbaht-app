@@ -1,30 +1,30 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { AccountMark } from "@/components/app";
-import { Card, PrimaryButton, Segmented, SecondaryButton, Sheet, cx } from "@/components/ui/primitives";
-import { useTranslation } from "react-i18next";
-import { MONO_TONES } from "@/lib/constants";
-import { t } from "@/lib/i18n";
-import type { Account, AccountKind } from "@/lib/types";
-import { BahtInput } from "./BahtInput";
-import { ConfirmSheet } from "./ConfirmSheet";
+import { useState } from "react"
+import { AccountMark } from "@/components/app"
+import { Card, PrimaryButton, Segmented, SecondaryButton, Sheet, cx } from "@/components/ui/primitives"
+import { useTranslation } from "react-i18next"
+import { MONO_TONES } from "@/lib/constants"
+import { t } from "@/lib/i18n"
+import type { Account, AccountKind } from "@/lib/types"
+import { BahtInput } from "./BahtInput"
+import { ConfirmSheet } from "./ConfirmSheet"
 
 /** Same as accounts_row_cap in the database, so the limit shows before a save fails. */
-export const MAX_ACCOUNTS = 100;
-export type AccountDraft = Omit<Account, "id">;
+export const MAX_ACCOUNTS = 100
+export type AccountDraft = Omit<Account, "id">
 
-const KINDS: AccountKind[] = ["bank", "saving", "credit", "cash"];
-export const kindOptions = () => KINDS.map((value) => ({ value, label: t(`kind.${value}`) }));
+const KINDS: AccountKind[] = ["bank", "saving", "credit", "cash"]
+export const kindOptions = () => KINDS.map((value) => ({ value, label: t(`kind.${value}`) }))
 
 /** First letter for the monogram, skipping Thai leading vowels (เ แ โ ใ ไ). */
 export function monoFor(name: string): string {
-  const ch = [...name.trim()].find((c) => !"เแโใไ".includes(c));
-  return (ch ?? "?").toUpperCase();
+  const ch = [...name.trim()].find((c) => !"เแโใไ".includes(c))
+  return (ch ?? "?").toUpperCase()
 }
 
 export function balanceLabel(kind: AccountKind) {
-  return t(kind === "credit" ? "balance.limit" : "balance.opening");
+  return t(kind === "credit" ? "balance.limit" : "balance.opening")
 }
 
 /** Bottom sheet to add or edit an account. */
@@ -37,23 +37,31 @@ export function AccountEditSheet({
   deleteBlocked,
   onReconcile,
 }: {
-  open: boolean;
-  onClose: () => void;
-  initial?: AccountDraft;
-  onSave: (a: AccountDraft) => void;
-  onDelete?: () => void;
+  open: boolean
+  onClose: () => void
+  initial?: AccountDraft
+  onSave: (a: AccountDraft) => void
+  onDelete?: () => void
   /** Why this account can't be deleted; shown instead of the delete button. */
-  deleteBlocked?: string | null;
+  deleteBlocked?: string | null
   /** Existing accounts: open the "match the real balance" sheet. */
-  onReconcile?: () => void;
+  onReconcile?: () => void
 }) {
-  const [confirming, setConfirming] = useState(false);
-  if (!open && confirming) setConfirming(false);
+  const [confirming, setConfirming] = useState(false)
+  if (!open && confirming) setConfirming(false)
   return (
     <>
       <Sheet open={open && !confirming} onClose={onClose} title={t(initial ? "accounts.edit" : "accounts.add")}>
         {/* Remount per open so the form starts from `initial`. */}
-        {open ? <AccountFields initial={initial} onSave={onSave} onDelete={onDelete ? () => setConfirming(true) : undefined} deleteBlocked={deleteBlocked} onReconcile={onReconcile} /> : null}
+        {open ? (
+          <AccountFields
+            initial={initial}
+            onSave={onSave}
+            onDelete={onDelete ? () => setConfirming(true) : undefined}
+            deleteBlocked={deleteBlocked}
+            onReconcile={onReconcile}
+          />
+        ) : null}
       </Sheet>
       <ConfirmSheet
         open={open && confirming}
@@ -64,7 +72,7 @@ export function AccountEditSheet({
         onConfirm={() => onDelete?.()}
       />
     </>
-  );
+  )
 }
 
 function AccountFields({
@@ -74,23 +82,23 @@ function AccountFields({
   deleteBlocked,
   onReconcile,
 }: {
-  initial?: AccountDraft;
-  onSave: (a: AccountDraft) => void;
-  onDelete?: () => void;
-  deleteBlocked?: string | null;
-  onReconcile?: () => void;
+  initial?: AccountDraft
+  onSave: (a: AccountDraft) => void
+  onDelete?: () => void
+  deleteBlocked?: string | null
+  onReconcile?: () => void
 }) {
-  const [name, setName] = useState(initial?.name ?? "");
-  const [kind, setKind] = useState<AccountKind>(initial?.kind ?? "bank");
-  const [balanceText, setBalanceText] = useState(initial ? String(initial.openingBalance) : "");
-  const [tone, setTone] = useState(initial?.tone ?? MONO_TONES[0]);
-  const [feeText, setFeeText] = useState(initial?.fxFeePct ? String(initial.fxFeePct) : "");
+  const [name, setName] = useState(initial?.name ?? "")
+  const [kind, setKind] = useState<AccountKind>(initial?.kind ?? "bank")
+  const [balanceText, setBalanceText] = useState(initial ? String(initial.openingBalance) : "")
+  const [tone, setTone] = useState(initial?.tone ?? MONO_TONES[0])
+  const [feeText, setFeeText] = useState(initial?.fxFeePct ? String(initial.fxFeePct) : "")
   // Cards and bank accounts can pay foreign (USD) subscriptions.
-  const paysAbroad = kind === "credit" || kind === "bank";
-  const [dueText, setDueText] = useState(initial?.dueDay ? String(initial.dueDay) : "");
-  const dueDay = Math.min(31, parseInt(dueText, 10) || 0) || null;
-  const { t: tr } = useTranslation();
-  const canSave = name.trim().length > 0;
+  const paysAbroad = kind === "credit" || kind === "bank"
+  const [dueText, setDueText] = useState(initial?.dueDay ? String(initial.dueDay) : "")
+  const dueDay = Math.min(31, parseInt(dueText, 10) || 0) || null
+  const { t: tr } = useTranslation()
+  const canSave = name.trim().length > 0
 
   return (
     <>
@@ -111,7 +119,13 @@ function AccountFields({
         </div>
       </div>
 
-      <Segmented<AccountKind> size="sm" label={tr("accounts.kind")} value={kind} onChange={setKind} options={kindOptions()} />
+      <Segmented<AccountKind>
+        size="sm"
+        label={tr("accounts.kind")}
+        value={kind}
+        onChange={setKind}
+        options={kindOptions()}
+      />
 
       <Card className="px-4 py-3">
         <label className="flex items-baseline gap-2">
@@ -179,7 +193,8 @@ function AccountFields({
       <PrimaryButton
         once
         disabled={!canSave}
-        onClick={() => onSave({
+        onClick={() =>
+          onSave({
             name: name.trim(),
             kind,
             openingBalance: parseFloat(balanceText) || 0,
@@ -187,7 +202,8 @@ function AccountFields({
             tone,
             fxFeePct: paysAbroad ? Math.min(10, parseFloat(feeText) || 0) : 0,
             dueDay: kind === "credit" ? dueDay : null,
-          })}
+          })
+        }
       >
         {tr("common.save")}
       </PrimaryButton>
@@ -200,5 +216,5 @@ function AccountFields({
         </SecondaryButton>
       ) : null}
     </>
-  );
+  )
 }

@@ -1,13 +1,13 @@
-"use client";
+"use client"
 
-import { useLayoutEffect, useRef, type InputHTMLAttributes } from "react";
+import { useLayoutEffect, useRef, type InputHTMLAttributes } from "react"
 
 /** "1234567.5" → "1,234,567.5" (the raw text stays without commas). */
 export function groupDigits(raw: string): string {
-  if (!raw) return "";
-  const [int, dec] = raw.split(".");
-  const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  return dec !== undefined ? `${grouped}.${dec}` : grouped;
+  if (!raw) return ""
+  const [int, dec] = raw.split(".")
+  const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+  return dec !== undefined ? `${grouped}.${dec}` : grouped
 }
 
 /**
@@ -20,25 +20,25 @@ export function BahtInput({
   onChange,
   ...rest
 }: Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "inputMode"> & {
-  value: string;
-  onChange: (e: { target: { value: string } }) => void;
+  value: string
+  onChange: (e: { target: { value: string } }) => void
 }) {
-  const ref = useRef<HTMLInputElement>(null);
+  const ref = useRef<HTMLInputElement>(null)
   // Digits (and the dot) before the caret, to put it back after regrouping.
-  const caret = useRef<number | null>(null);
+  const caret = useRef<number | null>(null)
 
   useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el || caret.current === null || document.activeElement !== el) return;
-    let left = caret.current;
-    let i = 0;
+    const el = ref.current
+    if (!el || caret.current === null || document.activeElement !== el) return
+    let left = caret.current
+    let i = 0
     while (i < el.value.length && left > 0) {
-      if (/[0-9.]/.test(el.value[i])) left--;
-      i++;
+      if (/[0-9.]/.test(el.value[i])) left--
+      i++
     }
-    el.setSelectionRange(i, i);
-    caret.current = null;
-  });
+    el.setSelectionRange(i, i)
+    caret.current = null
+  })
 
   return (
     <input
@@ -47,11 +47,11 @@ export function BahtInput({
       inputMode="decimal"
       value={groupDigits(value)}
       onChange={(e) => {
-        const el = e.target;
-        const pos = el.selectionStart ?? el.value.length;
-        caret.current = el.value.slice(0, pos).replace(/[^0-9.]/g, "").length;
-        onChange({ target: { value: el.value.replace(/,/g, "") } });
+        const el = e.target
+        const pos = el.selectionStart ?? el.value.length
+        caret.current = el.value.slice(0, pos).replace(/[^0-9.]/g, "").length
+        onChange({ target: { value: el.value.replace(/,/g, "") } })
       }}
     />
-  );
+  )
 }

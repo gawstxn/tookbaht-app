@@ -1,18 +1,18 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { useTranslation } from "react-i18next";
-import { Icon, type IconName } from "./Icon";
+import Link from "next/link"
+import { useEffect, useId, useRef, useState, type ReactNode } from "react"
+import { useTranslation } from "react-i18next"
+import { Icon, type IconName } from "./Icon"
 
 export function cx(...c: (string | false | null | undefined)[]) {
-  return c.filter(Boolean).join(" ");
+  return c.filter(Boolean).join(" ")
 }
 
 /* ---------- surfaces ---------- */
 
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
-  return <div className={cx("rounded-[20px] border border-line bg-card", className)}>{children}</div>;
+  return <div className={cx("rounded-[20px] border border-line bg-card", className)}>{children}</div>
 }
 
 /** The dark signature card used at the top of every tab screen. */
@@ -24,16 +24,21 @@ export function HeroCard({ className, children, label }: { className?: string; c
     >
       {children}
     </section>
-  );
+  )
 }
 
 /** Divided list inside a card. Children should be rows. */
 export function ListCard({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <Card className={cx("flex flex-col px-4 py-0.5 [&>*:not(:last-child)]:border-b [&>*:not(:last-child)]:border-divider", className)}>
+    <Card
+      className={cx(
+        "flex flex-col px-4 py-0.5 [&>*:not(:last-child)]:border-b [&>*:not(:last-child)]:border-divider",
+        className,
+      )}
+    >
       {children}
     </Card>
-  );
+  )
 }
 
 /* ---------- headers ---------- */
@@ -45,28 +50,28 @@ export function IconButton({
   href,
   variant = "light",
 }: {
-  icon: IconName;
-  label: string;
-  onClick?: () => void;
-  href?: string;
-  variant?: "light" | "dark";
+  icon: IconName
+  label: string
+  onClick?: () => void
+  href?: string
+  variant?: "light" | "dark"
 }) {
   const cls = cx(
     "flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
     variant === "dark" ? "bg-ink text-on-ink" : "border border-line bg-card",
-  );
-  const inner = <Icon name={icon} size={20} strokeWidth={variant === "dark" ? 2.2 : 2} />;
+  )
+  const inner = <Icon name={icon} size={20} strokeWidth={variant === "dark" ? 2.2 : 2} />
   if (href)
     return (
       <Link href={href} aria-label={label} className={cls}>
         {inner}
       </Link>
-    );
+    )
   return (
     <button type="button" aria-label={label} onClick={onClick} className={cls}>
       {inner}
     </button>
-  );
+  )
 }
 
 /** Header for pushed screens: back/close, centred title, optional action. */
@@ -77,20 +82,25 @@ export function PushHeader({
   onBack,
   action,
 }: {
-  title?: string;
-  backHref?: string;
-  backIcon?: IconName;
-  onBack?: () => void;
-  action?: ReactNode;
+  title?: string
+  backHref?: string
+  backIcon?: IconName
+  onBack?: () => void
+  action?: ReactNode
 }) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
   return (
     <header className="flex min-h-12 items-center justify-between">
-      <IconButton icon={backIcon} label={t(backIcon === "close" ? "common.close" : "common.back")} href={backHref} onClick={onBack} />
+      <IconButton
+        icon={backIcon}
+        label={t(backIcon === "close" ? "common.close" : "common.back")}
+        href={backHref}
+        onClick={onBack}
+      />
       {title ? <h1 className="font-serif text-xl font-bold">{title}</h1> : <span />}
       {action ?? <span className="h-11 w-11" />}
     </header>
-  );
+  )
 }
 
 /** Header for tab screens: serif title with a subtitle/month switcher, actions on the right. */
@@ -98,17 +108,27 @@ export function TabHeader({ title, subtitle, actions }: { title: string; subtitl
   return (
     <header className="flex min-h-12 items-center justify-between">
       <div className="flex flex-col">
-        <h1 className="font-serif text-[26px] font-bold leading-tight">{title}</h1>
+        <h1 className="font-serif text-[26px] leading-tight font-bold">{title}</h1>
         {subtitle ? <div className="text-[13px] text-muted">{subtitle}</div> : null}
       </div>
       {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
     </header>
-  );
+  )
 }
 
-export function SectionHeader({ title, href, linkLabel, aside }: { title: string; href?: string; linkLabel?: string; aside?: ReactNode }) {
-  const { t } = useTranslation();
-  linkLabel ??= t("common.seeAll");
+export function SectionHeader({
+  title,
+  href,
+  linkLabel,
+  aside,
+}: {
+  title: string
+  href?: string
+  linkLabel?: string
+  aside?: ReactNode
+}) {
+  const { t } = useTranslation()
+  linkLabel ??= t("common.seeAll")
   return (
     <div className="flex items-center justify-between">
       <h2 className="text-base font-semibold">{title}</h2>
@@ -120,12 +140,20 @@ export function SectionHeader({ title, href, linkLabel, aside }: { title: string
         aside
       )}
     </div>
-  );
+  )
 }
 
 /* ---------- controls ---------- */
 
-export function Switch({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+export function Switch({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean
+  onChange: (v: boolean) => void
+  label: string
+}) {
   return (
     <button
       type="button"
@@ -140,10 +168,20 @@ export function Switch({ checked, onChange, label }: { checked: boolean; onChang
     >
       <span className="h-[26px] w-[26px] rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.25)]" />
     </button>
-  );
+  )
 }
 
-export function SwitchRow({ label, hint, checked, onChange }: { label: string; hint?: string; checked: boolean; onChange: (v: boolean) => void }) {
+export function SwitchRow({
+  label,
+  hint,
+  checked,
+  onChange,
+}: {
+  label: string
+  hint?: string
+  checked: boolean
+  onChange: (v: boolean) => void
+}) {
   return (
     <div className="flex min-h-14 items-center justify-between gap-3 py-2.5">
       <div className="flex flex-col gap-0.5">
@@ -152,7 +190,7 @@ export function SwitchRow({ label, hint, checked, onChange }: { label: string; h
       </div>
       <Switch checked={checked} onChange={onChange} label={label} />
     </div>
-  );
+  )
 }
 
 export function Segmented<T extends string>({
@@ -163,12 +201,12 @@ export function Segmented<T extends string>({
   colorFor,
   size = "md",
 }: {
-  options: { value: T; label: string }[];
-  value: T;
-  onChange: (v: T) => void;
-  label: string;
-  colorFor?: (v: T) => string;
-  size?: "sm" | "md";
+  options: { value: T; label: string }[]
+  value: T
+  onChange: (v: T) => void
+  label: string
+  colorFor?: (v: T) => string
+  size?: "sm" | "md"
 }) {
   return (
     <div
@@ -178,7 +216,7 @@ export function Segmented<T extends string>({
       style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
     >
       {options.map((o) => {
-        const on = o.value === value;
+        const on = o.value === value
         return (
           <button
             key={o.value}
@@ -195,13 +233,23 @@ export function Segmented<T extends string>({
           >
             {o.label}
           </button>
-        );
+        )
       })}
     </div>
-  );
+  )
 }
 
-export function Chip({ on, onClick, children, size = "md" }: { on: boolean; onClick: () => void; children: ReactNode; size?: "sm" | "md" }) {
+export function Chip({
+  on,
+  onClick,
+  children,
+  size = "md",
+}: {
+  on: boolean
+  onClick: () => void
+  children: ReactNode
+  size?: "sm" | "md"
+}) {
   return (
     <button
       type="button"
@@ -215,7 +263,7 @@ export function Chip({ on, onClick, children, size = "md" }: { on: boolean; onCl
     >
       {children}
     </button>
-  );
+  )
 }
 
 export function PrimaryButton({
@@ -226,25 +274,25 @@ export function PrimaryButton({
   tone = "ink",
   once,
 }: {
-  children: ReactNode;
-  onClick?: () => void;
-  disabled?: boolean;
-  type?: "button" | "submit";
-  tone?: "ink" | "danger";
+  children: ReactNode
+  onClick?: () => void
+  disabled?: boolean
+  type?: "button" | "submit"
+  tone?: "ink" | "danger"
   /** Ignore taps after the first (for save buttons that leave the screen). */
-  once?: boolean;
+  once?: boolean
 }) {
-  const [used, setUsed] = useState(false);
-  disabled = disabled || (once && used);
+  const [used, setUsed] = useState(false)
+  disabled = disabled || (once && used)
   return (
     <button
       type={type}
       onClick={() => {
         if (once) {
-          if (used) return;
-          setUsed(true);
+          if (used) return
+          setUsed(true)
         }
-        onClick?.();
+        onClick?.()
       }}
       disabled={disabled}
       className={cx(
@@ -254,10 +302,18 @@ export function PrimaryButton({
     >
       {children}
     </button>
-  );
+  )
 }
 
-export function SecondaryButton({ children, onClick, tone }: { children: ReactNode; onClick?: () => void; tone?: "danger" }) {
+export function SecondaryButton({
+  children,
+  onClick,
+  tone,
+}: {
+  children: ReactNode
+  onClick?: () => void
+  tone?: "danger"
+}) {
   return (
     <button
       type="button"
@@ -269,23 +325,38 @@ export function SecondaryButton({ children, onClick, tone }: { children: ReactNo
     >
       {children}
     </button>
-  );
+  )
 }
 
 /** A tappable settings/field row that opens a picker. */
 export function PickerRow({ label, value, onClick }: { label: string; value: ReactNode; onClick: () => void }) {
   return (
-    <button type="button" aria-haspopup="dialog" onClick={onClick} className="flex min-h-[50px] w-full items-center gap-3 text-left">
+    <button
+      type="button"
+      aria-haspopup="dialog"
+      onClick={onClick}
+      className="flex min-h-[50px] w-full items-center gap-3 text-left"
+    >
       <span className="grow text-sm text-muted">{label}</span>
       <span className="text-sm font-semibold">{value}</span>
       <Icon name="chevronRight" size={16} strokeWidth={2} className="text-faint" />
     </button>
-  );
+  )
 }
 
 /* ---------- data display ---------- */
 
-export function Monogram({ text, tone, size = 40, className }: { text: string; tone: string; size?: number; className?: string }) {
+export function Monogram({
+  text,
+  tone,
+  size = 40,
+  className,
+}: {
+  text: string
+  tone: string
+  size?: number
+  className?: string
+}) {
   return (
     <span
       aria-hidden="true"
@@ -294,11 +365,23 @@ export function Monogram({ text, tone, size = 40, className }: { text: string; t
     >
       {text}
     </span>
-  );
+  )
 }
 
-export function Bar({ value, color, track = "var(--color-ink-3)", height = 6, marker }: { value: number; color: string; track?: string; height?: number; marker?: { at: number; color: string } }) {
-  const pct = Math.max(0, Math.min(1, value)) * 100;
+export function Bar({
+  value,
+  color,
+  track = "var(--color-ink-3)",
+  height = 6,
+  marker,
+}: {
+  value: number
+  color: string
+  track?: string
+  height?: number
+  marker?: { at: number; color: string }
+}) {
+  const pct = Math.max(0, Math.min(1, value)) * 100
   return (
     <div className="relative" style={{ height }}>
       <div className="overflow-hidden rounded-full" style={{ height, background: track }}>
@@ -312,11 +395,11 @@ export function Bar({ value, color, track = "var(--color-ink-3)", height = 6, ma
         />
       ) : null}
     </div>
-  );
+  )
 }
 
 export function Empty({ children }: { children: ReactNode }) {
-  return <p className="py-6 text-center text-sm text-muted">{children}</p>;
+  return <p className="py-6 text-center text-sm text-muted">{children}</p>
 }
 
 /* ---------- bottom sheet ---------- */
@@ -329,58 +412,58 @@ export function Sheet({
   titleClassName,
   variant = "sheet",
 }: {
-  open: boolean;
-  onClose: () => void;
-  title: string;
-  children: ReactNode;
-  titleClassName?: string;
+  open: boolean
+  onClose: () => void
+  title: string
+  children: ReactNode
+  titleClassName?: string
   /** "modal": a card in the middle of the screen, for announcements rather than choices. */
-  variant?: "sheet" | "modal";
+  variant?: "sheet" | "modal"
 }) {
-  const modal = variant === "modal";
-  const { t } = useTranslation();
-  const titleId = useId();
-  const panel = useRef<HTMLDivElement>(null);
+  const modal = variant === "modal"
+  const { t } = useTranslation()
+  const titleId = useId()
+  const panel = useRef<HTMLDivElement>(null)
   // Stay mounted after `open` turns false so the sheet can slide out, showing
   // the last content it had (parents often clear it on close).
-  const [mounted, setMounted] = useState(open);
-  const [kept, setKept] = useState({ title, children });
-  if (open && !mounted) setMounted(true);
-  if (open && (kept.title !== title || kept.children !== children)) setKept({ title, children });
-  const closing = mounted && !open;
+  const [mounted, setMounted] = useState(open)
+  const [kept, setKept] = useState({ title, children })
+  if (open && !mounted) setMounted(true)
+  if (open && (kept.title !== title || kept.children !== children)) setKept({ title, children })
+  const closing = mounted && !open
 
   // Unmount after the slide-out even if animationend never fires (hidden tab, reduced motion).
   useEffect(() => {
-    if (!closing) return;
-    const t = setTimeout(() => setMounted(false), 260);
-    return () => clearTimeout(t);
-  }, [closing]);
+    if (!closing) return
+    const t = setTimeout(() => setMounted(false), 260)
+    return () => clearTimeout(t)
+  }, [closing])
 
   // Parents often pass a new onClose each render; reading it through a ref keeps
   // the effect below from re-running (and pulling focus out of a text field) while typing.
-  const closeRef = useRef(onClose);
+  const closeRef = useRef(onClose)
   useEffect(() => {
-    closeRef.current = onClose;
-  });
+    closeRef.current = onClose
+  })
 
   useEffect(() => {
-    if (!open) return;
-    const prev = document.activeElement as HTMLElement | null;
-    panel.current?.focus();
+    if (!open) return
+    const prev = document.activeElement as HTMLElement | null
+    panel.current?.focus()
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeRef.current();
-    };
-    document.addEventListener("keydown", onKey);
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+      if (e.key === "Escape") closeRef.current()
+    }
+    document.addEventListener("keydown", onKey)
+    const overflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
     return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = overflow;
-      prev?.focus?.();
-    };
-  }, [open]);
+      document.removeEventListener("keydown", onKey)
+      document.body.style.overflow = overflow
+      prev?.focus?.()
+    }
+  }, [open])
 
-  if (!mounted) return null;
+  if (!mounted) return null
   return (
     <div
       className={cx(
@@ -389,36 +472,57 @@ export function Sheet({
         closing ? "animate-fade-out pointer-events-none" : "animate-fade",
       )}
     >
-      {modal ? <button type="button" aria-label={t("common.close")} tabIndex={-1} onClick={onClose} className="absolute inset-0" /> : null}
+      {modal ? (
+        <button
+          type="button"
+          aria-label={t("common.close")}
+          tabIndex={-1}
+          onClick={onClose}
+          className="absolute inset-0"
+        />
+      ) : null}
       <div className={cx("flex w-full flex-col", modal ? "relative max-w-[390px]" : "max-w-[430px]")}>
-      {modal ? null : <button type="button" aria-label={t("common.close")} tabIndex={-1} onClick={onClose} className="grow" />}
-      <div
-        ref={panel}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        onAnimationEnd={(e) => {
-          if (closing && e.target === e.currentTarget) setMounted(false);
-        }}
-        className={cx(
-          modal
-            ? cx(closing ? "animate-modal-out" : "animate-modal", "flex max-h-[82dvh] flex-col gap-3.5 overflow-y-auto rounded-[28px] bg-paper px-6 py-6 shadow-sheet outline-none")
-            : cx(closing ? "animate-sheet-out" : "animate-sheet", "flex max-h-[88dvh] flex-col gap-3.5 overflow-y-auto rounded-t-[28px] bg-paper px-6 pb-[calc(32px+env(safe-area-inset-bottom))] pt-2.5 shadow-sheet outline-none"),
+        {modal ? null : (
+          <button type="button" aria-label={t("common.close")} tabIndex={-1} onClick={onClose} className="grow" />
         )}
-      >
-        {modal ? null : <span aria-hidden="true" className="h-1 w-10 self-center rounded-full bg-line-strong" />}
-        <div className="flex items-center justify-between">
-          <h2 id={titleId} className={cx("font-serif text-xl font-bold", titleClassName)}>
-            {closing ? kept.title : title}
-          </h2>
-          <button type="button" aria-label={t("common.close")} onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-card">
-            <Icon name="close" size={18} strokeWidth={2} />
-          </button>
+        <div
+          ref={panel}
+          tabIndex={-1}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          onAnimationEnd={(e) => {
+            if (closing && e.target === e.currentTarget) setMounted(false)
+          }}
+          className={cx(
+            modal
+              ? cx(
+                  closing ? "animate-modal-out" : "animate-modal",
+                  "flex max-h-[82dvh] flex-col gap-3.5 overflow-y-auto rounded-[28px] bg-paper px-6 py-6 shadow-sheet outline-none",
+                )
+              : cx(
+                  closing ? "animate-sheet-out" : "animate-sheet",
+                  "flex max-h-[88dvh] flex-col gap-3.5 overflow-y-auto rounded-t-[28px] bg-paper px-6 pt-2.5 pb-[calc(32px+env(safe-area-inset-bottom))] shadow-sheet outline-none",
+                ),
+          )}
+        >
+          {modal ? null : <span aria-hidden="true" className="h-1 w-10 self-center rounded-full bg-line-strong" />}
+          <div className="flex items-center justify-between">
+            <h2 id={titleId} className={cx("font-serif text-xl font-bold", titleClassName)}>
+              {closing ? kept.title : title}
+            </h2>
+            <button
+              type="button"
+              aria-label={t("common.close")}
+              onClick={onClose}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-card"
+            >
+              <Icon name="close" size={18} strokeWidth={2} />
+            </button>
+          </div>
+          {closing ? kept.children : children}
         </div>
-        {closing ? kept.children : children}
-      </div>
       </div>
     </div>
-  );
+  )
 }

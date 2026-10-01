@@ -1,35 +1,35 @@
-import type { Iou, IouDirection } from "./types";
+import type { Iou, IouDirection } from "./types"
 
-const dirOf = (i: Iou): IouDirection => i.direction ?? "owed_to_me";
+const dirOf = (i: Iou): IouDirection => i.direction ?? "owed_to_me"
 
 export interface PersonDebt {
-  person: string;
-  total: number;
+  person: string
+  total: number
   /** Unpaid debts, oldest first. */
-  items: Iou[];
+  items: Iou[]
 }
 
-const round2 = (n: number) => Math.round(n * 100) / 100;
+const round2 = (n: number) => Math.round(n * 100) / 100
 /** Names compare without case or surrounding spaces ("Boss" = "boss "). */
-const nameKey = (s: string) => s.trim().toLocaleLowerCase();
+const nameKey = (s: string) => s.trim().toLocaleLowerCase()
 
 /** Unpaid debts in one direction, grouped by friend, largest total first. */
 export function debtsByPerson(ious: Iou[], direction: IouDirection = "owed_to_me"): PersonDebt[] {
-  const groups = new Map<string, PersonDebt>();
+  const groups = new Map<string, PersonDebt>()
   for (const i of [...ious].sort((a, b) => a.date.localeCompare(b.date) || a.createdAt - b.createdAt)) {
-    if (i.settledOn || dirOf(i) !== direction) continue;
-    const key = nameKey(i.person);
-    const g = groups.get(key) ?? { person: i.person.trim(), total: 0, items: [] };
-    g.total = round2(g.total + i.amount);
-    g.items.push(i);
-    groups.set(key, g);
+    if (i.settledOn || dirOf(i) !== direction) continue
+    const key = nameKey(i.person)
+    const g = groups.get(key) ?? { person: i.person.trim(), total: 0, items: [] }
+    g.total = round2(g.total + i.amount)
+    g.items.push(i)
+    groups.set(key, g)
   }
-  return [...groups.values()].sort((a, b) => b.total - a.total || a.person.localeCompare(b.person));
+  return [...groups.values()].sort((a, b) => b.total - a.total || a.person.localeCompare(b.person))
 }
 
 /** Everything still unpaid in one direction (by default, what friends owe the user). */
 export function owedTotal(ious: Iou[], direction: IouDirection = "owed_to_me"): number {
-  return round2(ious.reduce((s, i) => (i.settledOn || dirOf(i) !== direction ? s : s + i.amount), 0));
+  return round2(ious.reduce((s, i) => (i.settledOn || dirOf(i) !== direction ? s : s + i.amount), 0))
 }
 
 /**
@@ -37,35 +37,39 @@ export function owedTotal(ious: Iou[], direction: IouDirection = "owed_to_me"): 
  * included). Rounded to satang; any leftover satang stays with the user.
  */
 export function splitShare(total: number, people: number): number {
-  if (people < 2 || total <= 0) return 0;
-  return Math.floor((total * 100) / people) / 100;
+  if (people < 2 || total <= 0) return 0
+  return Math.floor((total * 100) / people) / 100
 }
 
 export interface CustomSplit {
   /** What the friends owe in total. */
-  friends: number;
+  friends: number
   /** What's left for the user to cover (0 when friends pay it all). */
-  yours: number;
+  yours: number
   /** Every friend owes something and together no more than the bill. */
-  ok: boolean;
+  ok: boolean
 }
 
 /** A bill split by amounts typed per friend; the user covers the rest. */
 export function customSplit(total: number, amounts: number[]): CustomSplit {
-  const friends = round2(amounts.reduce((s, a) => s + (Number.isFinite(a) ? a : 0), 0));
-  const yours = round2(total - friends);
-  return { friends, yours, ok: total > 0 && amounts.length > 0 && amounts.every((a) => Number.isFinite(a) && a > 0) && yours >= 0 };
+  const friends = round2(amounts.reduce((s, a) => s + (Number.isFinite(a) ? a : 0), 0))
+  const yours = round2(total - friends)
+  return {
+    friends,
+    yours,
+    ok: total > 0 && amounts.length > 0 && amounts.every((a) => Number.isFinite(a) && a > 0) && yours >= 0,
+  }
 }
 
 /** Names used before, most recent first, for quick picks. */
 export function knownPeople(ious: Iou[], limit = 8): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
+  const seen = new Set<string>()
+  const out: string[] = []
   for (const i of [...ious].sort((a, b) => b.createdAt - a.createdAt)) {
-    const key = nameKey(i.person);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(i.person.trim());
+    const key = nameKey(i.person)
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(i.person.trim())
   }
-  return out.slice(0, limit);
+  return out.slice(0, limit)
 }

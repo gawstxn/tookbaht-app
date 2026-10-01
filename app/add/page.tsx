@@ -1,193 +1,219 @@
-"use client";
+"use client"
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { PushScreen } from "@/components/app";
-import { CategoryEditSheet, type CategoryDraft } from "@/components/CategoryEditSheet";
-import { ConfirmSheet } from "@/components/ConfirmSheet";
-import { CurrencySheet } from "@/components/CurrencySheet";
-import { SlipBatchSheet } from "@/components/SlipBatchSheet";
-import { SlipReader } from "@/components/SlipReader";
-import { TagField } from "@/components/TagField";
-import { TaxField } from "@/components/TaxField";
-import { AccountSheet, DateSheet } from "@/components/pickers";
-import { Icon } from "@/components/ui/Icon";
-import { Chip, PrimaryButton, PushHeader, Segmented, cx } from "@/components/ui/primitives";
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, TYPE_META, expenseCategories, incomeCategories } from "@/lib/constants";
-import { evaluate, formatExpr, hasOperator, pressKey, type CalcKey } from "@/lib/calc";
-import { addDays, baht2, shortDate, todayISO } from "@/lib/format";
-import { entryDefaults, recentDuplicate } from "@/lib/quick";
-import { accountBalance } from "@/lib/selectors";
-import { useTranslation } from "react-i18next";
-import { currencySymbol, formatForeign, formatRate, fxToBaht, type FxCurrency } from "@/lib/currencies";
-import type { UsdRate } from "@/lib/fx";
-import { fetchRate } from "@/lib/fxRates";
-import { useGoBack } from "@/lib/nav";
-import { useStore } from "@/lib/store";
-import { isDefaultTitle, txTitle } from "@/lib/txTitle";
-import type { SlipFields } from "@/lib/slip";
-import type { TaxType } from "@/lib/tax";
-import type { Transaction, TxType } from "@/lib/types";
-
+import { useRouter, useSearchParams } from "next/navigation"
+import { Suspense, useEffect, useMemo, useRef, useState } from "react"
+import { PushScreen } from "@/components/app"
+import { CategoryEditSheet, type CategoryDraft } from "@/components/CategoryEditSheet"
+import { ConfirmSheet } from "@/components/ConfirmSheet"
+import { CurrencySheet } from "@/components/CurrencySheet"
+import { SlipBatchSheet } from "@/components/SlipBatchSheet"
+import { SlipReader } from "@/components/SlipReader"
+import { TagField } from "@/components/TagField"
+import { TaxField } from "@/components/TaxField"
+import { AccountSheet, DateSheet } from "@/components/pickers"
+import { Icon } from "@/components/ui/Icon"
+import { Chip, PrimaryButton, PushHeader, Segmented, cx } from "@/components/ui/primitives"
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, TYPE_META, expenseCategories, incomeCategories } from "@/lib/constants"
+import { evaluate, formatExpr, hasOperator, pressKey, type CalcKey } from "@/lib/calc"
+import { addDays, baht2, shortDate, todayISO } from "@/lib/format"
+import { entryDefaults, recentDuplicate } from "@/lib/quick"
+import { accountBalance } from "@/lib/selectors"
+import { useTranslation } from "react-i18next"
+import { currencySymbol, formatForeign, formatRate, fxToBaht, type FxCurrency } from "@/lib/currencies"
+import type { UsdRate } from "@/lib/fx"
+import { fetchRate } from "@/lib/fxRates"
+import { useGoBack } from "@/lib/nav"
+import { useStore } from "@/lib/store"
+import { isDefaultTitle, txTitle } from "@/lib/txTitle"
+import type { SlipFields } from "@/lib/slip"
+import type { TaxType } from "@/lib/tax"
+import type { Transaction, TxType } from "@/lib/types"
 
 export default function AddPage() {
   return (
     <Suspense>
       <AddForm />
     </Suspense>
-  );
+  )
 }
 
 function AddForm() {
-  const router = useRouter();
-  const goBack = useGoBack("/");
-  const params = useSearchParams();
-  const accounts = useStore((s) => s.accounts);
-  const txs = useStore((s) => s.transactions);
-  const keypadMath = useStore((s) => s.settings.keypadMath !== false);
-  const setSettings = useStore((s) => s.setSettings);
-  const notify = useStore((s) => s.notify);
-  const addTransaction = useStore((s) => s.addTransaction);
-  const updateTransaction = useStore((s) => s.updateTransaction);
+  const router = useRouter()
+  const goBack = useGoBack("/")
+  const params = useSearchParams()
+  const accounts = useStore((s) => s.accounts)
+  const txs = useStore((s) => s.transactions)
+  const keypadMath = useStore((s) => s.settings.keypadMath !== false)
+  const setSettings = useStore((s) => s.setSettings)
+  const notify = useStore((s) => s.notify)
+  const addTransaction = useStore((s) => s.addTransaction)
+  const updateTransaction = useStore((s) => s.updateTransaction)
   // /add?edit=<id> edits a saved transaction with the same form.
-  const editing = txs.find((x) => x.id === params.get("edit"));
-  const initialType = editing?.type ?? ((["in", "out", "move"].includes(params.get("type") ?? "") ? params.get("type") : "out") as TxType);
-  const today = todayISO();
-  const { t } = useTranslation();
+  const editing = txs.find((x) => x.id === params.get("edit"))
+  const initialType =
+    editing?.type ?? ((["in", "out", "move"].includes(params.get("type") ?? "") ? params.get("type") : "out") as TxType)
+  const today = todayISO()
+  const { t } = useTranslation()
   // A new entry starts from the category and account used most for its type.
-  const accountIds = useMemo(() => accounts.map((a) => a.id), [accounts]);
+  const accountIds = useMemo(() => accounts.map((a) => a.id), [accounts])
   const defaultsFor = (type: TxType) => {
-    const d = entryDefaults(txs, type, accountIds);
-    const fromId = d.fromId ?? accounts[0]?.id ?? "";
+    const d = entryDefaults(txs, type, accountIds)
+    const fromId = d.fromId ?? accounts[0]?.id ?? ""
     return {
       category: d.category ?? (type === "in" ? INCOME_CATEGORIES[0].key : EXPENSE_CATEGORIES[0].key),
       accountId: d.accountId ?? accounts[0]?.id ?? "",
       fromId,
       toId: d.toId ?? accounts.find((a) => a.id !== fromId)?.id ?? "",
-    };
-  };
-  const [initial] = useState(() => (editing ? null : defaultsFor(initialType)));
+    }
+  }
+  const [initial] = useState(() => (editing ? null : defaultsFor(initialType)))
 
-  const [type, setType] = useState<TxType>(initialType);
-  const [amount, setAmount] = useState(editing ? String(editing.amount) : "");
-  const [cat, setCat] = useState(editing?.category ?? initial?.category ?? EXPENSE_CATEGORIES[0].key);
-  const [acc, setAcc] = useState(editing?.accountId ?? initial?.accountId ?? "");
-  const [from, setFrom] = useState(editing?.fromId ?? initial?.fromId ?? "");
-  const [to, setTo] = useState(editing?.toId ?? initial?.toId ?? "");
+  const [type, setType] = useState<TxType>(initialType)
+  const [amount, setAmount] = useState(editing ? String(editing.amount) : "")
+  const [cat, setCat] = useState(editing?.category ?? initial?.category ?? EXPENSE_CATEGORIES[0].key)
+  const [acc, setAcc] = useState(editing?.accountId ?? initial?.accountId ?? "")
+  const [from, setFrom] = useState(editing?.fromId ?? initial?.fromId ?? "")
+  const [to, setTo] = useState(editing?.toId ?? initial?.toId ?? "")
   // /add?date=<day> starts on a past day (going back to log a missed streak day).
-  const presetDate = /^\d{4}-\d{2}-\d{2}$/.test(params.get("date") ?? "") && params.get("date")! <= today ? params.get("date")! : today;
-  const [date, setDate] = useState(editing?.date ?? presetDate);
-  const [note, setNote] = useState(editing?.note ?? "");
-  const [tag, setTag] = useState(editing?.tag ?? "");
-  const [taxType, setTaxType] = useState<TaxType | undefined>(editing?.taxType);
+  const presetDate =
+    /^\d{4}-\d{2}-\d{2}$/.test(params.get("date") ?? "") && params.get("date")! <= today ? params.get("date")! : today
+  const [date, setDate] = useState(editing?.date ?? presetDate)
+  const [note, setNote] = useState(editing?.note ?? "")
+  const [tag, setTag] = useState(editing?.tag ?? "")
+  const [taxType, setTaxType] = useState<TaxType | undefined>(editing?.taxType)
   // Logging abroad: the amount is typed in the trip's currency and saved in baht at the day's rate.
-  const tripCurrencies = useStore((s) => s.settings.tripCurrencies);
-  const [cur, setCur] = useState<FxCurrency | "">("");
-  const [rate, setRate] = useState<{ key: string; value: UsdRate | null } | null>(null);
-  const [sheet, setSheet] = useState<"" | "acc" | "from" | "to" | "date" | "cur">("");
+  const tripCurrencies = useStore((s) => s.settings.tripCurrencies)
+  const [cur, setCur] = useState<FxCurrency | "">("")
+  const [rate, setRate] = useState<{ key: string; value: UsdRate | null } | null>(null)
+  const [sheet, setSheet] = useState<"" | "acc" | "from" | "to" | "date" | "cur">("")
   // After saving, go straight on to splitting the bill with friends.
-  const [split, setSplit] = useState(false);
-  const [slips, setSlips] = useState<SlipFields[] | null>(null);
-  const [newCat, setNewCat] = useState<CategoryDraft | null>(null);
+  const [split, setSplit] = useState(false)
+  const [slips, setSlips] = useState<SlipFields[] | null>(null)
+  const [newCat, setNewCat] = useState<CategoryDraft | null>(null)
 
   // "Subscriptions" is for auto-logged charges; offer it only when editing one.
-  const cats = type === "in" ? incomeCategories() : expenseCategories().filter((c) => c.key !== "sub" || cat === "sub");
-  const meta = TYPE_META[type];
+  const cats = type === "in" ? incomeCategories() : expenseCategories().filter((c) => c.key !== "sub" || cat === "sub")
+  const meta = TYPE_META[type]
   const copy = {
     amountLabel: t(`add.amount_${type}`),
     save: editing ? t("tx.saveEdit") : t(`add.save_${type}`),
     acc: type === "move" ? "" : t(`add.acc_${type}`),
     note: t(`add.note_${type}`),
-  };
-  const value = evaluate(amount);
-  const summing = hasOperator(amount);
-  const accountOf = (id: string) => accounts.find((a) => a.id === id);
-  const foreign = !editing && type !== "move" ? cur : "";
-  const rateKey = foreign ? `${foreign}:${date}` : "";
+  }
+  const value = evaluate(amount)
+  const summing = hasOperator(amount)
+  const accountOf = (id: string) => accounts.find((a) => a.id === id)
+  const foreign = !editing && type !== "move" ? cur : ""
+  const rateKey = foreign ? `${foreign}:${date}` : ""
   useEffect(() => {
-    if (!rateKey) return;
-    const [c, d] = rateKey.split(":");
-    let live = true;
+    if (!rateKey) return
+    const [c, d] = rateKey.split(":")
+    let live = true
     void fetchRate(c as FxCurrency, d).then((r) => {
-      if (live) setRate({ key: rateKey, value: r });
-    });
+      if (live) setRate({ key: rateKey, value: r })
+    })
     return () => {
-      live = false;
-    };
-  }, [rateKey]);
+      live = false
+    }
+  }, [rateKey])
   // undefined while loading, null when there's no rate (offline).
-  const dayRate = rate?.key === rateKey ? rate.value : undefined;
-  const feePct = accountOf(acc)?.fxFeePct ?? 0;
-  const bahtValue = foreign ? (dayRate ? fxToBaht(value, dayRate.rate, feePct) : 0) : value;
-  const canSave = value > 0 && (type !== "move" || (from && to && from !== to)) && (!foreign || !!dayRate);
+  const dayRate = rate?.key === rateKey ? rate.value : undefined
+  const feePct = accountOf(acc)?.fxFeePct ?? 0
+  const bahtValue = foreign ? (dayRate ? fxToBaht(value, dayRate.rate, feePct) : 0) : value
+  const canSave = value > 0 && (type !== "move" || (from && to && from !== to)) && (!foreign || !!dayRate)
   const pickTag = (next: string) => {
-    setTag(next);
-    const c = tripCurrencies?.[next];
-    if (!editing && c) setCur(c);
-  };
+    setTag(next)
+    const c = tripCurrencies?.[next]
+    if (!editing && c) setCur(c)
+  }
 
   const changeType = (next: TxType) => {
-    setType(next);
+    setType(next)
     if (editing) {
-      if (next === "in") setCat(INCOME_CATEGORIES[0].key);
-      if (next === "out") setCat(EXPENSE_CATEGORIES[0].key);
-      return;
+      if (next === "in") setCat(INCOME_CATEGORIES[0].key)
+      if (next === "out") setCat(EXPENSE_CATEGORIES[0].key)
+      return
     }
-    const d = defaultsFor(next);
+    const d = defaultsFor(next)
     if (next === "move") {
-      setFrom(d.fromId);
-      setTo(d.toId);
+      setFrom(d.fromId)
+      setTo(d.toId)
     } else {
-      setCat(d.category);
-      setAcc(d.accountId);
+      setCat(d.category)
+      setAcc(d.accountId)
     }
-  };
+  }
 
-  const press = (k: CalcKey) => setAmount((a) => pressKey(a, k));
+  const press = (k: CalcKey) => setAmount((a) => pressKey(a, k))
 
   // While summing ("120 + 85"), the big number is the total and the sum sits above it.
-  const amountText = summing ? value.toLocaleString("en-US", { maximumFractionDigits: 2 }) : formatExpr(amount || "0");
+  const amountText = summing ? value.toLocaleString("en-US", { maximumFractionDigits: 2 }) : formatExpr(amount || "0")
 
-  const saving = useRef(false);
-  const [duplicate, setDuplicate] = useState<{ tx: Transaction; minutes: number } | null>(null);
+  const saving = useRef(false)
+  const [duplicate, setDuplicate] = useState<{ tx: Transaction; minutes: number } | null>(null)
 
   const save = (confirmedDuplicate = false) => {
-    if (!canSave || saving.current) return;
-    const catLabel = cats.find((c) => c.key === cat)?.label ?? "";
-    const fallback = type === "move" ? t("add.transferTo", { name: accountOf(to)?.name ?? "" }) : catLabel;
+    if (!canSave || saving.current) return
+    const catLabel = cats.find((c) => c.key === cat)?.label ?? ""
+    const fallback = type === "move" ? t("add.transferTo", { name: accountOf(to)?.name ?? "" }) : catLabel
     // Keep a title the user or a subscription set (e.g. "Claude Pro") unless a note replaces it.
-    const kept = editing && editing.type === type && !isDefaultTitle(editing, accounts) ? editing.title : "";
-    const title = note.trim() || kept || fallback;
-    const fx = foreign && dayRate ? { origAmount: value, origCurrency: foreign, fxRate: dayRate.rate } : {};
+    const kept = editing && editing.type === type && !isDefaultTitle(editing, accounts) ? editing.title : ""
+    const title = note.trim() || kept || fallback
+    const fx = foreign && dayRate ? { origAmount: value, origCurrency: foreign, fxRate: dayRate.rate } : {}
     const fields =
       type === "move"
-        ? { type, amount: value, date, title, note: undefined, category: undefined, accountId: undefined, fromId: from, toId: to, tag: tag || undefined }
-        : { type, amount: bahtValue, date, title, note: note.trim() || undefined, category: cat, accountId: acc, fromId: undefined, toId: undefined, tag: tag || undefined, taxType: type === "out" ? taxType : undefined, ...fx };
+        ? {
+            type,
+            amount: value,
+            date,
+            title,
+            note: undefined,
+            category: undefined,
+            accountId: undefined,
+            fromId: from,
+            toId: to,
+            tag: tag || undefined,
+          }
+        : {
+            type,
+            amount: bahtValue,
+            date,
+            title,
+            note: note.trim() || undefined,
+            category: cat,
+            accountId: acc,
+            fromId: undefined,
+            toId: undefined,
+            tag: tag || undefined,
+            taxType: type === "out" ? taxType : undefined,
+            ...fx,
+          }
     if (!editing && !confirmedDuplicate) {
-      const now = clock();
-      const dup = recentDuplicate(txs, fields, now);
-      if (dup) return setDuplicate({ tx: dup, minutes: Math.max(1, Math.round((now - dup.createdAt) / 60_000)) });
+      const now = clock()
+      const dup = recentDuplicate(txs, fields, now)
+      if (dup) return setDuplicate({ tx: dup, minutes: Math.max(1, Math.round((now - dup.createdAt) / 60_000)) })
     }
-    saving.current = true;
+    saving.current = true
     if (editing) {
-      updateTransaction(editing.id, fields);
-      goBack();
+      updateTransaction(editing.id, fields)
+      goBack()
     } else {
-      const id = addTransaction(fields);
+      const id = addTransaction(fields)
       // The first entry of a trip in another currency sets the trip's currency.
-      const trip = tag.trim();
-      if (trip && foreign && tripCurrencies?.[trip] !== foreign) setSettings({ tripCurrencies: { ...tripCurrencies, [trip]: foreign } });
-      if (split && type === "out") router.replace(`/ious/split?tx=${id}`);
-      else router.push("/");
+      const trip = tag.trim()
+      if (trip && foreign && tripCurrencies?.[trip] !== foreign)
+        setSettings({ tripCurrencies: { ...tripCurrencies, [trip]: foreign } })
+      if (split && type === "out") router.replace(`/ious/split?tx=${id}`)
+      else router.push("/")
     }
-  };
+  }
 
   const dateText =
     date === today
       ? t("add.todayDate", { date: shortDate(date, false) })
       : date === addDays(today, -1)
         ? t("add.yesterdayDate", { date: shortDate(date, false) })
-        : shortDate(date);
+        : shortDate(date)
 
   return (
     <PushScreen className="gap-3">
@@ -202,9 +228,9 @@ function AddForm() {
             aria-label={t("profile.keypadMath")}
             onClick={() => {
               // Turning the keys off keeps the amount: a half-typed sum becomes its total.
-              if (keypadMath && summing) setAmount(value > 0 ? String(value) : "");
-              setSettings({ keypadMath: !keypadMath });
-              notify(t(keypadMath ? "profile.keypadMathOff" : "profile.keypadMathOn"));
+              if (keypadMath && summing) setAmount(value > 0 ? String(value) : "")
+              setSettings({ keypadMath: !keypadMath })
+              notify(t(keypadMath ? "profile.keypadMathOff" : "profile.keypadMathOn"))
             }}
             className={cx(
               "flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
@@ -229,8 +255,13 @@ function AddForm() {
       />
 
       <output aria-live="polite" className="flex flex-col items-center gap-0.5 py-2">
-        <span className="max-w-full truncate text-[13px] text-muted">{summing ? <span className="font-mono">{formatExpr(amount)} =</span> : copy.amountLabel}</span>
-        <span className="font-mono text-[44px] font-semibold leading-tight tracking-tight" style={{ color: meta.color }}>
+        <span className="max-w-full truncate text-[13px] text-muted">
+          {summing ? <span className="font-mono">{formatExpr(amount)} =</span> : copy.amountLabel}
+        </span>
+        <span
+          className="font-mono text-[44px] leading-tight font-semibold tracking-tight"
+          style={{ color: meta.color }}
+        >
           {value < 0 ? "−" : meta.sign}
           {foreign ? currencySymbol(foreign).trim() : "฿"}
           {amountText.replace("-", "")}
@@ -239,9 +270,15 @@ function AddForm() {
           <span className="text-center text-xs leading-relaxed text-muted">
             {dayRate ? (
               <>
-                <span className="font-mono font-semibold text-ink">{t("fxEntry.converted", { amount: baht2(bahtValue) })}</span>
+                <span className="font-mono font-semibold text-ink">
+                  {t("fxEntry.converted", { amount: baht2(bahtValue) })}
+                </span>
                 <br />
-                {t("fxEntry.rate", { currency: foreign, rate: formatRate(dayRate.rate), date: shortDate(dayRate.date) })}
+                {t("fxEntry.rate", {
+                  currency: foreign,
+                  rate: formatRate(dayRate.rate),
+                  date: shortDate(dayRate.date),
+                })}
                 {feePct ? ` · ${t("fxEntry.fee", { pct: feePct })}` : ""}
               </>
             ) : dayRate === null ? (
@@ -256,7 +293,11 @@ function AddForm() {
         <p className="-mt-2 text-center text-xs leading-relaxed text-muted">
           {t("tx.original")}{" "}
           <span className="font-mono font-semibold text-ink">
-            {t("tx.originalValue", { amount: formatForeign(editing.origAmount, editing.origCurrency ?? "USD"), rate: formatRate(editing.fxRate), currency: editing.origCurrency ?? "USD" })}
+            {t("tx.originalValue", {
+              amount: formatForeign(editing.origAmount, editing.origCurrency ?? "USD"),
+              rate: formatRate(editing.fxRate),
+              currency: editing.origCurrency ?? "USD",
+            })}
           </span>
           <br />
           {t("tx.fixHint")}
@@ -286,23 +327,37 @@ function AddForm() {
             ) : null}
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <FieldButton label={copy.acc} value={accountOf(acc)?.name ?? t("common.selectAccount")} onClick={() => setSheet("acc")} />
+            <FieldButton
+              label={copy.acc}
+              value={accountOf(acc)?.name ?? t("common.selectAccount")}
+              onClick={() => setSheet("acc")}
+            />
             <FieldButton label={t("common.date")} value={dateText} onClick={() => setSheet("date")} />
           </div>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
           <div className="relative flex flex-col gap-1.5">
-            <TransferRow label={t("common.fromAccount")} name={accountOf(from)?.name} balance={accountOf(from) ? accountBalance(accountOf(from)!, txs) : 0} onClick={() => setSheet("from")} />
-            <TransferRow label={t("common.toAccount")} name={accountOf(to)?.name} balance={accountOf(to) ? accountBalance(accountOf(to)!, txs) : 0} onClick={() => setSheet("to")} />
+            <TransferRow
+              label={t("common.fromAccount")}
+              name={accountOf(from)?.name}
+              balance={accountOf(from) ? accountBalance(accountOf(from)!, txs) : 0}
+              onClick={() => setSheet("from")}
+            />
+            <TransferRow
+              label={t("common.toAccount")}
+              name={accountOf(to)?.name}
+              balance={accountOf(to) ? accountBalance(accountOf(to)!, txs) : 0}
+              onClick={() => setSheet("to")}
+            />
             <button
               type="button"
               aria-label={t("add.swap")}
               onClick={() => {
-                setFrom(to);
-                setTo(from);
+                setFrom(to)
+                setTo(from)
               }}
-              className="absolute right-[120px] top-11 flex h-9 w-9 items-center justify-center rounded-full border-[3px] border-paper bg-transfer text-white"
+              className="absolute top-11 right-[120px] flex h-9 w-9 items-center justify-center rounded-full border-[3px] border-paper bg-transfer text-white"
             >
               <Icon name="swap" size={16} strokeWidth={2.2} />
             </button>
@@ -329,7 +384,10 @@ function AddForm() {
               type="button"
               aria-haspopup="dialog"
               onClick={() => setSheet("cur")}
-              className={cx("flex min-h-9 items-center gap-1.5 self-start rounded-full px-3 text-[13px] font-medium", cur ? "bg-ink text-on-ink" : "border border-line bg-card text-muted")}
+              className={cx(
+                "flex min-h-9 items-center gap-1.5 self-start rounded-full px-3 text-[13px] font-medium",
+                cur ? "bg-ink text-on-ink" : "border border-line bg-card text-muted",
+              )}
             >
               <Icon name="globe" size={14} strokeWidth={2.2} />
               {cur || t("fxEntry.chip")}
@@ -350,13 +408,18 @@ function AddForm() {
                 // Fill what the slip shows; everything stays editable before saving.
                 // Slips are in baht.
                 if (f.amount) {
-                  setAmount(String(f.amount));
-                  setCur("");
+                  setAmount(String(f.amount))
+                  setCur("")
                 }
-                if (f.date) setDate(f.date);
-                const label = f.memo || f.receiver;
-                if (label && !note.trim()) setNote(label);
-                notify(t("slip.filled", { amount: f.amount ? baht2(f.amount) : "—", date: f.date ? shortDate(f.date) : "—" }));
+                if (f.date) setDate(f.date)
+                const label = f.memo || f.receiver
+                if (label && !note.trim()) setNote(label)
+                notify(
+                  t("slip.filled", {
+                    amount: f.amount ? baht2(f.amount) : "—",
+                    date: f.date ? shortDate(f.date) : "—",
+                  }),
+                )
               }}
               onBatch={type === "out" ? setSlips : undefined}
             />
@@ -369,9 +432,23 @@ function AddForm() {
           <button
             key={k}
             type="button"
-            aria-label={k === "del" ? t("add.del") : k === "+" ? t("add.plus") : k === "-" ? t("add.minus") : k === "*" ? t("add.times") : k}
+            aria-label={
+              k === "del"
+                ? t("add.del")
+                : k === "+"
+                  ? t("add.plus")
+                  : k === "-"
+                    ? t("add.minus")
+                    : k === "*"
+                      ? t("add.times")
+                      : k
+            }
             onClick={() => press(k)}
-            className={cx("flex min-h-[50px] items-center justify-center rounded-xl font-mono text-[22px] font-medium", /[0-9]/.test(k) ? "bg-card" : "bg-chip", k === "del" && keypadMath && "col-span-2")}
+            className={cx(
+              "flex min-h-[50px] items-center justify-center rounded-xl font-mono text-[22px] font-medium",
+              /[0-9]/.test(k) ? "bg-card" : "bg-chip",
+              k === "del" && keypadMath && "col-span-2",
+            )}
           >
             {k === "del" ? <Icon name="del" size={24} /> : (OP_LABEL[k] ?? k)}
           </button>
@@ -382,9 +459,29 @@ function AddForm() {
         {copy.save}
       </PrimaryButton>
 
-      <AccountSheet open={sheet === "acc"} onClose={() => setSheet("")} title={copy.acc || t("common.account")} value={acc} onPick={setAcc} />
-      <AccountSheet open={sheet === "from"} onClose={() => setSheet("")} title={t("add.fromTitle")} value={from} exclude={to} onPick={setFrom} />
-      <AccountSheet open={sheet === "to"} onClose={() => setSheet("")} title={t("add.toTitle")} value={to} exclude={from} onPick={setTo} />
+      <AccountSheet
+        open={sheet === "acc"}
+        onClose={() => setSheet("")}
+        title={copy.acc || t("common.account")}
+        value={acc}
+        onPick={setAcc}
+      />
+      <AccountSheet
+        open={sheet === "from"}
+        onClose={() => setSheet("")}
+        title={t("add.fromTitle")}
+        value={from}
+        exclude={to}
+        onPick={setFrom}
+      />
+      <AccountSheet
+        open={sheet === "to"}
+        onClose={() => setSheet("")}
+        title={t("add.toTitle")}
+        value={to}
+        exclude={from}
+        onPick={setTo}
+      />
       <DateSheet
         open={sheet === "date"}
         onClose={() => setSheet("")}
@@ -397,52 +494,92 @@ function AddForm() {
           { label: t("common.yesterday"), value: addDays(today, -1) },
         ]}
       />
-      <CurrencySheet open={sheet === "cur"} onClose={() => setSheet("")} title={t("fxEntry.pickTitle")} value={cur} onPick={setCur} />
+      <CurrencySheet
+        open={sheet === "cur"}
+        onClose={() => setSheet("")}
+        title={t("fxEntry.pickTitle")}
+        value={cur}
+        onPick={setCur}
+      />
       <CategoryEditSheet draft={newCat} onClose={() => setNewCat(null)} onSaved={setCat} />
-      <SlipBatchSheet slips={slips} category={cat} accountId={acc} onClose={() => setSlips(null)} onSaved={() => router.push("/")} />
+      <SlipBatchSheet
+        slips={slips}
+        category={cat}
+        accountId={acc}
+        onClose={() => setSlips(null)}
+        onSaved={() => router.push("/")}
+      />
       <ConfirmSheet
         tone="ink"
         open={!!duplicate}
         onClose={() => setDuplicate(null)}
         title={t("dup.title")}
-        lead={duplicate ? t("dup.lead", { amount: baht2(duplicate.tx.amount), title: txTitle(duplicate.tx, accounts), minutes: duplicate.minutes }) : ""}
+        lead={
+          duplicate
+            ? t("dup.lead", {
+                amount: baht2(duplicate.tx.amount),
+                title: txTitle(duplicate.tx, accounts),
+                minutes: duplicate.minutes,
+              })
+            : ""
+        }
         confirmLabel={t("dup.save")}
         onConfirm={() => {
-          setDuplicate(null);
-          save(true);
+          setDuplicate(null)
+          save(true)
         }}
       />
     </PushScreen>
-  );
+  )
 }
 
 /** Current time; read when saving (an event), not while rendering. */
-const clock = () => Date.now();
+const clock = () => Date.now()
 
 /** Number pad with + − × down the right (unless turned off in Profile); the entry saves the total. */
-const MATH_KEYS: CalcKey[] = ["1", "2", "3", "+", "4", "5", "6", "-", "7", "8", "9", "*", ".", "0", "del"];
+const MATH_KEYS: CalcKey[] = ["1", "2", "3", "+", "4", "5", "6", "-", "7", "8", "9", "*", ".", "0", "del"]
 /** Without the calculator (switch in Profile). */
-const PLAIN_KEYS: CalcKey[] = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "del"];
-const OP_LABEL: Partial<Record<CalcKey, string>> = { "+": "+", "-": "−", "*": "×" };
+const PLAIN_KEYS: CalcKey[] = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "del"]
+const OP_LABEL: Partial<Record<CalcKey, string>> = { "+": "+", "-": "−", "*": "×" }
 
 function FieldButton({ label, value, onClick }: { label: string; value: string; onClick: () => void }) {
   return (
-    <button type="button" aria-haspopup="dialog" onClick={onClick} className="flex min-h-[52px] flex-col items-start justify-center rounded-[14px] border border-line bg-card px-3 text-left">
+    <button
+      type="button"
+      aria-haspopup="dialog"
+      onClick={onClick}
+      className="flex min-h-[52px] flex-col items-start justify-center rounded-[14px] border border-line bg-card px-3 text-left"
+    >
       <span className="text-[11px] text-muted">{label}</span>
       <span className="text-sm font-semibold">{value}</span>
     </button>
-  );
+  )
 }
 
-function TransferRow({ label, name, balance, onClick }: { label: string; name?: string; balance: number; onClick: () => void }) {
-  const { t } = useTranslation();
+function TransferRow({
+  label,
+  name,
+  balance,
+  onClick,
+}: {
+  label: string
+  name?: string
+  balance: number
+  onClick: () => void
+}) {
+  const { t } = useTranslation()
   return (
-    <button type="button" aria-haspopup="dialog" onClick={onClick} className="flex min-h-[60px] items-center justify-between rounded-[14px] border border-line bg-card px-3.5 text-left">
+    <button
+      type="button"
+      aria-haspopup="dialog"
+      onClick={onClick}
+      className="flex min-h-[60px] items-center justify-between rounded-[14px] border border-line bg-card px-3.5 text-left"
+    >
       <span className="flex flex-col">
         <span className="text-[11px] text-muted">{label}</span>
         <span className="text-[15px] font-semibold">{name ?? t("common.selectAccount")}</span>
       </span>
       <span className="font-mono text-[13px] text-muted">{baht2(balance)}</span>
     </button>
-  );
+  )
 }

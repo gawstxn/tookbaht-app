@@ -178,62 +178,136 @@ body,
    an iPhone) while the app settles into place underneath; no crossfade, so the
    two never show through each other. */
 @keyframes lock-out {
-  to { transform: translateY(-100%); }
+  to {
+    transform: translateY(-100%);
+  }
 }
 @keyframes app-in {
-  from { opacity: 0.6; transform: scale(0.95); }
+  from {
+    opacity: 0.6;
+    transform: scale(0.95);
+  }
 }
-.animate-lock-out { animation: lock-out 380ms cubic-bezier(0.5, 0, 0.2, 1) forwards; }
-:root[data-unlocking] .app-content { animation: app-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.animate-lock-out {
+  animation: lock-out 380ms cubic-bezier(0.5, 0, 0.2, 1) forwards;
+}
+:root[data-unlocking] .app-content {
+  animation: app-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
 @media (prefers-reduced-motion: reduce) {
   /* Still ends, so the lock screen unmounts. */
-  .animate-lock-out { animation-duration: 1ms; }
-  :root[data-unlocking] .app-content { animation: none; }
+  .animate-lock-out {
+    animation-duration: 1ms;
+  }
+  :root[data-unlocking] .app-content {
+    animation: none;
+  }
 }
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-8px); }
-  75% { transform: translateX(8px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-8px);
+  }
+  75% {
+    transform: translateX(8px);
+  }
 }
 
 @keyframes sheet-in {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 @keyframes sheet-out {
-  from { transform: translateY(0); }
-  to { transform: translateY(100%); }
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
 }
 @keyframes fade-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 @keyframes toast-in {
-  from { opacity: 0; transform: translateY(18px) scale(0.96); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 @keyframes toast-out {
-  from { opacity: 1; transform: translateY(0) scale(1); }
-  to { opacity: 0; transform: translateY(10px) scale(0.97); }
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
 }
-.animate-sheet { animation: sheet-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
-.animate-fade { animation: fade-in 180ms ease-out; }
-.animate-sheet-out { animation: sheet-out 200ms cubic-bezier(0.4, 0, 1, 1) forwards; }
-.animate-fade-out { animation: fade-out 200ms ease-in forwards; }
-.animate-toast { animation: toast-in 340ms cubic-bezier(0.22, 1, 0.36, 1); }
+.animate-sheet {
+  animation: sheet-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.animate-fade {
+  animation: fade-in 180ms ease-out;
+}
+.animate-sheet-out {
+  animation: sheet-out 200ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+.animate-fade-out {
+  animation: fade-out 200ms ease-in forwards;
+}
+.animate-toast {
+  animation: toast-in 340ms cubic-bezier(0.22, 1, 0.36, 1);
+}
 /* Centred dialogs (Sheet variant="modal"): same easing as the toast. */
-.animate-modal { animation: toast-in 280ms cubic-bezier(0.22, 1, 0.36, 1); }
-.animate-modal-out { animation: toast-out 200ms ease-in forwards; }
-.animate-toast-out { animation: toast-out 220ms ease-in forwards; }
+.animate-modal {
+  animation: toast-in 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.animate-modal-out {
+  animation: toast-out 200ms ease-in forwards;
+}
+.animate-toast-out {
+  animation: toast-out 220ms ease-in forwards;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-sheet, .animate-fade, .animate-toast, .animate-modal { animation: none; }
+  .animate-sheet,
+  .animate-fade,
+  .animate-toast,
+  .animate-modal {
+    animation: none;
+  }
   /* Exit animations still need to end so the element unmounts. */
-  .animate-sheet-out, .animate-fade-out, .animate-toast-out, .animate-modal-out { animation-duration: 1ms; }
+  .animate-sheet-out,
+  .animate-fade-out,
+  .animate-toast-out,
+  .animate-modal-out {
+    animation-duration: 1ms;
+  }
 }
 
 /* ---------- page transitions (see PageTransition in AppShell) ----------
@@ -282,16 +356,24 @@ body,
   animation: 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both vt-from-left;
 }
 @keyframes vt-under-left {
-  to { transform: translateX(-25%); }
+  to {
+    transform: translateX(-25%);
+  }
 }
 @keyframes vt-from-right {
-  from { transform: translateX(100%); }
+  from {
+    transform: translateX(100%);
+  }
 }
 @keyframes vt-to-right {
-  to { transform: translateX(100%); }
+  to {
+    transform: translateX(100%);
+  }
 }
 @keyframes vt-from-left {
-  from { transform: translateX(-25%); }
+  from {
+    transform: translateX(-25%);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-old(*),

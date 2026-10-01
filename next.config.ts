@@ -1,8 +1,8 @@
-import type { NextConfig } from "next";
-import pkg from "./package.json";
+import type { NextConfig } from "next"
+import pkg from "./package.json"
 
-const dev = process.env.NODE_ENV === "development";
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const dev = process.env.NODE_ENV === "development"
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""
 
 /**
  * Static CSP (no nonces) so pages can be prerendered and navigations stay
@@ -24,7 +24,7 @@ const csp = [
   "form-action 'self'",
   "frame-ancestors 'none'",
   ...(!dev && supabaseUrl.startsWith("https://") ? ["upgrade-insecure-requests"] : []),
-].join("; ");
+].join("; ")
 
 const nextConfig: NextConfig = {
   turbopack: {
@@ -51,7 +51,10 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           // Nothing here uses the camera, microphone, location or payments. Passkeys (Face ID lock) stay allowed.
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=(), browsing-topics=()" },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=(), browsing-topics=()",
+          },
         ],
       },
       {
@@ -62,8 +65,8 @@ const nextConfig: NextConfig = {
           { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'" },
         ],
       },
-    ];
+    ]
   },
-};
+}
 
-export default nextConfig;
+export default nextConfig

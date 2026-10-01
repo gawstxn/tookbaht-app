@@ -1,36 +1,50 @@
-"use client";
+"use client"
 
-import { usePathname, useRouter } from "next/navigation";
-import { Fragment, ViewTransition, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { applyLang, preferredLang } from "@/lib/i18n";
-import { applyTheme, followSystemTheme, themePref } from "@/lib/theme";
-import { useAmountsHidden } from "@/lib/hideAmounts";
-import { isManualBack, notifyPathCommitted, rememberPath } from "@/lib/nav";
-import { allowPromptPayEdit, hasPendingReauth, takeReauth } from "@/lib/reauth";
-import { setUnlocked, writeLock } from "@/lib/appLock";
-import { preloadBrandLogos } from "@/lib/brandLogos";
-import { shortDate, toISO } from "@/lib/format";
-import { TERMS_VERSION } from "@/lib/legal";
-import { TermsGate } from "./TermsConsent";
-import { LockGate } from "./AppLock";
-import { getSupabase } from "@/lib/supabase/client";
-import { useStore, type Toast } from "@/lib/store";
-import { Icon } from "./ui/Icon";
-import { PrimaryButton, cx } from "./ui/primitives";
+import { usePathname, useRouter } from "next/navigation"
+import { Fragment, ViewTransition, useEffect, useLayoutEffect, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
+import { applyLang, preferredLang } from "@/lib/i18n"
+import { applyTheme, followSystemTheme, themePref } from "@/lib/theme"
+import { useAmountsHidden } from "@/lib/hideAmounts"
+import { isManualBack, notifyPathCommitted, rememberPath } from "@/lib/nav"
+import { allowPromptPayEdit, hasPendingReauth, takeReauth } from "@/lib/reauth"
+import { setUnlocked, writeLock } from "@/lib/appLock"
+import { preloadBrandLogos } from "@/lib/brandLogos"
+import { shortDate, toISO } from "@/lib/format"
+import { TERMS_VERSION } from "@/lib/legal"
+import { TermsGate } from "./TermsConsent"
+import { LockGate } from "./AppLock"
+import { getSupabase } from "@/lib/supabase/client"
+import { useStore, type Toast } from "@/lib/store"
+import { Icon } from "./ui/Icon"
+import { PrimaryButton, cx } from "./ui/primitives"
 
 /** Tab roots sit at depth 0; everything else is pushed on top of them. */
-const TAB_ROOTS = ["/", "/transactions", "/subscriptions", "/profile"];
-const depth = (path: string) => (TAB_ROOTS.includes(path) ? 0 : path.split("/").filter(Boolean).length);
+const TAB_ROOTS = ["/", "/transactions", "/subscriptions", "/profile"]
+const depth = (path: string) => (TAB_ROOTS.includes(path) ? 0 : path.split("/").filter(Boolean).length)
 
 /** Screens kept by the service worker so they open offline. */
 const OFFLINE_PAGES = [
-  "/", "/transactions", "/subscriptions", "/profile", "/add", "/goals", "/goals/edit", "/ious", "/ious/split",
-  "/insights", "/accounts", "/notifications", "/subscriptions/new", "/recurring/new", "/terms", "/privacy",
-];
+  "/",
+  "/transactions",
+  "/subscriptions",
+  "/profile",
+  "/add",
+  "/goals",
+  "/goals/edit",
+  "/ious",
+  "/ious/split",
+  "/insights",
+  "/accounts",
+  "/notifications",
+  "/subscriptions/new",
+  "/recurring/new",
+  "/terms",
+  "/privacy",
+]
 
 /** Screens that work without a session or before any data exists. */
-const NO_DATA_PATHS = ["/login", "/auth/", "/terms", "/privacy"];
+const NO_DATA_PATHS = ["/login", "/auth/", "/terms", "/privacy"]
 
 /**
  * Follows the Supabase session, loads the user's data, and sends users
@@ -38,124 +52,132 @@ const NO_DATA_PATHS = ["/login", "/auth/", "/terms", "/privacy"];
  * visitors on /login.
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const status = useStore((s) => s.status);
-  const needsOnboarding = useStore((s) => s.status === "ready" && s.accounts.length === 0);
+  const status = useStore((s) => s.status)
+  const needsOnboarding = useStore((s) => s.status === "ready" && s.accounts.length === 0)
   // Onboarded users who haven't accepted the current terms (onboarding asks new users itself).
-  const needsTerms = useStore((s) => s.status === "ready" && s.accounts.length > 0 && s.settings.termsAcceptedVersion !== TERMS_VERSION);
-  const pathname = usePathname();
-  const router = useRouter();
-  const noData = NO_DATA_PATHS.some((p) => pathname.startsWith(p));
-  const onOnboarding = pathname === "/onboarding";
-  const { i18n } = useTranslation();
-  const hidden = useAmountsHidden();
+  const needsTerms = useStore(
+    (s) => s.status === "ready" && s.accounts.length > 0 && s.settings.termsAcceptedVersion !== TERMS_VERSION,
+  )
+  const pathname = usePathname()
+  const router = useRouter()
+  const noData = NO_DATA_PATHS.some((p) => pathname.startsWith(p))
+  const onOnboarding = pathname === "/onboarding"
+  const { i18n } = useTranslation()
+  const hidden = useAmountsHidden()
 
   // Pages prerender in Thai; switch to the saved/device language once in the browser.
   useEffect(() => {
-    applyLang(preferredLang());
-  }, []);
+    applyLang(preferredLang())
+  }, [])
 
   // Send changes made offline when the connection comes back, the app returns
   // to the foreground, and every 10 s while some are still waiting.
   useEffect(() => {
-    const sync = () => void useStore.getState().sync();
-    const onVisible = () => document.visibilityState === "visible" && sync();
+    const sync = () => void useStore.getState().sync()
+    const onVisible = () => document.visibilityState === "visible" && sync()
     // The connection is often not usable yet when "online" fires; try again shortly.
-    let retry: ReturnType<typeof setTimeout> | undefined;
+    let retry: ReturnType<typeof setTimeout> | undefined
     const onOnline = () => {
-      sync();
-      clearTimeout(retry);
-      retry = setTimeout(sync, 2500);
-    };
-    window.addEventListener("online", onOnline);
-    document.addEventListener("visibilitychange", onVisible);
+      sync()
+      clearTimeout(retry)
+      retry = setTimeout(sync, 2500)
+    }
+    window.addEventListener("online", onOnline)
+    document.addEventListener("visibilitychange", onVisible)
     const timer = setInterval(() => {
-      if (useStore.getState().pending > 0 || useStore.getState().offline) sync();
-    }, 10_000);
+      if (useStore.getState().pending > 0 || useStore.getState().offline) sync()
+    }, 10_000)
     return () => {
-      window.removeEventListener("online", onOnline);
-      clearTimeout(retry);
-      document.removeEventListener("visibilitychange", onVisible);
-      clearInterval(timer);
-    };
-  }, []);
+      window.removeEventListener("online", onOnline)
+      clearTimeout(retry)
+      document.removeEventListener("visibilitychange", onVisible)
+      clearInterval(timer)
+    }
+  }, [])
 
   // Once signed in, have the service worker keep the app's screens for offline use,
   // including each subscription's and account's detail screen.
   useEffect(() => {
-    if (status !== "ready" || process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return;
-    const { subscriptions, accounts } = useStore.getState();
-    const detail = [...subscriptions.map((s) => `/subscriptions/${s.id}`), ...accounts.map((a) => `/accounts/${a.id}`)].slice(0, 80);
-    const build = `${process.env.NEXT_PUBLIC_APP_VERSION}-${process.env.NEXT_PUBLIC_APP_COMMIT}`;
-    void navigator.serviceWorker.ready.then((reg) => reg.active?.postMessage({ type: "warm", urls: [...OFFLINE_PAGES, ...detail], build }));
-  }, [status]);
+    if (status !== "ready" || process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return
+    const { subscriptions, accounts } = useStore.getState()
+    const detail = [
+      ...subscriptions.map((s) => `/subscriptions/${s.id}`),
+      ...accounts.map((a) => `/accounts/${a.id}`),
+    ].slice(0, 80)
+    const build = `${process.env.NEXT_PUBLIC_APP_VERSION}-${process.env.NEXT_PUBLIC_APP_COMMIT}`
+    void navigator.serviceWorker.ready.then((reg) =>
+      reg.active?.postMessage({ type: "warm", urls: [...OFFLINE_PAGES, ...detail], build }),
+    )
+  }, [status])
 
   // Logos are a separate chunk; fetch it while the user's data loads.
   useEffect(() => {
-    void preloadBrandLogos();
-  }, []);
+    void preloadBrandLogos()
+  }, [])
 
   // The boot script already set the theme; keep "system" in step with the OS.
   useEffect(() => {
-    applyTheme(themePref());
-    return followSystemTheme();
-  }, []);
+    applyTheme(themePref())
+    return followSystemTheme()
+  }, [])
 
   useEffect(() => {
-    const sb = getSupabase();
+    const sb = getSupabase()
     const { data } = sb.auth.onAuthStateChange((event, session) => {
-      const { userId, load, signedOut } = useStore.getState();
+      const { userId, load, signedOut } = useStore.getState()
       if (session?.user && session.user.id !== userId) {
         // Defer so we don't call Supabase inside its own auth callback.
-        setTimeout(() => void load(session.user.id), 0);
+        setTimeout(() => void load(session.user.id), 0)
       } else if (!session && event === "SIGNED_OUT") {
-        signedOut();
-        router.replace("/login");
+        signedOut()
+        router.replace("/login")
       }
-    });
-    return () => data.subscription.unsubscribe();
-  }, [router]);
+    })
+    return () => data.subscription.unsubscribe()
+  }, [router])
 
   // iOS Safari still pinch-zooms despite the viewport settings; cancel its gesture events.
   useEffect(() => {
-    const block = (e: Event) => e.preventDefault();
-    document.addEventListener("gesturestart", block);
-    return () => document.removeEventListener("gesturestart", block);
-  }, []);
+    const block = (e: Event) => e.preventDefault()
+    document.addEventListener("gesturestart", block)
+    return () => document.removeEventListener("gesturestart", block)
+  }, [])
 
   useEffect(() => {
-    if (needsOnboarding && !onOnboarding && !noData) router.replace("/onboarding");
-  }, [needsOnboarding, onOnboarding, noData, router]);
+    if (needsOnboarding && !onOnboarding && !noData) router.replace("/onboarding")
+  }, [needsOnboarding, onOnboarding, noData, router])
 
   // Back from confirming with Google: finish what it was for.
   useEffect(() => {
-    if (status !== "ready" || !hasPendingReauth()) return;
+    if (status !== "ready" || !hasPendingReauth()) return
     void takeReauth().then(async (intent) => {
-      const { notify, deleteAccount } = useStore.getState();
+      const { notify, deleteAccount } = useStore.getState()
       if (intent === "unlock") {
-        writeLock(null);
-        setUnlocked(true);
-        notify(i18n.t("lock.resetDone"));
+        writeLock(null)
+        setUnlocked(true)
+        notify(i18n.t("lock.resetDone"))
       } else if (intent === "promptpay") {
-        allowPromptPayEdit();
-        router.replace("/profile?edit=promptpay");
+        allowPromptPayEdit()
+        router.replace("/profile?edit=promptpay")
       } else if (intent === "delete") {
-        const until = await deleteAccount();
-        if (until) router.replace(`/login?deleted=${until}`);
+        const until = await deleteAccount()
+        if (until) router.replace(`/login?deleted=${until}`)
       } else {
-        notify(i18n.t("reauth.failed"), { tone: "error" });
+        notify(i18n.t("reauth.failed"), { tone: "error" })
       }
-    });
-  }, [status, router, i18n]);
-  const deletionRequestedAt = useStore((s) => s.deletionRequestedAt);
+    })
+  }, [status, router, i18n])
+  const deletionRequestedAt = useStore((s) => s.deletionRequestedAt)
 
-  let content: React.ReactNode;
-  if (noData) content = children;
-  else if (status === "error") content = <LoadError />;
-  else if (status === "ready" && deletionRequestedAt) content = <DeletionPending requestedAt={deletionRequestedAt} />;
-  else if (needsTerms) content = <TermsGate />;
+  let content: React.ReactNode
+  if (noData) content = children
+  else if (status === "error") content = <LoadError />
+  else if (status === "ready" && deletionRequestedAt) content = <DeletionPending requestedAt={deletionRequestedAt} />
+  else if (needsTerms) content = <TermsGate />
   // Plain background while loading: iOS already showed its launch image.
-  else if (status !== "ready" || (needsOnboarding && !onOnboarding)) content = <div aria-busy="true" className="min-h-dvh" />;
-  else content = children;
+  else if (status !== "ready" || (needsOnboarding && !onOnboarding))
+    content = <div aria-busy="true" className="min-h-dvh" />
+  else content = children
 
   return (
     <div className="relative mx-auto min-h-dvh w-full max-w-[430px] bg-paper">
@@ -169,7 +191,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <LockGate active={!noData} />
       <ToastHost />
     </div>
-  );
+  )
 }
 
 /**
@@ -179,39 +201,48 @@ export function AppShell({ children }: { children: React.ReactNode }) {
  * transitions, so keying by path makes React run a view transition.
  */
 function PageTransition({ path, children }: { path: string; children: React.ReactNode }) {
-  const prev = useRef(path);
+  const prev = useRef(path)
   // Runs inside the transition's DOM update, before the animation starts.
   useLayoutEffect(() => {
-    const from = prev.current;
-    prev.current = path;
-    rememberPath(path);
-    if (from === path) return;
-    const [a, b] = [depth(from), depth(path)];
+    const from = prev.current
+    prev.current = path
+    rememberPath(path)
+    if (from === path) return
+    const [a, b] = [depth(from), depth(path)]
     // A history pop (goBack) runs its own whole-page transition, styled as "pop".
     // Between two screens at the same depth (Insights → Trips or Tax), opening one slides in too;
     // only switching between tab roots is instant.
-    document.documentElement.dataset.nav = isManualBack() ? "pop" : b > a || (b === a && b > 0) ? "forward" : b < a ? "back" : "tab";
-    notifyPathCommitted();
-  }, [path]);
+    document.documentElement.dataset.nav = isManualBack()
+      ? "pop"
+      : b > a || (b === a && b > 0)
+        ? "forward"
+        : b < a
+          ? "back"
+          : "tab"
+    notifyPathCommitted()
+  }, [path])
   return (
     <ViewTransition key={path} enter="page" exit="page" default="none">
       {/* Opaque and full-height, so the outgoing page never shows through the incoming one. */}
       <div className="min-h-dvh bg-paper">{children}</div>
     </ViewTransition>
-  );
+  )
 }
 
 /** Signed in to an account that is closed and waiting to be deleted: restore it, or leave. */
 function DeletionPending({ requestedAt }: { requestedAt: string }) {
-  const { t } = useTranslation();
-  const router = useRouter();
-  const cancelDeletion = useStore((s) => s.cancelDeletion);
-  const signOut = useStore((s) => s.signOut);
-  const [busy, setBusy] = useState(false);
-  const purgeOn = toISO(new Date(Date.parse(requestedAt) + 30 * 86_400_000));
+  const { t } = useTranslation()
+  const router = useRouter()
+  const cancelDeletion = useStore((s) => s.cancelDeletion)
+  const signOut = useStore((s) => s.signOut)
+  const [busy, setBusy] = useState(false)
+  const purgeOn = toISO(new Date(Date.parse(requestedAt) + 30 * 86_400_000))
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
-      <span aria-hidden="true" className="flex h-14 w-14 items-center justify-center rounded-2xl bg-expense-tint text-danger">
+      <span
+        aria-hidden="true"
+        className="flex h-14 w-14 items-center justify-center rounded-2xl bg-expense-tint text-danger"
+      >
         <Icon name="alert" size={26} strokeWidth={2} />
       </span>
       <h1 className="font-serif text-2xl font-bold">{t("deletion.title")}</h1>
@@ -220,8 +251,8 @@ function DeletionPending({ requestedAt }: { requestedAt: string }) {
         <PrimaryButton
           disabled={busy}
           onClick={async () => {
-            setBusy(true);
-            if (!(await cancelDeletion())) setBusy(false);
+            setBusy(true)
+            if (!(await cancelDeletion())) setBusy(false)
           }}
         >
           {t("deletion.restore")}
@@ -229,8 +260,8 @@ function DeletionPending({ requestedAt }: { requestedAt: string }) {
         <button
           type="button"
           onClick={async () => {
-            await signOut();
-            router.replace("/login");
+            await signOut()
+            router.replace("/login")
           }}
           className="min-h-11 text-sm font-medium text-muted"
         >
@@ -238,45 +269,45 @@ function DeletionPending({ requestedAt }: { requestedAt: string }) {
         </button>
       </div>
     </main>
-  );
+  )
 }
 
 function LoadError() {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
   const retry = () => {
-    const { userId, load } = useStore.getState();
-    if (userId) void load(userId);
-  };
+    const { userId, load } = useStore.getState()
+    if (userId) void load(userId)
+  }
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
       <h1 className="font-serif text-xl font-bold">{t("shell.loadFailed")}</h1>
       <p className="text-sm text-muted">{t("shell.checkConnection")}</p>
       <PrimaryButton onClick={retry}>{t("common.retry")}</PrimaryButton>
     </main>
-  );
+  )
 }
 
 /** Small pill above the tab bar while offline, while the server can't be reached, or while changes wait to be sent (tab screens only). */
 function OfflinePill() {
-  const { t } = useTranslation();
-  const pending = useStore((s) => s.pending);
-  const offline = useStore((s) => s.offline);
+  const { t } = useTranslation()
+  const pending = useStore((s) => s.pending)
+  const offline = useStore((s) => s.offline)
   // Shares the toast's spot; the toast wins while it's up.
-  const toast = useStore((s) => s.toast);
-  const [online, setOnline] = useState(true);
+  const toast = useStore((s) => s.toast)
+  const [online, setOnline] = useState(true)
   useEffect(() => {
-    const update = () => setOnline(navigator.onLine);
-    update();
-    window.addEventListener("online", update);
-    window.addEventListener("offline", update);
+    const update = () => setOnline(navigator.onLine)
+    update()
+    window.addEventListener("online", update)
+    window.addEventListener("offline", update)
     return () => {
-      window.removeEventListener("online", update);
-      window.removeEventListener("offline", update);
-    };
-  }, []);
-  if (toast || (online && !offline && pending === 0)) return null;
+      window.removeEventListener("online", update)
+      window.removeEventListener("offline", update)
+    }
+  }, [])
+  if (toast || (online && !offline && pending === 0)) return null
   // Online but the data couldn't be fetched: the server is down, not the connection.
-  const text = pending > 0 ? t("offline.pending", { count: pending }) : t("offline.noServer");
+  const text = pending > 0 ? t("offline.pending", { count: pending }) : t("offline.noServer")
   return (
     <div
       role="status"
@@ -287,32 +318,32 @@ function OfflinePill() {
         {online ? text : `${t("offline.label")}${pending > 0 ? " · " + text : ""}`}
       </span>
     </div>
-  );
+  )
 }
 
 /** Bottom toast for the last change; delete toasts carry an undo button. */
 function ToastHost() {
-  const toast = useStore((s) => s.toast);
-  const dismiss = useStore((s) => s.dismissToast);
+  const toast = useStore((s) => s.toast)
+  const dismiss = useStore((s) => s.dismissToast)
   // Keep the last toast on screen while it animates out.
-  const [shown, setShown] = useState<Toast | null>(toast);
-  if (toast && toast !== shown) setShown(toast);
-  const leaving = !toast && !!shown;
+  const [shown, setShown] = useState<Toast | null>(toast)
+  if (toast && toast !== shown) setShown(toast)
+  const leaving = !toast && !!shown
 
   // Same fallback as the sheet: clear the toast even if animationend never fires.
   useEffect(() => {
-    if (!leaving) return;
-    const t = setTimeout(() => setShown(null), 280);
-    return () => clearTimeout(t);
-  }, [leaving]);
+    if (!leaving) return
+    const t = setTimeout(() => setShown(null), 280)
+    return () => clearTimeout(t)
+  }, [leaving])
 
   useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(dismiss, toast.action ? 5000 : 2800);
-    return () => clearTimeout(t);
-  }, [toast, dismiss]);
+    if (!toast) return
+    const t = setTimeout(dismiss, toast.action ? 5000 : 2800)
+    return () => clearTimeout(t)
+  }, [toast, dismiss])
 
-  if (!shown) return null;
+  if (!shown) return null
   return (
     <div
       role={shown.tone === "error" ? "alert" : "status"}
@@ -321,10 +352,10 @@ function ToastHost() {
       <div
         key={shown.id}
         onAnimationEnd={() => {
-          if (leaving) setShown(null);
+          if (leaving) setShown(null)
         }}
         className={cx(
-          "flex min-h-12 w-full items-center gap-3 rounded-2xl py-2 pl-4 pr-2 text-sm shadow-hero",
+          "flex min-h-12 w-full items-center gap-3 rounded-2xl py-2 pr-2 pl-4 text-sm shadow-hero",
           leaving ? "animate-toast-out" : "animate-toast pointer-events-auto",
           shown.tone === "error" ? "bg-danger text-white" : "bg-hero text-on-hero",
         )}
@@ -335,8 +366,8 @@ function ToastHost() {
           <button
             type="button"
             onClick={() => {
-              shown.action!.run();
-              dismiss();
+              shown.action!.run()
+              dismiss()
             }}
             className="min-h-9 shrink-0 rounded-xl px-3 font-semibold text-lime"
           >
@@ -345,5 +376,5 @@ function ToastHost() {
         ) : null}
       </div>
     </div>
-  );
+  )
 }

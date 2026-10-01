@@ -1,22 +1,22 @@
-"use client";
+"use client"
 
-import { useTranslation } from "react-i18next";
-import { PushScreen } from "@/components/app";
-import { useCashFlow } from "@/components/cashflow";
-import { Card, Empty, PushHeader, cx } from "@/components/ui/primitives";
-import { CASHFLOW_DAYS, type CashEvent } from "@/lib/cashflow";
-import { baht, shortDate } from "@/lib/format";
-import { useGoBack } from "@/lib/nav";
-import { useStore } from "@/lib/store";
+import { useTranslation } from "react-i18next"
+import { PushScreen } from "@/components/app"
+import { useCashFlow } from "@/components/cashflow"
+import { Card, Empty, PushHeader, cx } from "@/components/ui/primitives"
+import { CASHFLOW_DAYS, type CashEvent } from "@/lib/cashflow"
+import { baht, shortDate } from "@/lib/format"
+import { useGoBack } from "@/lib/nav"
+import { useStore } from "@/lib/store"
 
 /** Each account's balance day by day over the next 30 days, and where it runs short. */
 export default function CashFlowPage() {
-  const { t } = useTranslation();
-  const goBack = useGoBack("/accounts");
-  const flows = useCashFlow();
-  const accounts = useStore((s) => s.accounts);
+  const { t } = useTranslation()
+  const goBack = useGoBack("/accounts")
+  const flows = useCashFlow()
+  const accounts = useStore((s) => s.accounts)
   // Cards whose bill can't be placed: no "pay from" account set.
-  const unplaced = accounts.filter((a) => a.kind === "credit" && a.dueDay && !a.billFromId);
+  const unplaced = accounts.filter((a) => a.kind === "credit" && a.dueDay && !a.billFromId)
 
   return (
     <PushScreen>
@@ -37,11 +37,14 @@ export default function CashFlowPage() {
               </span>
             </div>
             {f.start < 0 ? (
-              <p className="mt-2.5 rounded-xl bg-warn-tint px-3 py-2 text-xs leading-relaxed" style={{ color: "var(--color-warn-ink)" }}>
+              <p
+                className="mt-2.5 rounded-xl bg-warn-tint px-3 py-2 text-xs leading-relaxed"
+                style={{ color: "var(--color-warn-ink)" }}
+              >
                 {t("cashflow.negativeNow")}
               </p>
             ) : f.short ? (
-              <p className="mt-2.5 rounded-xl bg-expense-tint px-3 py-2 text-xs font-semibold leading-relaxed text-danger">
+              <p className="mt-2.5 rounded-xl bg-expense-tint px-3 py-2 text-xs leading-relaxed font-semibold text-danger">
                 {t("cashflow.shortBy", { date: shortDate(f.short.event.date, false), amount: baht(f.short.by) })}
               </p>
             ) : (
@@ -58,15 +61,19 @@ export default function CashFlowPage() {
         <Empty>{t("cashflow.empty", { count: CASHFLOW_DAYS })}</Empty>
       )}
 
-      {unplaced.length ? <p className="text-xs leading-relaxed text-muted">{t("cashflow.noPayFrom", { names: unplaced.map((a) => a.name).join(", ") })}</p> : null}
+      {unplaced.length ? (
+        <p className="text-xs leading-relaxed text-muted">
+          {t("cashflow.noPayFrom", { names: unplaced.map((a) => a.name).join(", ") })}
+        </p>
+      ) : null}
       <p className="text-xs leading-relaxed text-muted">{t("cashflow.hint")}</p>
     </PushScreen>
-  );
+  )
 }
 
 function EventRow({ e }: { e: CashEvent }) {
-  const { t } = useTranslation();
-  const label = e.kind === "card" ? t("cashflow.cardBill", { name: e.label }) : e.label || t("cashflow.transfer");
+  const { t } = useTranslation()
+  const label = e.kind === "card" ? t("cashflow.cardBill", { name: e.label }) : e.label || t("cashflow.transfer")
   return (
     <li className="flex min-h-12 items-center gap-3 border-b border-divider py-2 last:border-b-0">
       <span className="w-14 shrink-0 text-xs text-muted">{shortDate(e.date, false)}</span>
@@ -85,5 +92,5 @@ function EventRow({ e }: { e: CashEvent }) {
         </span>
       </span>
     </li>
-  );
+  )
 }

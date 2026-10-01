@@ -1,39 +1,39 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { useState } from "react";
-import { DuePill, SubMono, TabScreen, TxIcon } from "@/components/app";
-import { RecurringSuggestions } from "@/components/RecurringSuggestions";
-import { Icon } from "@/components/ui/Icon";
-import { Empty, HeroCard, IconButton, ListCard, TabHeader, cx } from "@/components/ui/primitives";
-import { SUB_CATEGORIES, TYPE_META } from "@/lib/constants";
-import { baht, cyclePer, shortDate, todayISO } from "@/lib/format";
-import { formatMoney, subTHB } from "@/lib/fx";
-import type { Subscription } from "@/lib/types";
-import { chargesSoFar, isService, subscriptionTotals, upcomingSubscriptions } from "@/lib/selectors";
-import { inTrial } from "@/lib/trial";
-import { useTranslation } from "react-i18next";
-import { useStore } from "@/lib/store";
+import Link from "next/link"
+import { useState } from "react"
+import { DuePill, SubMono, TabScreen, TxIcon } from "@/components/app"
+import { RecurringSuggestions } from "@/components/RecurringSuggestions"
+import { Icon } from "@/components/ui/Icon"
+import { Empty, HeroCard, IconButton, ListCard, TabHeader, cx } from "@/components/ui/primitives"
+import { SUB_CATEGORIES, TYPE_META } from "@/lib/constants"
+import { baht, cyclePer, shortDate, todayISO } from "@/lib/format"
+import { formatMoney, subTHB } from "@/lib/fx"
+import type { Subscription } from "@/lib/types"
+import { chargesSoFar, isService, subscriptionTotals, upcomingSubscriptions } from "@/lib/selectors"
+import { inTrial } from "@/lib/trial"
+import { useTranslation } from "react-i18next"
+import { useStore } from "@/lib/store"
 
-const SEG_COLORS = ["var(--color-lime)", "var(--color-peach)", "var(--color-on-ink-faint)", "#7fa98f", "#8fa3c9"];
+const SEG_COLORS = ["var(--color-lime)", "var(--color-peach)", "var(--color-on-ink-faint)", "#7fa98f", "#8fa3c9"]
 
 export default function SubscriptionsPage() {
-  const { subscriptions, accounts } = useStore();
-  const { t: tr } = useTranslation();
-  const today = todayISO();
-  const [sort, setSort] = useState<"due" | "price">("due");
+  const { subscriptions, accounts } = useStore()
+  const { t: tr } = useTranslation()
+  const today = todayISO()
+  const [sort, setSort] = useState<"due" | "price">("due")
 
-  const usdRate = useStore((s) => s.usdRate);
-  const thb = (s: Subscription) => subTHB(s, accounts, usdRate) ?? 0;
-  const totals = subscriptionTotals(subscriptions, today, thb);
-  const services = subscriptions.filter(isService);
-  const list = upcomingSubscriptions(services, today);
-  const active = sort === "price" ? [...list].sort((a, b) => thb(b.sub) - thb(a.sub)) : list;
-  const paused = subscriptions.filter((s) => s.paused);
+  const usdRate = useStore((s) => s.usdRate)
+  const thb = (s: Subscription) => subTHB(s, accounts, usdRate) ?? 0
+  const totals = subscriptionTotals(subscriptions, today, thb)
+  const services = subscriptions.filter(isService)
+  const list = upcomingSubscriptions(services, today)
+  const active = sort === "price" ? [...list].sort((a, b) => thb(b.sub) - thb(a.sub)) : list
+  const paused = subscriptions.filter((s) => s.paused)
   // Salary, rent, transfers and installment plans; paid-off plans go last.
-  const recurring = subscriptions.filter((s) => !isService(s) && !s.paused);
-  const upcomingRecurring = upcomingSubscriptions(recurring, today);
-  const finished = recurring.filter((s) => !upcomingRecurring.some((u) => u.sub.id === s.id));
+  const recurring = subscriptions.filter((s) => !isService(s) && !s.paused)
+  const upcomingRecurring = upcomingSubscriptions(recurring, today)
+  const finished = recurring.filter((s) => !upcomingRecurring.some((u) => u.sub.id === s.id))
 
   const segments = Object.entries(totals.byCategory)
     .sort((a, b) => b[1] - a[1])
@@ -42,8 +42,8 @@ export default function SubscriptionsPage() {
       value,
       label: SUB_CATEGORIES.find((c) => c.key === key)?.label ?? key,
       color: SEG_COLORS[i % SEG_COLORS.length],
-    }));
-  const accName = (id: string) => accounts.find((a) => a.id === id)?.name ?? "";
+    }))
+  const accName = (id: string) => accounts.find((a) => a.id === id)?.name ?? ""
 
   return (
     <TabScreen>
@@ -57,7 +57,9 @@ export default function SubscriptionsPage() {
         <div className="flex items-end justify-between">
           <div className="flex flex-col gap-1">
             <span className="text-[13px] text-on-ink-muted">{tr("subs.perMonth")}</span>
-            <span className="font-mono text-4xl font-semibold leading-tight tracking-tight">{baht(totals.perMonth)}</span>
+            <span className="font-mono text-4xl leading-tight font-semibold tracking-tight">
+              {baht(totals.perMonth)}
+            </span>
           </div>
           {totals.perYearExtra > 0 ? (
             <div className="flex flex-col items-end gap-0.5">
@@ -70,7 +72,11 @@ export default function SubscriptionsPage() {
           <div className="flex flex-col gap-2.5">
             <div className="flex h-2 gap-[3px]">
               {segments.map((s) => (
-                <div key={s.key} className="min-w-2 rounded-full" style={{ width: `${(s.value / totals.perMonth) * 100}%`, background: s.color }} />
+                <div
+                  key={s.key}
+                  className="min-w-2 rounded-full"
+                  style={{ width: `${(s.value / totals.perMonth) * 100}%`, background: s.color }}
+                />
               ))}
             </div>
             <div className="flex flex-wrap gap-x-3.5 gap-y-1 text-xs text-on-ink-muted">
@@ -92,7 +98,9 @@ export default function SubscriptionsPage() {
           <div className="-mt-2 flex min-h-9 items-center gap-2 text-xs text-on-ink-muted">
             <Icon name="repeat" size={14} strokeWidth={2} className="text-lime" />
             <span className="grow">{tr("subs.perYearAll")}</span>
-            <span className="font-mono text-[13px] font-semibold">{baht(totals.perMonth * 12 + totals.perYearExtra)}</span>
+            <span className="font-mono text-[13px] font-semibold">
+              {baht(totals.perMonth * 12 + totals.perYearExtra)}
+            </span>
           </div>
         ) : null}
         {totals.trialCount ? (
@@ -112,7 +120,11 @@ export default function SubscriptionsPage() {
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold">{sort === "due" ? tr("subs.byDue") : tr("subs.byPrice")}</h2>
-          <button type="button" onClick={() => setSort(sort === "due" ? "price" : "due")} className="min-h-9 text-[13px] font-medium text-muted">
+          <button
+            type="button"
+            onClick={() => setSort(sort === "due" ? "price" : "due")}
+            className="min-h-9 text-[13px] font-medium text-muted"
+          >
             {tr("subs.changeSort")}
           </button>
         </div>
@@ -124,7 +136,10 @@ export default function SubscriptionsPage() {
                 <div className="flex min-w-0 grow flex-col">
                   <span className="truncate text-[15px] font-medium">{sub.name}</span>
                   <span className="truncate text-xs text-muted">
-                    {inTrial(sub, today) ? tr("subs.trialUntil", { date: shortDate(due, false) }) : shortDate(due, false)} · {accName(sub.accountId)}
+                    {inTrial(sub, today)
+                      ? tr("subs.trialUntil", { date: shortDate(due, false) })
+                      : shortDate(due, false)}{" "}
+                    · {accName(sub.accountId)}
                   </span>
                 </div>
                 <div className="flex flex-col items-end gap-0.5">
@@ -155,7 +170,9 @@ export default function SubscriptionsPage() {
             {upcomingRecurring.map(({ sub, due, days, n }) => (
               <RecurringRow key={sub.id} sub={sub} account={accName(sub.accountId)} detail={shortDate(due, false)}>
                 {sub.installments ? (
-                  <span className="whitespace-nowrap rounded-full bg-chip px-2 py-px text-[11px] font-semibold">{tr("rec.progress", { n, total: sub.installments })}</span>
+                  <span className="rounded-full bg-chip px-2 py-px text-[11px] font-semibold whitespace-nowrap">
+                    {tr("rec.progress", { n, total: sub.installments })}
+                  </span>
                 ) : (
                   <DuePill days={days} />
                 )}
@@ -163,7 +180,7 @@ export default function SubscriptionsPage() {
             ))}
             {finished.map((sub) => (
               <RecurringRow key={sub.id} sub={sub} account={accName(sub.accountId)} detail={tr("rec.paidOff")} dim>
-                <span className="whitespace-nowrap rounded-full bg-income-tint px-2 py-px text-[11px] font-semibold text-income">
+                <span className="rounded-full bg-income-tint px-2 py-px text-[11px] font-semibold whitespace-nowrap text-income">
                   {tr("rec.progress", { n: chargesSoFar(sub, today), total: sub.installments })}
                 </span>
               </RecurringRow>
@@ -179,8 +196,16 @@ export default function SubscriptionsPage() {
           <h2 className="text-base font-semibold">{tr("subs.paused")}</h2>
           <ListCard>
             {paused.map((sub) => (
-              <Link key={sub.id} href={`/subscriptions/${sub.id}`} className={cx("flex min-h-16 items-center gap-3 opacity-70")}>
-                {isService(sub) ? <SubMono s={sub} /> : <TxIcon type={sub.entryType} category={sub.category} size={40} />}
+              <Link
+                key={sub.id}
+                href={`/subscriptions/${sub.id}`}
+                className={cx("flex min-h-16 items-center gap-3 opacity-70")}
+              >
+                {isService(sub) ? (
+                  <SubMono s={sub} />
+                ) : (
+                  <TxIcon type={sub.entryType} category={sub.category} size={40} />
+                )}
                 <span className="grow text-[15px] font-medium">{sub.name}</span>
                 <span className="font-mono text-[15px] font-semibold">{formatMoney(sub.amount, sub.currency)}</span>
               </Link>
@@ -189,11 +214,23 @@ export default function SubscriptionsPage() {
         </section>
       ) : null}
     </TabScreen>
-  );
+  )
 }
 
-function RecurringRow({ sub, account, detail, dim, children }: { sub: Subscription; account: string; detail: string; dim?: boolean; children: React.ReactNode }) {
-  const meta = TYPE_META[sub.entryType];
+function RecurringRow({
+  sub,
+  account,
+  detail,
+  dim,
+  children,
+}: {
+  sub: Subscription
+  account: string
+  detail: string
+  dim?: boolean
+  children: React.ReactNode
+}) {
+  const meta = TYPE_META[sub.entryType]
   return (
     <Link href={`/subscriptions/${sub.id}`} className={cx("flex min-h-16 items-center gap-3", dim && "opacity-70")}>
       <TxIcon type={sub.entryType} category={sub.category} size={40} />
@@ -212,5 +249,5 @@ function RecurringRow({ sub, account, detail, dim, children }: { sub: Subscripti
         {children}
       </div>
     </Link>
-  );
+  )
 }

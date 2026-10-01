@@ -1,24 +1,32 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { promptPayKind } from "@/lib/promptpay";
-import { useStore } from "@/lib/store";
-import { PrimaryButton } from "./ui/primitives";
+import { useState } from "react"
+import { useTranslation } from "react-i18next"
+import { promptPayKind } from "@/lib/promptpay"
+import { useStore } from "@/lib/store"
+import { PrimaryButton } from "./ui/primitives"
 
 /**
  * The user's PromptPay ID field and save button (Profile, and the QR sheet
  * when none is set yet). With `required`, an empty field can't be saved;
  * otherwise saving it empty removes the ID.
  */
-export function PromptPayForm({ required, saveLabel, onSaved }: { required?: boolean; saveLabel?: string; onSaved?: () => void }) {
-  const { t } = useTranslation();
-  const current = useStore((s) => s.settings.promptPayId);
-  const setSettings = useStore((s) => s.setSettings);
-  const notify = useStore((s) => s.notify);
-  const [text, setText] = useState(current ?? "");
-  const empty = !text.trim();
-  const valid = empty ? !required : promptPayKind(text) !== null;
+export function PromptPayForm({
+  required,
+  saveLabel,
+  onSaved,
+}: {
+  required?: boolean
+  saveLabel?: string
+  onSaved?: () => void
+}) {
+  const { t } = useTranslation()
+  const current = useStore((s) => s.settings.promptPayId)
+  const setSettings = useStore((s) => s.setSettings)
+  const notify = useStore((s) => s.notify)
+  const [text, setText] = useState(current ?? "")
+  const empty = !text.trim()
+  const valid = empty ? !required : promptPayKind(text) !== null
 
   return (
     <>
@@ -37,14 +45,14 @@ export function PromptPayForm({ required, saveLabel, onSaved }: { required?: boo
       <PrimaryButton
         disabled={!valid}
         onClick={() => {
-          const id = text.replace(/\D/g, "");
-          setSettings({ promptPayId: id || undefined });
-          notify(t(id ? "promptpay.saved" : "promptpay.cleared"));
-          onSaved?.();
+          const id = text.replace(/\D/g, "")
+          setSettings({ promptPayId: id || undefined })
+          notify(t(id ? "promptpay.saved" : "promptpay.cleared"))
+          onSaved?.()
         }}
       >
         {saveLabel ?? t("common.save")}
       </PrimaryButton>
     </>
-  );
+  )
 }
