@@ -6,6 +6,7 @@ import { PushScreen } from "@/components/app"
 import { CycleDaySheet } from "@/components/CycleDaySheet"
 import { LockSettings } from "@/components/LockSettings"
 import { PushToggle } from "@/components/PushToggle"
+import { StorageSettings } from "@/components/StorageSettings"
 import { ChoiceSheet, Group, NavRow } from "@/components/settingsUi"
 import { PushHeader, SwitchRow } from "@/components/ui/primitives"
 import { readLock } from "@/lib/appLock"
@@ -14,7 +15,7 @@ import { useGoBack } from "@/lib/nav"
 import { useStartDay, useStore } from "@/lib/store"
 import { setThemePref, themePref, type ThemePref } from "@/lib/theme"
 
-/** Everything about how the app behaves: display, when the month starts, app lock and notifications. */
+/** Everything about how the app behaves: display, when the month starts, app lock, notifications and what is kept on the device. */
 export default function SettingsPage() {
   const { t: tr } = useTranslation()
   const goBack = useGoBack("/profile")
@@ -96,6 +97,10 @@ export default function SettingsPage() {
             notify(on ? tr("reminder.on") : tr("reminder.off"))
           }}
         />
+      </Group>
+
+      <Group title={tr("storage.group")}>
+        <StorageSettings />
       </Group>
 
       <ChoiceSheet

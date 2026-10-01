@@ -7,6 +7,7 @@ import { applyLang, preferredLang } from "@/lib/i18n"
 import { applyTheme, followSystemTheme, themePref } from "@/lib/theme"
 import { useAmountsHidden } from "@/lib/hideAmounts"
 import { isManualBack, notifyPathCommitted, rememberPath } from "@/lib/nav"
+import { keepScreensOffline } from "@/lib/offlineScreens"
 import { allowPromptPayEdit, hasPendingReauth, takeReauth } from "@/lib/reauth"
 import { setUnlocked, writeLock } from "@/lib/appLock"
 import { preloadBrandLogos } from "@/lib/brandLogos"
@@ -22,26 +23,6 @@ import { PrimaryButton, cx } from "./ui/primitives"
 /** Tab roots sit at depth 0; everything else is pushed on top of them. */
 const TAB_ROOTS = ["/", "/transactions", "/subscriptions", "/profile"]
 const depth = (path: string) => (TAB_ROOTS.includes(path) ? 0 : path.split("/").filter(Boolean).length)
-
-/** Screens kept by the service worker so they open offline. */
-const OFFLINE_PAGES = [
-  "/",
-  "/transactions",
-  "/subscriptions",
-  "/profile",
-  "/add",
-  "/goals",
-  "/goals/edit",
-  "/ious",
-  "/ious/split",
-  "/insights",
-  "/accounts",
-  "/notifications",
-  "/subscriptions/new",
-  "/recurring/new",
-  "/terms",
-  "/privacy",
-]
 
 /** Screens that work without a session or before any data exists. */
 const NO_DATA_PATHS = ["/login", "/auth/", "/terms", "/privacy"]
@@ -95,19 +76,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  // Once signed in, have the service worker keep the app's screens for offline use,
-  // including each subscription's and account's detail screen.
+  // Once signed in, have the service worker keep the app's screens for offline use.
   useEffect(() => {
-    if (status !== "ready" || process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return
-    const { subscriptions, accounts } = useStore.getState()
-    const detail = [
-      ...subscriptions.map((s) => `/subscriptions/${s.id}`),
-      ...accounts.map((a) => `/accounts/${a.id}`),
-    ].slice(0, 80)
-    const build = `${process.env.NEXT_PUBLIC_APP_VERSION}-${process.env.NEXT_PUBLIC_APP_COMMIT}`
-    void navigator.serviceWorker.ready.then((reg) =>
-      reg.active?.postMessage({ type: "warm", urls: [...OFFLINE_PAGES, ...detail], build }),
-    )
+    if (status === "ready") keepScreensOffline()
   }, [status])
 
   // Logos are a separate chunk; fetch it while the user's data loads.

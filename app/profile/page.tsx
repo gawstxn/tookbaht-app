@@ -9,6 +9,7 @@ import { canEditPromptPay, endPromptPayEdit, startReauth } from "@/lib/reauth"
 import { useTranslation } from "react-i18next"
 import { ListCard, PrimaryButton, SecondaryButton, Sheet, TabHeader } from "@/components/ui/primitives"
 import { FeedbackSheet } from "@/components/FeedbackSheet"
+import { InstallPrompt } from "@/components/InstallPrompt"
 import { PromptPayForm } from "@/components/PromptPayForm"
 import { Avatar, ProfileSheet } from "@/components/ProfileSheet"
 import { TierBadge } from "@/components/TierBadge"
@@ -204,6 +205,8 @@ export default function ProfilePage() {
           <Icon name="chevronRight" size={14} strokeWidth={2.2} />
         </Link>
       </section>
+
+      <InstallPrompt variant="row" />
 
       <Group title={tr("profile.finance")}>
         <NavRow

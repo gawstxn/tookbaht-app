@@ -4,7 +4,7 @@ import { useState, useSyncExternalStore } from "react"
 import { Trans, useTranslation } from "react-i18next"
 import { currentInstallMode, isLineApp, promptInstall, subscribeInstall, type InstallMode } from "@/lib/install"
 import { Icon, type IconName } from "./ui/Icon"
-import { PrimaryButton, Sheet } from "./ui/primitives"
+import { ListCard, PrimaryButton, Sheet } from "./ui/primitives"
 
 const STEPS: Record<"ios" | "android" | "inApp", [IconName, IconName, IconName]> = {
   ios: ["share", "addSquare", "check"],
@@ -13,12 +13,12 @@ const STEPS: Record<"ios" | "android" | "inApp", [IconName, IconName, IconName]>
 }
 
 /**
- * "Add to home screen" for visitors using the browser: the native prompt where
+ * "Add to home screen" for people using the browser (sign-in, onboarding and profile): the native prompt where
  * the browser offers one, step-by-step instructions otherwise (Safari, Android
  * browsers that don't prompt, in-app browsers that must hand off to a real one).
  * Hidden once installed.
  */
-export function InstallPrompt() {
+export function InstallPrompt({ variant = "button" }: { variant?: "button" | "row" }) {
   const mode = useSyncExternalStore(subscribeInstall, currentInstallMode, () => "hidden" as InstallMode)
   const [help, setHelp] = useState<Exclude<InstallMode, "hidden" | "native"> | null>(null)
   const { t: tr } = useTranslation()
@@ -40,14 +40,37 @@ export function InstallPrompt() {
   const steps = help ? STEPS[help] : null
   return (
     <>
-      <button
-        type="button"
-        onClick={install}
-        className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-line bg-paper text-sm font-semibold"
-      >
-        <Icon name="addSquare" size={18} strokeWidth={2} />
-        {tr("install.button")}
-      </button>
+      {variant === "row" ? (
+        // A row of its own on the profile screen, for people who signed in before installing.
+        <ListCard>
+          <button
+            type="button"
+            onClick={install}
+            className="flex min-h-[60px] w-full items-center gap-3 py-2 text-left"
+          >
+            <span
+              aria-hidden="true"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-lime-tint text-lime-ink"
+            >
+              <Icon name="addSquare" size={18} strokeWidth={2} />
+            </span>
+            <span className="flex min-w-0 grow flex-col">
+              <span className="text-[15px] font-medium">{tr("install.button")}</span>
+              <span className="text-xs text-muted">{tr("install.rowHint")}</span>
+            </span>
+            <Icon name="chevronRight" size={16} strokeWidth={2} className="shrink-0 text-faint" />
+          </button>
+        </ListCard>
+      ) : (
+        <button
+          type="button"
+          onClick={install}
+          className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-line bg-paper text-sm font-semibold"
+        >
+          <Icon name="addSquare" size={18} strokeWidth={2} />
+          {tr("install.button")}
+        </button>
+      )}
       <Sheet
         open={help !== null}
         onClose={() => setHelp(null)}

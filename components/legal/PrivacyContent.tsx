@@ -121,7 +121,8 @@ function PrivacyTh() {
           และเก็บการตั้งค่าเฉพาะเครื่องไว้ในเบราว์เซอร์ ได้แก่ ธีม ภาษา ล็อกแอป และการซ่อนยอดเงิน
           ไม่มีคุกกี้โฆษณาหรือคุกกี้ติดตาม เพื่อให้เปิดแอปและจดรายการได้ตอนไม่มีอินเทอร์เน็ต
           แอปเก็บสำเนาข้อมูลของคุณล่าสุด และรายการที่จดตอนออฟไลน์ซึ่งรอส่งขึ้นเซิร์ฟเวอร์ ไว้ในเบราว์เซอร์ของอุปกรณ์นั้น
-          รวมถึงการหารทริปที่ยังไม่ได้บันทึก (ชื่อเพื่อนและบิลที่เพื่อนจ่าย) ทั้งหมดนี้ถูกลบเมื่อคุณออกจากระบบ
+          รวมถึงการหารทริปที่ยังไม่ได้บันทึก (ชื่อเพื่อนและบิลที่เพื่อนจ่าย)
+          และข้อความที่คุณพิมพ์ในโหมดจดแบบแชทของวันนั้น (เก็บถึงสิ้นวัน) ทั้งหมดนี้ถูกลบเมื่อคุณออกจากระบบ
           ส่วนรูปสลิปที่ใช้ &quot;อ่านสลิป&quot; จะถูกอ่านบนอุปกรณ์ของคุณเท่านั้น
           ไม่ถูกส่งขึ้นเซิร์ฟเวอร์และไม่ถูกเก็บไว้
         </p>
@@ -294,8 +295,9 @@ function PrivacyEn() {
           hiding amounts) in the browser. There are no advertising or tracking cookies. So the app opens and you can log
           entries without a connection, it also keeps a copy of your latest data, and entries made offline that are
           waiting to be sent, in that device&apos;s browser, along with any trip split you haven&apos;t saved yet
-          (friends&apos; names and the bills they paid). All of this is removed when you sign out. Slip photos used with
-          &quot;Read a slip&quot; are read on your device only; they are never uploaded or kept.
+          (friends&apos; names and the bills they paid) and the lines you typed in chat entry that day (kept until the
+          day ends). All of this is removed when you sign out. Slip photos used with &quot;Read a slip&quot; are read on
+          your device only; they are never uploaded or kept.
         </p>
       </section>
 

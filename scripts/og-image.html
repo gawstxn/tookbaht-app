@@ -1,0 +1,166 @@
+<!doctype html>
+<!--
+  Source of app/opengraph-image.png, the picture shown when a link to the app is
+  shared. Open this file in a browser at 1200×630 and take a screenshot
+  (for example Playwright: page.goto("file://…/scripts/og-image.html"), then
+  page.screenshot({ path: "app/opengraph-image.png" }) with a 1200×630 viewport).
+  Fonts and colours are the app's own (app/layout.tsx, app/globals.css).
+-->
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      @font-face {
+        font-family: "Noto Serif Thai";
+        font-weight: 700;
+        src: url("../node_modules/@fontsource/noto-serif-thai/files/noto-serif-thai-thai-700-normal.woff2")
+          format("woff2");
+        unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC;
+      }
+      @font-face {
+        font-family: "Noto Serif Thai";
+        font-weight: 700;
+        src: url("../node_modules/@fontsource/noto-serif-thai/files/noto-serif-thai-latin-700-normal.woff2")
+          format("woff2");
+      }
+      @font-face {
+        font-family: "IBM Plex Sans Thai";
+        font-weight: 400;
+        src: url("../node_modules/@fontsource/ibm-plex-sans-thai/files/ibm-plex-sans-thai-thai-400-normal.woff2")
+          format("woff2");
+        unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC;
+      }
+      @font-face {
+        font-family: "IBM Plex Sans Thai";
+        font-weight: 400;
+        src: url("../node_modules/@fontsource/ibm-plex-sans-thai/files/ibm-plex-sans-thai-latin-400-normal.woff2")
+          format("woff2");
+      }
+      @font-face {
+        font-family: "IBM Plex Sans Thai";
+        font-weight: 600;
+        src: url("../node_modules/@fontsource/ibm-plex-sans-thai/files/ibm-plex-sans-thai-thai-600-normal.woff2")
+          format("woff2");
+        unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC;
+      }
+      @font-face {
+        font-family: "IBM Plex Sans Thai";
+        font-weight: 600;
+        src: url("../node_modules/@fontsource/ibm-plex-sans-thai/files/ibm-plex-sans-thai-latin-600-normal.woff2")
+          format("woff2");
+      }
+      @font-face {
+        font-family: "IBM Plex Mono";
+        font-weight: 600;
+        src: url("../node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-600-normal.woff2") format("woff2");
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      body {
+        width: 1200px;
+        height: 630px;
+        display: flex;
+        align-items: center;
+        gap: 56px;
+        padding: 0 72px;
+        background: #f3f0e8;
+        color: #1c1e1b;
+        font-family: "IBM Plex Sans Thai", sans-serif;
+      }
+      .copy {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 26px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        font:
+          700 40px "Noto Serif Thai",
+          serif;
+      }
+      .brand img {
+        width: 76px;
+        height: 76px;
+      }
+      h1 {
+        font:
+          700 76px/1.18 "Noto Serif Thai",
+          serif;
+      }
+      .lead {
+        font-size: 29px;
+        line-height: 1.5;
+        color: #5f6259;
+      }
+      .card {
+        width: 410px;
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+        padding: 34px;
+        border-radius: 40px;
+        background: #1c1e1b;
+        color: #f3f0e8;
+      }
+      .label {
+        font-size: 22px;
+        color: #b9bcb2;
+      }
+      .amount {
+        font:
+          600 60px/1.1 "IBM Plex Mono",
+          "IBM Plex Sans Thai",
+          monospace;
+        letter-spacing: -0.03em;
+      }
+      .bar {
+        height: 10px;
+        border-radius: 99px;
+        background: #3a3d37;
+      }
+      .bar i {
+        display: block;
+        width: 62%;
+        height: 100%;
+        border-radius: 99px;
+        background: #d4f06a;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 18px;
+        border-top: 1px solid #33362f;
+        font-size: 24px;
+      }
+      .row b {
+        font:
+          600 24px "IBM Plex Mono",
+          "IBM Plex Sans Thai",
+          monospace;
+      }
+      .in {
+        color: #d4f06a;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="copy">
+      <div class="brand"><img src="../docs/logo.png" alt="" />Tookbaht</div>
+      <h1>ทุกบาท<br />อยู่ในมือคุณ</h1>
+      <p class="lead">รายรับ รายจ่าย การโอน subscriptions<br />และเป้าหมาย ครบในที่เดียว</p>
+    </div>
+    <div class="card">
+      <span class="label">คงเหลือเดือนนี้</span>
+      <span class="amount">฿18,450</span>
+      <div class="bar"><i></i></div>
+      <div class="row"><span>ค่าข้าว</span><b>−฿50</b></div>
+      <div class="row"><span>เงินเดือน</span><b class="in">+฿30,000</b></div>
+    </div>
+  </body>
+</html>

@@ -140,6 +140,13 @@ async function warm(paths, build) {
   const marker = await pages.match(WARMED)
   const sameBuild = !!build && !!marker && (await marker.text()) === build
   let complete = true
+  // The offline screen is kept at install; put it back if the user cleared the kept files (Settings).
+  for (const url of PRECACHE) {
+    if (await statics.match(url)) continue
+    await statics.add(url).catch(() => {
+      complete = false
+    })
+  }
   for (const path of paths) {
     if (sameBuild && (await pages.match(path))) continue
     try {

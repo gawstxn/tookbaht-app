@@ -162,6 +162,8 @@ export interface Settings {
   monthlySummary?: boolean
   /** + − × keys on the add screen's keypad (on unless false). */
   keypadMath?: boolean
+  /** The add screen opens as a chat: type "ค่าข้าว 50", send, and keep going (off unless true). */
+  chatEntry?: boolean
   /** Evening push (20:00) when nothing was logged that day (off unless true). */
   dailyReminder?: boolean
   /** Last app version whose "what's new" this account has seen. */
