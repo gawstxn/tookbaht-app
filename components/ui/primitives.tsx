@@ -90,15 +90,18 @@ export function PushHeader({
 }) {
   const { t } = useTranslation()
   return (
-    <header className="flex min-h-12 items-center justify-between">
-      <IconButton
-        icon={backIcon}
-        label={t(backIcon === "close" ? "common.close" : "common.back")}
-        href={backHref}
-        onClick={onBack}
-      />
+    // Equal side columns keep the title centred when the action is wider than the back button.
+    <header className="grid min-h-12 grid-cols-[1fr_auto_1fr] items-center gap-2">
+      <div className="flex">
+        <IconButton
+          icon={backIcon}
+          label={t(backIcon === "close" ? "common.close" : "common.back")}
+          href={backHref}
+          onClick={onBack}
+        />
+      </div>
       {title ? <h1 className="font-serif text-xl font-bold">{title}</h1> : <span />}
-      {action ?? <span className="h-11 w-11" />}
+      <div className="flex justify-end gap-2">{action ?? <span className="h-11 w-11" />}</div>
     </header>
   )
 }

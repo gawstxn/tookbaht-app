@@ -10,6 +10,7 @@ import { baht, shortDate, toISO, todayISO } from "./format"
 import { impliedFeePct, type UsdRate } from "./fx"
 import { cycleStartDay, periodFor, periodOf, type Period } from "./period"
 import { clearTripDrafts } from "./tripSplit"
+import { clearChatLogs } from "./chatLog"
 import { isDuplicate, isRetryable, keepQueued, online, outbox, runOp, snapshot, type Op } from "./offline"
 import { getSupabase } from "./supabase/client"
 import type { Account, Goals, Iou, SavingsGoal, Settings, Subscription, Transaction, User, Wish } from "./types"
@@ -81,8 +82,11 @@ interface Actions {
   /** Resolves false when the account is still used by transactions or subscriptions. */
   removeAccount: (id: string) => Promise<boolean>
 
-  /** Save a new entry; `undoable` puts an undo button on the toast (one-tap quick entries). */
-  addTransaction: (t: Omit<Transaction, "id" | "createdAt">, opts?: { undoable?: boolean }) => string
+  /**
+   * Save a new entry; `undoable` puts an undo button on the toast (one-tap quick entries),
+   * `quiet` skips the toast where the screen already shows what was saved (chat entry).
+   */
+  addTransaction: (t: Omit<Transaction, "id" | "createdAt">, opts?: { undoable?: boolean; quiet?: boolean }) => string
   /** Several entries at once (e.g. a batch of slips), with one toast that can undo them all. */
   addTransactions: (list: Omit<Transaction, "id" | "createdAt">[]) => void
   /** Edit a saved transaction. Correcting a USD charge also learns the card's real FX fee. */
@@ -407,6 +411,7 @@ export const useStore = create<State & Actions>()((set, get) => {
         outbox(userId).clear()
       }
       clearTripDrafts()
+      clearChatLogs()
       get().reset()
     },
     deleteAccount: async () => {
@@ -423,6 +428,7 @@ export const useStore = create<State & Actions>()((set, get) => {
         outbox(userId).clear()
       }
       clearTripDrafts()
+      clearChatLogs()
       get().reset()
       // The purge date in this device's calendar (the server returns a UTC timestamp).
       return toISO(new Date(String(data)))
@@ -486,13 +492,14 @@ export const useStore = create<State & Actions>()((set, get) => {
           set((s) => ({ transactions: s.transactions.filter((x) => x.id !== tx.id) }))
           void save(del("transactions", tx.id), () => set((s) => ({ transactions: [...s.transactions, tx] })))
         })
-      ok(
-        t("toast.txSaved", {
-          type: tx.type === "move" ? t("type.moveLong") : TYPE_META[tx.type].label,
-          amount: baht(tx.amount),
-        }),
-        opts?.undoable ? { label: UNDO(), run: undo } : undefined,
-      )
+      if (!opts?.quiet)
+        ok(
+          t("toast.txSaved", {
+            type: tx.type === "move" ? t("type.moveLong") : TYPE_META[tx.type].label,
+            amount: baht(tx.amount),
+          }),
+          opts?.undoable ? { label: UNDO(), run: undo } : undefined,
+        )
       return tx.id
     },
     addTransactions: (list) => {

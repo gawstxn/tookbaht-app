@@ -120,6 +120,7 @@ const en: Messages = {
       "This link opened inside a chat or social app, which can't add it to your home screen. Open it in Chrome or Safari first.",
     openInBrowser: "Open in browser",
     installNow: "Install now",
+    rowHint: "Opens like an app, from an icon on your home screen",
   },
   shell: { loadFailed: "Couldn't load your data", checkConnection: "Check your internet connection and try again." },
   overview: {
@@ -220,6 +221,33 @@ const en: Messages = {
     plus: "Plus",
     minus: "Minus",
     times: "Times",
+  },
+  chat: {
+    toggle: "Chat entry",
+    title: "Log by typing",
+    lead: "Type what it was and how much, then send. Keep going without leaving this screen.",
+    ex1: "lunch 50",
+    ex2: "lunch 50 coffee 65",
+    ex3: "+salary 30000",
+    ex4: "transfer 500 to {{name}}",
+    hint: "One message can hold several entries. End with an account's name to pick the account, start with + for income, or with transfer to move money between accounts. Tap the reply to change the amount, category or account.",
+    placeholder: "lunch 50",
+    input: "Type what it was and how much",
+    send: "Send",
+    problem: {
+      amount: "Add the amount too, e.g. lunch 50",
+      account: "There's no account to log to yet. Add one in Profile → My accounts.",
+      to: "Couldn't find the account to move it to. Type its name, e.g. transfer 500 to {{name}}",
+      from: "Couldn't find the account to move it from. Type its name, e.g. transfer 500 from {{name}}",
+      same: "Both sides are the same account",
+    },
+    changeFrom: "Change the account it comes from, {{name}}",
+    changeTo: "Change the account it goes to, {{name}}",
+    removed: "This entry was deleted",
+    amountTitle: "Change the amount",
+    changeAmount: "Change the amount {{amount}}",
+    changeCategory: "Change category {{name}}",
+    changeAccount: "Change account {{name}}",
   },
   quick: {
     title: "Quick add",
@@ -978,6 +1006,28 @@ const en: Messages = {
   settings: {
     title: "Settings",
   },
+  storage: {
+    group: "On this device",
+    row: "Files the app keeps",
+    lead: "The app keeps files on this device so it opens quickly and works without a connection.",
+    screens: "App screens",
+    screensHint: "Makes the app open fast and work offline",
+    slipReader: "Slip reader",
+    slipReaderHint: "Downloaded the first time you read a slip",
+    data: "Your data",
+    dataHint: "A copy of your latest data and this device's settings; removed when you sign out",
+    clearHint:
+      "Clearing doesn't touch your data. Files from older versions are removed, the screens needed offline are downloaded again, and the slip reader is downloaded the next time you use it.",
+    offline: "Connect to the internet before clearing, or the app won't open until you're back online.",
+    clear: "Clear kept files {{size}}",
+    clearing: "Clearing…",
+    confirmTitle: "Clear kept files?",
+    confirmLead:
+      "This removes {{size}} of files the app keeps on this device. Your data stays, and the screens needed offline are downloaded again.",
+    confirm: "Clear now",
+    nothing: "Nothing to clear",
+    cleared: "Kept files cleared",
+  },
   cats: {
     title: "My categories",
     count_one: "{{count}} category",
@@ -1257,6 +1307,18 @@ const en: Messages = {
   },
   whatsNew: {
     title: "What's new in v{{version}}",
+    chatEntry: {
+      title: "Chat entry",
+      body: "Tap the chat button at the top right of the add screen and type, say, lunch 50. Send it and type the next one straight away, without leaving the screen. Several entries in one message, naming the account, and transfers between accounts work too.",
+    },
+    storage: {
+      title: "See and clear what the app keeps",
+      body: "Settings → On this device shows how much space the app uses on your device, and clears its kept files without touching your data.",
+    },
+    installRow: {
+      title: "Add to home screen from Profile",
+      body: "Still using the app in a browser? Profile now has a button to add Tookbaht to your home screen, with no need to sign out first.",
+    },
     trials: {
       title: "Free trials",
       body: "When adding a subscription, turn on \"Free trial\" and pick 7 days, 1 month, 3 months, 1 year or your own end date. It isn't counted as a cost until the trial ends, and you're reminded 3 days before, in time to cancel.",

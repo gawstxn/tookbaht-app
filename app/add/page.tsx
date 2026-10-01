@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import { PushScreen } from "@/components/app"
 import { CategoryEditSheet, type CategoryDraft } from "@/components/CategoryEditSheet"
+import { ChatEntry } from "@/components/ChatEntry"
 import { ConfirmSheet } from "@/components/ConfirmSheet"
 import { CurrencySheet } from "@/components/CurrencySheet"
 import { SlipBatchSheet } from "@/components/SlipBatchSheet"
@@ -15,6 +16,7 @@ import { Icon } from "@/components/ui/Icon"
 import { Chip, PrimaryButton, PushHeader, Segmented, cx } from "@/components/ui/primitives"
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, TYPE_META, expenseCategories, incomeCategories } from "@/lib/constants"
 import { evaluate, formatExpr, hasOperator, pressKey, type CalcKey } from "@/lib/calc"
+import { readChatLog, saveChatLog, type ChatLine } from "@/lib/chatLog"
 import { addDays, baht2, shortDate, todayISO } from "@/lib/format"
 import { entryDefaults, recentDuplicate } from "@/lib/quick"
 import { accountBalance } from "@/lib/selectors"
@@ -44,6 +46,7 @@ function AddForm() {
   const accounts = useStore((s) => s.accounts)
   const txs = useStore((s) => s.transactions)
   const keypadMath = useStore((s) => s.settings.keypadMath !== false)
+  const chatPref = useStore((s) => s.settings.chatEntry === true)
   const setSettings = useStore((s) => s.setSettings)
   const notify = useStore((s) => s.notify)
   const addTransaction = useStore((s) => s.addTransaction)
@@ -90,6 +93,19 @@ function AddForm() {
   const [split, setSplit] = useState(false)
   const [slips, setSlips] = useState<SlipFields[] | null>(null)
   const [newCat, setNewCat] = useState<CategoryDraft | null>(null)
+  // Chat mode (the button next to the calculator's): type a line, send, and stay for the next one.
+  const chat = chatPref && !editing
+  // Today's lines stay on this device, so the conversation is still here when the screen is opened again.
+  const userId = useStore((s) => s.userId)
+  const [chatLines, setChatLines] = useState<ChatLine[]>(() =>
+    userId ? readChatLog(userId, today, (id) => txs.some((x) => x.id === id)) : [],
+  )
+  const keepChatLines = (lines: ChatLine[]) => {
+    setChatLines(lines)
+    if (userId) saveChatLog(userId, today, lines)
+  }
+  // Opened by the button just now (not on arriving at the screen): put the cursor in the field.
+  const [chatOpened, setChatOpened] = useState(false)
 
   // "Subscriptions" is for auto-logged charges; offer it only when editing one.
   const cats = type === "in" ? incomeCategories() : expenseCategories().filter((c) => c.key !== "sub" || cat === "sub")
@@ -215,32 +231,62 @@ function AddForm() {
         ? t("add.yesterdayDate", { date: shortDate(date, false) })
         : shortDate(date)
 
+  const header = (
+    <PushHeader
+      title={editing ? t("tx.editTitle") : t("add.title")}
+      backIcon="close"
+      onBack={() => goBack()}
+      action={
+        <>
+          {chat ? null : (
+            <button
+              type="button"
+              aria-pressed={keypadMath}
+              aria-label={t("profile.keypadMath")}
+              onClick={() => {
+                // Turning the keys off keeps the amount: a half-typed sum becomes its total.
+                if (keypadMath && summing) setAmount(value > 0 ? String(value) : "")
+                setSettings({ keypadMath: !keypadMath })
+                notify(t(keypadMath ? "profile.keypadMathOff" : "profile.keypadMathOn"))
+              }}
+              className={cx(
+                "flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
+                keypadMath ? "bg-ink text-on-ink" : "border border-line bg-card text-muted",
+              )}
+            >
+              <Icon name="calc" size={20} strokeWidth={keypadMath ? 2.2 : 2} />
+            </button>
+          )}
+          {editing ? null : (
+            <button
+              type="button"
+              aria-pressed={chat}
+              aria-label={t("chat.toggle")}
+              onClick={() => {
+                setChatOpened(!chat)
+                setSettings({ chatEntry: !chat })
+              }}
+              className={cx(
+                "flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
+                chat ? "bg-ink text-on-ink" : "border border-line bg-card text-muted",
+              )}
+            >
+              <Icon name="message" size={20} strokeWidth={chat ? 2.2 : 2} />
+            </button>
+          )}
+        </>
+      }
+    />
+  )
+
+  if (chat)
+    return (
+      <ChatEntry header={header} date={presetDate} lines={chatLines} onLines={keepChatLines} autoFocus={chatOpened} />
+    )
+
   return (
     <PushScreen className="gap-3">
-      <PushHeader
-        title={editing ? t("tx.editTitle") : t("add.title")}
-        backIcon="close"
-        onBack={() => goBack()}
-        action={
-          <button
-            type="button"
-            aria-pressed={keypadMath}
-            aria-label={t("profile.keypadMath")}
-            onClick={() => {
-              // Turning the keys off keeps the amount: a half-typed sum becomes its total.
-              if (keypadMath && summing) setAmount(value > 0 ? String(value) : "")
-              setSettings({ keypadMath: !keypadMath })
-              notify(t(keypadMath ? "profile.keypadMathOff" : "profile.keypadMathOn"))
-            }}
-            className={cx(
-              "flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
-              keypadMath ? "bg-ink text-on-ink" : "border border-line bg-card text-muted",
-            )}
-          >
-            <Icon name="calc" size={20} strokeWidth={keypadMath ? 2.2 : 2} />
-          </button>
-        }
-      />
+      {header}
 
       <Segmented
         label={t("add.typeLabel")}

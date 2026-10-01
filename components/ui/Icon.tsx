@@ -396,6 +396,12 @@ const PATHS = {
     </>
   ),
   play: <path d="M7 4l13 8-13 8z" />,
+  send: (
+    <>
+      <path d="M12 19V5" />
+      <path d="M5 12l7-7 7 7" />
+    </>
+  ),
 }
 
 export type IconName = keyof typeof PATHS

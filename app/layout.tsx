@@ -14,11 +14,29 @@ import { LOCK_BOOT_SCRIPT } from "@/lib/appLock"
 import { THEME_BOOT_SCRIPT } from "@/lib/theme"
 import { INSTALL_BOOT_SCRIPT } from "@/lib/install"
 
+const DESCRIPTION =
+  "บันทึกรายรับ รายจ่าย การโอน subscriptions และเป้าหมายการเงิน · Track income, expenses, subscriptions and money goals"
+
 export const metadata: Metadata = {
+  // Link previews need absolute URLs; Vercel names the production domain.
+  metadataBase: new URL(
+    process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : "http://localhost:3000",
+  ),
   title: "Tookbaht",
-  description:
-    "บันทึกรายรับ รายจ่าย การโอน subscriptions และเป้าหมายการเงิน · Track income, expenses, subscriptions and money goals",
+  description: DESCRIPTION,
   applicationName: "Tookbaht",
+  // The card shown when the link is shared in LINE, Messenger, iMessage, …; its picture is app/opengraph-image.png.
+  openGraph: {
+    type: "website",
+    siteName: "Tookbaht",
+    title: "Tookbaht · ทุกบาทอยู่ในมือคุณ",
+    description: "รายรับ รายจ่าย การโอน subscriptions และเป้าหมาย ครบในที่เดียว",
+    url: "/",
+    locale: "th_TH",
+  },
+  twitter: { card: "summary_large_image" },
   // startupImage: iOS launch screens (cream + logo) instead of a black screen while the app starts.
   appleWebApp: { capable: true, title: "Tookbaht", statusBarStyle: "default", startupImage: splashScreens },
   icons: { apple: "/icons/apple-touch-icon.png" },
