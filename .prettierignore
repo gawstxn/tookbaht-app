@@ -1,0 +1,13 @@
+# Generated or copied files
+.next/
+out/
+build/
+next-env.d.ts
+package-lock.json
+public/ocr/
+
+# Supabase (SQL is not supported by Prettier; config and seed are kept as written)
+supabase/
+
+# Rewritten by `next dev` (see node_modules/next/dist/server/lib/generate-agent-files.js)
+AGENTS.md
