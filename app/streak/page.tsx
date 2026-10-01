@@ -1,26 +1,35 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { PushScreen } from "@/components/app";
-import { useStreak } from "@/components/streak";
-import { TierBadge } from "@/components/TierBadge";
-import { Icon } from "@/components/ui/Icon";
-import { Bar, Card, HeroCard, PushHeader, SecondaryButton, Sheet, cx } from "@/components/ui/primitives";
-import { dayHeading, daysInMonth, monthKey, monthLabel, shiftMonth, shortDate, toISO, weekdayNamesShort } from "@/lib/format";
-import { useGoBack } from "@/lib/nav";
-import { TIERS } from "@/lib/streak";
-import { useStore } from "@/lib/store";
+import Link from "next/link"
+import { useState } from "react"
+import { useTranslation } from "react-i18next"
+import { PushScreen } from "@/components/app"
+import { useStreak } from "@/components/streak"
+import { TierBadge } from "@/components/TierBadge"
+import { Icon } from "@/components/ui/Icon"
+import { Bar, Card, HeroCard, PushHeader, SecondaryButton, Sheet, cx } from "@/components/ui/primitives"
+import {
+  dayHeading,
+  daysInMonth,
+  monthKey,
+  monthLabel,
+  shiftMonth,
+  shortDate,
+  toISO,
+  weekdayNamesShort,
+} from "@/lib/format"
+import { useGoBack } from "@/lib/nav"
+import { TIERS } from "@/lib/streak"
+import { useStore } from "@/lib/store"
 
 /** Logging streak: today's status, restoring missed days, tier and a calendar of counted days. */
 export default function StreakPage() {
-  const { t } = useTranslation();
-  const goBack = useGoBack("/");
-  const s = useStreak();
-  const markNoSpend = useStore((st) => st.markNoSpend);
-  const toNext = s.next ? s.next.days - s.total : 0;
-  const [tiersOpen, setTiersOpen] = useState(false);
+  const { t } = useTranslation()
+  const goBack = useGoBack("/")
+  const s = useStreak()
+  const markNoSpend = useStore((st) => st.markNoSpend)
+  const toNext = s.next ? s.next.days - s.total : 0
+  const [tiersOpen, setTiersOpen] = useState(false)
 
   return (
     <PushScreen>
@@ -28,30 +37,50 @@ export default function StreakPage() {
 
       <HeroCard label={t("streak.title")}>
         <div className="flex items-center gap-3">
-          <span className={cx("flex h-14 w-14 shrink-0 items-center justify-center rounded-full", s.doneToday ? "bg-lime text-on-lime" : "bg-ink-line text-on-ink-muted")}>
+          <span
+            className={cx(
+              "flex h-14 w-14 shrink-0 items-center justify-center rounded-full",
+              s.doneToday ? "bg-lime text-on-lime" : "bg-ink-line text-on-ink-muted",
+            )}
+          >
             <Icon name="flame" size={28} strokeWidth={2} />
           </span>
           <div className="flex flex-col">
             <DayCount count={s.current} className="text-4xl leading-tight" unitClass="text-2xl" />
             <span className="text-[13px] text-on-ink-muted">
-              {s.missed.length ? t("streak.statusMissed") : s.doneToday ? t("streak.statusDone") : t("streak.statusPending")}
+              {s.missed.length
+                ? t("streak.statusMissed")
+                : s.doneToday
+                  ? t("streak.statusDone")
+                  : t("streak.statusPending")}
             </span>
           </div>
         </div>
-        <button type="button" aria-haspopup="dialog" onClick={() => setTiersOpen(true)} className="flex flex-col gap-2 border-t border-ink-line pt-3 text-left">
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          onClick={() => setTiersOpen(true)}
+          className="flex flex-col gap-2 border-t border-ink-line pt-3 text-left"
+        >
           <div className="flex w-full items-center justify-between gap-2 text-[13px]">
             <span className="flex items-center gap-1 font-semibold">
               <TierBadge tier={s.tier} size={20} />
               {t(`streak.tier.${s.tier.key}`)}
             </span>
             <span className="flex items-center gap-1 text-on-ink-muted">
-              {s.next ? t("streak.toNext", { count: toNext, tier: t(`streak.tier.${s.next.key}`) }) : t("streak.topTier")}
+              {s.next
+                ? t("streak.toNext", { count: toNext, tier: t(`streak.tier.${s.next.key}`) })
+                : t("streak.topTier")}
               <Icon name="chevronRight" size={14} strokeWidth={2} />
             </span>
           </div>
           {s.next ? (
             <span className="w-full">
-              <Bar value={(s.total - s.tier.days) / (s.next.days - s.tier.days)} color="var(--color-lime)" track="var(--color-ink-line)" />
+              <Bar
+                value={(s.total - s.tier.days) / (s.next.days - s.tier.days)}
+                color="var(--color-lime)"
+                track="var(--color-ink-line)"
+              />
             </span>
           ) : null}
         </button>
@@ -60,7 +89,9 @@ export default function StreakPage() {
       {s.missed.map((d) => (
         <Card key={d} className="flex flex-col gap-3 border-expense-line px-4 py-3.5">
           <div className="flex flex-col gap-0.5">
-            <span className="text-[15px] font-semibold">{t("streak.missedTitle", { day: dayHeading(d, s.today) })}</span>
+            <span className="text-[15px] font-semibold">
+              {t("streak.missedTitle", { day: dayHeading(d, s.today) })}
+            </span>
             <span className="text-xs leading-relaxed text-muted">
               {s.quotaLeft > 0 ? t("streak.missedLead", { left: s.quotaLeft, quota: s.quota }) : t("streak.noQuota")}
               {s.quotaLeft > 0 && s.bonus ? ` ${t("streak.bonusNote")}` : null}
@@ -68,10 +99,17 @@ export default function StreakPage() {
           </div>
           {s.quotaLeft > 0 ? (
             <div className="grid grid-cols-2 gap-2">
-              <Link href={`/add?date=${d}`} className="flex min-h-12 items-center justify-center rounded-2xl bg-ink text-[14px] font-semibold text-paper">
+              <Link
+                href={`/add?date=${d}`}
+                className="flex min-h-12 items-center justify-center rounded-2xl bg-ink text-[14px] font-semibold text-paper"
+              >
                 {t("streak.logThatDay")}
               </Link>
-              <button type="button" onClick={() => markNoSpend(d)} className="min-h-12 rounded-2xl border border-line bg-card text-[14px] font-semibold">
+              <button
+                type="button"
+                onClick={() => markNoSpend(d)}
+                className="min-h-12 rounded-2xl border border-line bg-card text-[14px] font-semibold"
+              >
                 {t("streak.noSpendThatDay")}
               </button>
             </div>
@@ -108,79 +146,148 @@ export default function StreakPage() {
       </section>
       <TierSheet open={tiersOpen} onClose={() => setTiersOpen(false)} total={s.total} current={s.tier.key} />
     </PushScreen>
-  );
+  )
 }
 
 /** Every tier, what it takes, and where the user stands. */
-function TierSheet({ open, onClose, total, current }: { open: boolean; onClose: () => void; total: number; current: string }) {
-  const { t } = useTranslation();
-  const at = TIERS.findIndex((x) => x.key === current);
+function TierSheet({
+  open,
+  onClose,
+  total,
+  current,
+}: {
+  open: boolean
+  onClose: () => void
+  total: number
+  current: string
+}) {
+  const { t } = useTranslation()
+  const at = TIERS.findIndex((x) => x.key === current)
   return (
     <Sheet open={open} onClose={onClose} title={t("streak.tiersTitle")}>
       <p className="text-sm leading-relaxed text-muted">{t("streak.tiersLead", { count: total })}</p>
       <ol className="flex flex-col rounded-[20px] border border-line bg-card px-4 py-0.5">
         {TIERS.map((tier, i) => {
-          const passed = i < at;
-          const here = i === at;
-          const next = TIERS[i + 1];
+          const passed = i < at
+          const here = i === at
+          const next = TIERS[i + 1]
           return (
-            <li key={tier.key} className={cx("flex min-h-[64px] flex-col justify-center gap-2 py-3", i < TIERS.length - 1 && "border-b border-divider")}>
+            <li
+              key={tier.key}
+              className={cx(
+                "flex min-h-[64px] flex-col justify-center gap-2 py-3",
+                i < TIERS.length - 1 && "border-b border-divider",
+              )}
+            >
               <div className="flex items-center gap-3">
                 <TierBadge tier={tier} size={28} />
                 <span className="flex grow flex-col">
-                  <span className={cx("text-[15px] font-semibold", i > at && "text-muted")}>{t(`streak.tier.${tier.key}`)}</span>
-                  <span className="text-xs text-muted">{tier.days ? t("streak.tierNeeds", { count: tier.days }) : t("streak.tierStart")}</span>
+                  <span className={cx("text-[15px] font-semibold", i > at && "text-muted")}>
+                    {t(`streak.tier.${tier.key}`)}
+                  </span>
+                  <span className="text-xs text-muted">
+                    {tier.days ? t("streak.tierNeeds", { count: tier.days }) : t("streak.tierStart")}
+                  </span>
                 </span>
                 {here ? (
-                  <span className="shrink-0 rounded-full bg-lime px-2.5 py-1 text-[11px] font-bold text-on-lime">{t("streak.tierYou")}</span>
+                  <span className="shrink-0 rounded-full bg-lime px-2.5 py-1 text-[11px] font-bold text-on-lime">
+                    {t("streak.tierYou")}
+                  </span>
                 ) : passed ? (
-                  <Icon name="check" size={18} strokeWidth={2.4} className="shrink-0 text-income" aria-label={t("streak.tierPassed")} />
+                  <Icon
+                    name="check"
+                    size={18}
+                    strokeWidth={2.4}
+                    className="shrink-0 text-income"
+                    aria-label={t("streak.tierPassed")}
+                  />
                 ) : (
-                  <span className="shrink-0 text-xs text-muted">{t("streak.tierLeft", { count: tier.days - total })}</span>
+                  <span className="shrink-0 text-xs text-muted">
+                    {t("streak.tierLeft", { count: tier.days - total })}
+                  </span>
                 )}
               </div>
-              {here && next ? <Bar value={(total - tier.days) / (next.days - tier.days)} color="var(--color-lime-ink)" track="var(--color-divider)" /> : null}
+              {here && next ? (
+                <Bar
+                  value={(total - tier.days) / (next.days - tier.days)}
+                  color="var(--color-lime-ink)"
+                  track="var(--color-divider)"
+                />
+              ) : null}
             </li>
-          );
+          )
         })}
       </ol>
     </Sheet>
-  );
+  )
 }
 
 /** Sunday to Saturday: which days count, and how many perfect weeks so far. */
-function WeekCard({ week, today, onTime, restored, perfect }: { week: string[]; today: string; onTime: Set<string>; restored: Set<string>; perfect: Set<string> }) {
-  const { t } = useTranslation();
-  const names = weekdayNamesShort();
-  const done = week.filter((d) => onTime.has(d)).length;
-  const isPerfect = perfect.has(week[0]);
+function WeekCard({
+  week,
+  today,
+  onTime,
+  restored,
+  perfect,
+}: {
+  week: string[]
+  today: string
+  onTime: Set<string>
+  restored: Set<string>
+  perfect: Set<string>
+}) {
+  const { t } = useTranslation()
+  const names = weekdayNamesShort()
+  const done = week.filter((d) => onTime.has(d)).length
+  const isPerfect = perfect.has(week[0])
   return (
     <Card className="flex flex-col gap-3 px-4 py-3.5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-0.5">
           <span className="text-[15px] font-semibold">{t("streak.weekTitle")}</span>
-          <span className="text-xs leading-relaxed text-muted">{isPerfect ? t("streak.weekDone") : t("streak.weekLead")}</span>
+          <span className="text-xs leading-relaxed text-muted">
+            {isPerfect ? t("streak.weekDone") : t("streak.weekLead")}
+          </span>
         </div>
-        <span className={cx("shrink-0 rounded-full px-2.5 py-1 font-mono text-xs font-semibold", isPerfect ? "bg-lime text-on-lime" : "bg-divider text-muted")}>{done}/7</span>
+        <span
+          className={cx(
+            "shrink-0 rounded-full px-2.5 py-1 font-mono text-xs font-semibold",
+            isPerfect ? "bg-lime text-on-lime" : "bg-divider text-muted",
+          )}
+        >
+          {done}/7
+        </span>
       </div>
       <ol className="grid grid-cols-7 gap-1">
         {week.map((d, i) => {
-          const on = onTime.has(d);
-          const back = restored.has(d);
+          const on = onTime.has(d)
+          const back = restored.has(d)
           return (
-            <li key={d} className="flex flex-col items-center gap-1" aria-label={`${shortDate(d)}${on ? ` · ${t("streak.dayDone")}` : back ? ` · ${t("streak.dayRestored")}` : ""}`}>
-              <span aria-hidden="true" className="text-[11px] text-muted">{names[i]}</span>
+            <li
+              key={d}
+              className="flex flex-col items-center gap-1"
+              aria-label={`${shortDate(d)}${on ? ` · ${t("streak.dayDone")}` : back ? ` · ${t("streak.dayRestored")}` : ""}`}
+            >
+              <span aria-hidden="true" className="text-[11px] text-muted">
+                {names[i]}
+              </span>
               <span
                 aria-hidden="true"
                 className={cx(
                   "flex h-8 w-8 items-center justify-center rounded-full border-2",
-                  on ? "border-transparent bg-lime text-on-lime" : back ? "border-lime-ink text-lime-ink" : d === today ? "border-line-strong" : "border-divider",
+                  on
+                    ? "border-transparent bg-lime text-on-lime"
+                    : back
+                      ? "border-lime-ink text-lime-ink"
+                      : d === today
+                        ? "border-line-strong"
+                        : "border-divider",
                 )}
               >
                 {on || back ? <Icon name="check" size={14} strokeWidth={2.6} /> : null}
               </span>
             </li>
-          );
+          )
         })}
       </ol>
       {perfect.size ? (
@@ -190,7 +297,7 @@ function WeekCard({ week, today, onTime, restored, perfect }: { week: string[]; 
         </span>
       ) : null}
     </Card>
-  );
+  )
 }
 
 function Stat({ label, count }: { label: string; count: number }) {
@@ -199,33 +306,38 @@ function Stat({ label, count }: { label: string; count: number }) {
       <span className="text-xs text-muted">{label}</span>
       <DayCount count={count} className="text-lg" unitClass="text-[15px]" />
     </Card>
-  );
+  )
 }
 
 /** "4 วัน": the number in mono, the unit in the body font so the mono space doesn't open a gap. */
 function DayCount({ count, className, unitClass }: { count: number; className: string; unitClass: string }) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
   return (
     <span className={cx("flex items-baseline gap-1.5 font-semibold", className)}>
       <span className="font-mono tracking-tight">{count}</span>
       <span className={unitClass}>{t("streak.unit", { count })}</span>
     </span>
-  );
+  )
 }
 
 /** A month of days: filled when logged on time, outlined when restored. */
 function StreakCalendar({ today, onTime, restored }: { today: string; onTime: Set<string>; restored: Set<string> }) {
-  const { t } = useTranslation();
-  const [view, setView] = useState(monthKey(today));
-  const [y, m] = view.split("-").map(Number);
-  const first = new Date(y, m - 1, 1).getDay();
-  const days = daysInMonth(y, m - 1);
-  const atEnd = view >= monthKey(today);
+  const { t } = useTranslation()
+  const [view, setView] = useState(monthKey(today))
+  const [y, m] = view.split("-").map(Number)
+  const first = new Date(y, m - 1, 1).getDay()
+  const days = daysInMonth(y, m - 1)
+  const atEnd = view >= monthKey(today)
 
   return (
     <Card className="flex flex-col gap-2 p-3">
       <div className="flex items-center justify-between">
-        <button type="button" aria-label={t("picker.prevMonth")} onClick={() => setView(shiftMonth(view, -1))} className="flex h-10 w-10 items-center justify-center rounded-full">
+        <button
+          type="button"
+          aria-label={t("picker.prevMonth")}
+          onClick={() => setView(shiftMonth(view, -1))}
+          className="flex h-10 w-10 items-center justify-center rounded-full"
+        >
           <Icon name="back" size={18} strokeWidth={2} />
         </button>
         <span className="text-[15px] font-semibold">{monthLabel(view)}</span>
@@ -249,22 +361,28 @@ function StreakCalendar({ today, onTime, restored }: { today: string; onTime: Se
           <span key={`b${i}`} />
         ))}
         {Array.from({ length: days }, (_, i) => {
-          const iso = toISO(new Date(y, m - 1, i + 1));
-          const done = onTime.has(iso);
-          const back = restored.has(iso);
+          const iso = toISO(new Date(y, m - 1, i + 1))
+          const done = onTime.has(iso)
+          const back = restored.has(iso)
           return (
             <span
               key={iso}
               aria-label={`${shortDate(iso)}${done ? ` · ${t("streak.dayDone")}` : back ? ` · ${t("streak.dayRestored")}` : ""}`}
               className={cx(
                 "mx-auto flex h-9 w-9 items-center justify-center rounded-full border-2 font-mono text-[13px] font-semibold",
-                done ? "border-transparent bg-lime text-on-lime" : back ? "border-lime-ink text-lime-ink" : iso === today ? "border-line-strong" : "border-transparent",
+                done
+                  ? "border-transparent bg-lime text-on-lime"
+                  : back
+                    ? "border-lime-ink text-lime-ink"
+                    : iso === today
+                      ? "border-line-strong"
+                      : "border-transparent",
                 iso > today && "text-faint",
               )}
             >
               {i + 1}
             </span>
-          );
+          )
         })}
       </div>
       <div className="flex items-center justify-center gap-4 pt-1 text-[11px] text-muted">
@@ -278,5 +396,5 @@ function StreakCalendar({ today, onTime, restored }: { today: string; onTime: Se
         </span>
       </div>
     </Card>
-  );
+  )
 }

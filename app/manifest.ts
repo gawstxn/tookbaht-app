@@ -1,11 +1,12 @@
-import type { MetadataRoute } from "next";
+import type { MetadataRoute } from "next"
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
     name: "Tookbaht",
     short_name: "Tookbaht",
-    description: "บันทึกรายรับ รายจ่าย การโอน subscriptions และเป้าหมายการเงิน · Track income, expenses, subscriptions and money goals",
+    description:
+      "บันทึกรายรับ รายจ่าย การโอน subscriptions และเป้าหมายการเงิน · Track income, expenses, subscriptions and money goals",
     lang: "th",
     start_url: "/",
     scope: "/",
@@ -18,5 +19,5 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
       { src: "/icons/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
-  };
+  }
 }

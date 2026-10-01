@@ -7,9 +7,9 @@ export class StorageApiError extends Error {}
 
 export class StorageClient {
   constructor(..._args: unknown[]) {
-    void _args;
+    void _args
   }
   from(): never {
-    throw new Error("Supabase Storage is not bundled in Tookbaht");
+    throw new Error("Supabase Storage is not bundled in Tookbaht")
   }
 }

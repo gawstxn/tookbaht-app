@@ -1,5 +1,5 @@
-import { addDays, daysInMonth, diffDays, shiftMonth, shortDate } from "./format";
-import type { ISODate, Settings } from "./types";
+import { addDays, daysInMonth, diffDays, shiftMonth, shortDate } from "./format"
+import type { ISODate, Settings } from "./types"
 
 /**
  * The user's month ("รอบเดือน"): from their payday to the day before the next
@@ -14,51 +14,56 @@ import type { ISODate, Settings } from "./types";
  */
 export interface Period {
   /** "YYYY-MM" name of the period. */
-  key: string;
-  startDay: number;
-  start: ISODate;
+  key: string
+  startDay: number
+  start: ISODate
   /** Last day, inclusive. */
-  end: ISODate;
+  end: ISODate
 }
 
 /** Start days after this name the period after the month they start in. */
-const NAMED_BY_START_UNTIL = 16;
+const NAMED_BY_START_UNTIL = 16
 
 /** The start day saved in settings, made safe (1 when unset or out of range). */
 export function cycleStartDay(settings: Pick<Settings, "cycleStartDay">): number {
-  const d = settings.cycleStartDay;
-  return typeof d === "number" && Number.isInteger(d) && d >= 1 && d <= 31 ? d : 1;
+  const d = settings.cycleStartDay
+  return typeof d === "number" && Number.isInteger(d) && d >= 1 && d <= 31 ? d : 1
 }
 
 /** The start date within the calendar month `month` ("YYYY-MM"). */
 function startIn(month: string, startDay: number): ISODate {
-  const [y, m] = month.split("-").map(Number);
-  return `${month}-${String(Math.min(startDay, daysInMonth(y, m - 1))).padStart(2, "0")}`;
+  const [y, m] = month.split("-").map(Number)
+  return `${month}-${String(Math.min(startDay, daysInMonth(y, m - 1))).padStart(2, "0")}`
 }
 
 /** The period named `key`. */
 export function periodFor(key: string, startDay: number): Period {
-  const startMonth = startDay > NAMED_BY_START_UNTIL ? shiftMonth(key, -1) : key;
-  return { key, startDay, start: startIn(startMonth, startDay), end: addDays(startIn(shiftMonth(startMonth, 1), startDay), -1) };
+  const startMonth = startDay > NAMED_BY_START_UNTIL ? shiftMonth(key, -1) : key
+  return {
+    key,
+    startDay,
+    start: startIn(startMonth, startDay),
+    end: addDays(startIn(shiftMonth(startMonth, 1), startDay), -1),
+  }
 }
 
 /** The period `date` falls in. */
 export function periodOf(date: ISODate, startDay: number): Period {
-  const month = date.slice(0, 7);
-  const startMonth = date >= startIn(month, startDay) ? month : shiftMonth(month, -1);
-  return periodFor(startDay > NAMED_BY_START_UNTIL ? shiftMonth(startMonth, 1) : startMonth, startDay);
+  const month = date.slice(0, 7)
+  const startMonth = date >= startIn(month, startDay) ? month : shiftMonth(month, -1)
+  return periodFor(startDay > NAMED_BY_START_UNTIL ? shiftMonth(startMonth, 1) : startMonth, startDay)
 }
 
 /** The period `n` periods after (or before, when negative) `p`. */
-export const shiftPeriod = (p: Period, n: number): Period => periodFor(shiftMonth(p.key, n), p.startDay);
+export const shiftPeriod = (p: Period, n: number): Period => periodFor(shiftMonth(p.key, n), p.startDay)
 
-export const inPeriod = (date: ISODate, p: Period) => date >= p.start && date <= p.end;
+export const inPeriod = (date: ISODate, p: Period) => date >= p.start && date <= p.end
 
 /** Number of days in the period. */
-export const periodDays = (p: Period) => diffDays(p.end, p.start) + 1;
+export const periodDays = (p: Period) => diffDays(p.end, p.start) + 1
 
 /** 1 on the period's first day. */
-export const dayOfPeriod = (date: ISODate, p: Period) => diffDays(date, p.start) + 1;
+export const dayOfPeriod = (date: ISODate, p: Period) => diffDays(date, p.start) + 1
 
 /** "2 ก.ย. – 1 ต.ค." / "2 Sep – 1 Oct" */
-export const periodRange = (p: Period) => `${shortDate(p.start, false)} – ${shortDate(p.end, false)}`;
+export const periodRange = (p: Period) => `${shortDate(p.start, false)} – ${shortDate(p.end, false)}`

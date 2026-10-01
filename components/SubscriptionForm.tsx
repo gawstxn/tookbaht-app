@@ -1,30 +1,42 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { AccountSheet, CategorySheet, DateSheet } from "@/components/pickers";
-import { Icon } from "@/components/ui/Icon";
-import { Card, Chip, Empty, ListCard, PickerRow, PrimaryButton, PushHeader, Segmented, Sheet, SwitchRow, cx } from "@/components/ui/primitives";
-import { BrandMark, PushScreen, SubMono } from "@/components/app";
-import { findBrand, normalizeName, suggestCategory } from "@/lib/brands";
-import { MONO_TONES, POPULAR_SUBS, SUB_CATALOG, SUB_CATEGORIES } from "@/lib/constants";
-import { SplitWithField } from "./SplitWithField";
-import { useTranslation } from "react-i18next";
-import { addDays, baht, cyclePer, fromISO, monthlyEquivalent, shortDate, todayISO } from "@/lib/format";
-import { useStore } from "@/lib/store";
-import { formatMoney, toTHB } from "@/lib/fx";
-import { TRIAL_LENGTHS, trialEnd, trialLengthOf, type TrialLength } from "@/lib/trial";
-import type { Currency, Cycle, Subscription } from "@/lib/types";
-import { BahtInput } from "./BahtInput";
+import { useState } from "react"
+import { AccountSheet, CategorySheet, DateSheet } from "@/components/pickers"
+import { Icon } from "@/components/ui/Icon"
+import {
+  Card,
+  Chip,
+  Empty,
+  ListCard,
+  PickerRow,
+  PrimaryButton,
+  PushHeader,
+  Segmented,
+  Sheet,
+  SwitchRow,
+  cx,
+} from "@/components/ui/primitives"
+import { BrandMark, PushScreen, SubMono } from "@/components/app"
+import { findBrand, normalizeName, suggestCategory } from "@/lib/brands"
+import { MONO_TONES, POPULAR_SUBS, SUB_CATALOG, SUB_CATEGORIES } from "@/lib/constants"
+import { SplitWithField } from "./SplitWithField"
+import { useTranslation } from "react-i18next"
+import { addDays, baht, cyclePer, fromISO, monthlyEquivalent, shortDate, todayISO } from "@/lib/format"
+import { useStore } from "@/lib/store"
+import { formatMoney, toTHB } from "@/lib/fx"
+import { TRIAL_LENGTHS, trialEnd, trialLengthOf, type TrialLength } from "@/lib/trial"
+import type { Currency, Cycle, Subscription } from "@/lib/types"
+import { BahtInput } from "./BahtInput"
 
-export type SubDraft = Omit<Subscription, "id">;
+export type SubDraft = Omit<Subscription, "id">
 
 /** Brand colour for known services, otherwise a stable colour per name. */
 function toneFor(name: string) {
-  const brand = findBrand(name);
-  if (brand) return brand.color;
-  let h = 0;
-  for (const ch of name.trim().toLowerCase()) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  return MONO_TONES[h % MONO_TONES.length];
+  const brand = findBrand(name)
+  if (brand) return brand.color
+  let h = 0
+  for (const ch of name.trim().toLowerCase()) h = (h * 31 + ch.charCodeAt(0)) >>> 0
+  return MONO_TONES[h % MONO_TONES.length]
 }
 
 export function SubscriptionForm({
@@ -34,16 +46,16 @@ export function SubscriptionForm({
   onBack,
   saveLabel,
 }: {
-  title: string;
-  initial?: SubDraft;
-  onSave: (s: SubDraft) => void;
-  onBack: () => void;
-  saveLabel: string;
+  title: string
+  initial?: SubDraft
+  onSave: (s: SubDraft) => void
+  onBack: () => void
+  saveLabel: string
 }) {
-  const accounts = useStore((s) => s.accounts);
-  const usdRate = useStore((s) => s.usdRate);
-  const ensureUsdRate = useStore((s) => s.ensureUsdRate);
-  const today = todayISO();
+  const accounts = useStore((s) => s.accounts)
+  const usdRate = useStore((s) => s.usdRate)
+  const ensureUsdRate = useStore((s) => s.ensureUsdRate)
+  const today = todayISO()
   const [d, setD] = useState<SubDraft>(
     initial ?? {
       kind: "subscription",
@@ -60,57 +72,57 @@ export function SubscriptionForm({
       paused: false,
       tone: MONO_TONES[0],
     },
-  );
-  const { t } = useTranslation();
-  const [amountText, setAmountText] = useState(initial ? String(initial.amount) : "");
+  )
+  const { t } = useTranslation()
+  const [amountText, setAmountText] = useState(initial ? String(initial.amount) : "")
   // The field holds the listed price; +VAT is a toggle on top of it, so tapping it twice doesn't add 7% twice.
-  const [vat, setVat] = useState(false);
-  const [sheet, setSheet] = useState<"" | "date" | "trialFrom" | "account" | "category" | "catalog">("");
-  const [categoryTouched, setCategoryTouched] = useState(!!initial);
-  const pick = (n: string) => set({ name: n, category: suggestCategory(n) ?? d.category });
-  const set = (p: Partial<SubDraft>) => setD((x) => ({ ...x, ...p }));
+  const [vat, setVat] = useState(false)
+  const [sheet, setSheet] = useState<"" | "date" | "trialFrom" | "account" | "category" | "catalog">("")
+  const [categoryTouched, setCategoryTouched] = useState(!!initial)
+  const pick = (n: string) => set({ name: n, category: suggestCategory(n) ?? d.category })
+  const set = (p: Partial<SubDraft>) => setD((x) => ({ ...x, ...p }))
 
-  const account = accounts.find((a) => a.id === d.accountId);
+  const account = accounts.find((a) => a.id === d.accountId)
   // Baht per billing cycle (estimated for USD from the latest rate and the card's fee).
-  const thb = toTHB(d.amount, d.currency, usdRate, account);
-  const monthly = monthlyEquivalent(thb ?? 0, d.cycle);
+  const thb = toTHB(d.amount, d.currency, usdRate, account)
+  const monthly = monthlyEquivalent(thb ?? 0, d.cycle)
   const priced = (text: string, withVat: boolean) => {
-    const n = parseFloat(text) || 0;
-    return withVat ? Math.round(n * 107) / 100 : n;
-  };
+    const n = parseFloat(text) || 0
+    return withVat ? Math.round(n * 107) / 100 : n
+  }
   const setAmount = (v: string) => {
-    setAmountText(v);
-    set({ amount: priced(v, vat && d.currency === "USD") });
-  };
+    setAmountText(v)
+    set({ amount: priced(v, vat && d.currency === "USD") })
+  }
   const toggleVat = () => {
-    setVat(!vat);
-    set({ amount: priced(amountText, !vat) });
-  };
+    setVat(!vat)
+    set({ amount: priced(amountText, !vat) })
+  }
   // A free trial runs from trialFrom until the first charge (startDate).
-  const trialFrom = d.trialFrom ?? null;
-  const trialLength = trialFrom ? trialLengthOf(trialFrom, d.startDate) : null;
+  const trialFrom = d.trialFrom ?? null
+  const trialLength = trialFrom ? trialLengthOf(trialFrom, d.startDate) : null
   const toggleTrial = (on: boolean) => {
-    if (!on) return set({ trialFrom: null, startDate: trialFrom ?? d.startDate });
+    if (!on) return set({ trialFrom: null, startDate: trialFrom ?? d.startDate })
     // Trials start on the day chosen so far, or today (never in the future).
-    const from = d.startDate > today ? today : d.startDate;
-    set({ trialFrom: from, startDate: trialEnd(from, "1m") });
-  };
+    const from = d.startDate > today ? today : d.startDate
+    set({ trialFrom: from, startDate: trialEnd(from, "1m") })
+  }
   const pickLength = (length: TrialLength) => {
-    if (trialFrom) set({ startDate: trialEnd(trialFrom, length) });
-  };
+    if (trialFrom) set({ startDate: trialEnd(trialFrom, length) })
+  }
   const moveTrialStart = (from: string) => {
     // Keep a preset length when the start moves; a custom end stays unless it would come first.
-    const end = trialLength ? trialEnd(from, trialLength) : d.startDate > from ? d.startDate : trialEnd(from, "1m");
-    set({ trialFrom: from, startDate: end });
-  };
-  const canSave = d.name.trim().length > 0 && d.amount > 0 && !!d.accountId && (!trialFrom || trialFrom < d.startDate);
-  const start = fromISO(d.startDate);
+    const end = trialLength ? trialEnd(from, trialLength) : d.startDate > from ? d.startDate : trialEnd(from, "1m")
+    set({ trialFrom: from, startDate: end })
+  }
+  const canSave = d.name.trim().length > 0 && d.amount > 0 && !!d.accountId && (!trialFrom || trialFrom < d.startDate)
+  const start = fromISO(d.startDate)
   const hint =
     d.cycle === "week"
       ? t("subs.hintWeek")
       : d.cycle === "year"
         ? t("subs.hintYear", { date: shortDate(d.startDate, false) })
-        : t("subs.hintMonth", { day: start.getDate() });
+        : t("subs.hintMonth", { day: start.getDate() })
 
   return (
     <PushScreen className="gap-3.5">
@@ -120,7 +132,10 @@ export function SubscriptionForm({
         {findBrand(d.name) ? (
           <SubMono s={{ name: d.name, tone: toneFor(d.name) }} size={56} />
         ) : (
-          <span aria-hidden="true" className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-hero text-2xl font-bold text-lime">
+          <span
+            aria-hidden="true"
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-hero text-2xl font-bold text-lime"
+          >
             {(d.name.trim()[0] ?? "?").toUpperCase()}
           </span>
         )}
@@ -133,8 +148,8 @@ export function SubscriptionForm({
             value={d.name}
             onChange={(e) => {
               // Typing a known service (e.g. "Claude Pro") picks its category too, until the user chooses one.
-              const suggested = suggestCategory(e.target.value);
-              set({ name: e.target.value, ...(suggested && !categoryTouched ? { category: suggested } : {}) });
+              const suggested = suggestCategory(e.target.value)
+              set({ name: e.target.value, ...(suggested && !categoryTouched ? { category: suggested } : {}) })
             }}
             placeholder={t("subs.namePlaceholder")}
             className="min-h-9 w-full border-b border-line-strong bg-transparent pb-1 font-serif text-[22px] font-bold outline-none"
@@ -144,7 +159,7 @@ export function SubscriptionForm({
 
       <div aria-label={t("subs.popular")} className="flex flex-wrap gap-1.5">
         {POPULAR_SUBS.map((n) => {
-          const brand = findBrand(n);
+          const brand = findBrand(n)
           return (
             <Chip key={n} size="sm" on={d.name === n} onClick={() => pick(n)}>
               <span className="flex items-center gap-1.5">
@@ -152,7 +167,7 @@ export function SubscriptionForm({
                 {n}
               </span>
             </Chip>
-          );
+          )
         })}
         <Chip size="sm" on={false} onClick={() => setSheet("catalog")}>
           <span className="flex items-center gap-1">
@@ -171,8 +186,8 @@ export function SubscriptionForm({
               label={t("subs.currency")}
               value={d.currency}
               onChange={(currency) => {
-                set({ currency, amount: priced(amountText, vat && currency === "USD") });
-                if (currency === "USD") void ensureUsdRate();
+                set({ currency, amount: priced(amountText, vat && currency === "USD") })
+                if (currency === "USD") void ensureUsdRate()
               }}
               options={[
                 { value: "THB", label: "฿ THB" },
@@ -210,7 +225,9 @@ export function SubscriptionForm({
         {d.currency === "USD" ? (
           <p className="-mt-1 text-xs leading-relaxed text-muted">
             {vat && d.amount > 0 ? (
-              <span className="font-semibold text-ink">{t("subs.withVat", { amount: formatMoney(d.amount, "USD") })}</span>
+              <span className="font-semibold text-ink">
+                {t("subs.withVat", { amount: formatMoney(d.amount, "USD") })}
+              </span>
             ) : (
               t("subs.vatHint")
             )}
@@ -264,10 +281,24 @@ export function SubscriptionForm({
       </ListCard>
 
       <ListCard>
-        {trialFrom ? <PickerRow label={t("subs.trialFrom")} value={shortDate(trialFrom)} onClick={() => setSheet("trialFrom")} /> : null}
-        <PickerRow label={t(trialFrom ? "subs.firstCharge" : "subs.start")} value={shortDate(d.startDate)} onClick={() => setSheet("date")} />
-        <PickerRow label={t("subs.payFrom")} value={accounts.find((a) => a.id === d.accountId)?.name ?? t("common.selectAccount")} onClick={() => setSheet("account")} />
-        <PickerRow label={t("common.category")} value={SUB_CATEGORIES.find((c) => c.key === d.category)?.label ?? ""} onClick={() => setSheet("category")} />
+        {trialFrom ? (
+          <PickerRow label={t("subs.trialFrom")} value={shortDate(trialFrom)} onClick={() => setSheet("trialFrom")} />
+        ) : null}
+        <PickerRow
+          label={t(trialFrom ? "subs.firstCharge" : "subs.start")}
+          value={shortDate(d.startDate)}
+          onClick={() => setSheet("date")}
+        />
+        <PickerRow
+          label={t("subs.payFrom")}
+          value={accounts.find((a) => a.id === d.accountId)?.name ?? t("common.selectAccount")}
+          onClick={() => setSheet("account")}
+        />
+        <PickerRow
+          label={t("common.category")}
+          value={SUB_CATEGORIES.find((c) => c.key === d.category)?.label ?? ""}
+          onClick={() => setSheet("category")}
+        />
       </ListCard>
 
       <ListCard>
@@ -275,21 +306,27 @@ export function SubscriptionForm({
         <SwitchRow label={t("subs.autoLog")} checked={d.autoLog} onChange={(autoLog) => set({ autoLog })} />
       </ListCard>
 
-      <SplitWithField names={d.splitWith ?? []} onChange={(splitWith) => set({ splitWith })} perCharge={thb} autoLog={d.autoLog} />
+      <SplitWithField
+        names={d.splitWith ?? []}
+        onChange={(splitWith) => set({ splitWith })}
+        perCharge={thb}
+        autoLog={d.autoLog}
+      />
 
       <div className="mt-auto flex flex-col gap-2.5">
         <p className="flex justify-center gap-1.5 text-[13px] text-muted">
-          {t("subs.average")} <span className="font-mono font-semibold text-ink">{baht(monthly)}</span> {t("common.perMonth")} ·
-          <span className="font-mono font-semibold text-ink">{baht(monthly * 12)}</span> {t("common.perYear")}
+          {t("subs.average")} <span className="font-mono font-semibold text-ink">{baht(monthly)}</span>{" "}
+          {t("common.perMonth")} ·<span className="font-mono font-semibold text-ink">{baht(monthly * 12)}</span>{" "}
+          {t("common.perYear")}
         </p>
         <PrimaryButton
           once
           disabled={!canSave}
           onClick={() => {
-            const name = d.name.trim();
+            const name = d.name.trim()
             // Keep a custom colour on edit unless the name now matches a known service.
-            const tone = findBrand(name) || !initial ? toneFor(name) : initial.tone;
-            onSave({ ...d, name, tone });
+            const tone = findBrand(name) || !initial ? toneFor(name) : initial.tone
+            onSave({ ...d, name, tone })
           }}
         >
           {saveLabel}
@@ -303,7 +340,13 @@ export function SubscriptionForm({
         value={d.startDate}
         onChange={(startDate) => set({ startDate })}
         min={trialFrom ? addDays(trialFrom, 1) : undefined}
-        hint={trialFrom ? `${t("subs.firstChargeHint")} · ${hint}` : d.startDate < today ? hint + t("subs.noBackfill") : hint}
+        hint={
+          trialFrom
+            ? `${t("subs.firstChargeHint")} · ${hint}`
+            : d.startDate < today
+              ? hint + t("subs.noBackfill")
+              : hint
+        }
       />
       <DateSheet
         open={sheet === "trialFrom"}
@@ -313,34 +356,64 @@ export function SubscriptionForm({
         onChange={moveTrialStart}
         max={today}
       />
-      <AccountSheet open={sheet === "account"} onClose={() => setSheet("")} title={t("subs.payFrom")} value={d.accountId} onPick={(accountId) => set({ accountId })} />
+      <AccountSheet
+        open={sheet === "account"}
+        onClose={() => setSheet("")}
+        title={t("subs.payFrom")}
+        value={d.accountId}
+        onPick={(accountId) => set({ accountId })}
+      />
       <CatalogSheet
         open={sheet === "catalog"}
         onClose={() => setSheet("")}
         onPick={(n) => {
-          pick(n);
-          setSheet("");
+          pick(n)
+          setSheet("")
         }}
       />
-      <CategorySheet open={sheet === "category"} onClose={() => setSheet("")} title={t("common.category")} options={SUB_CATEGORIES} value={d.category} onPick={(category) => {
-          setCategoryTouched(true);
-          set({ category });
-        }} />
+      <CategorySheet
+        open={sheet === "category"}
+        onClose={() => setSheet("")}
+        title={t("common.category")}
+        options={SUB_CATEGORIES}
+        value={d.category}
+        onPick={(category) => {
+          setCategoryTouched(true)
+          set({ category })
+        }}
+      />
     </PushScreen>
-  );
+  )
 }
 
 /** Full list of known services, grouped, with search. */
-function CatalogSheet({ open, onClose, onPick }: { open: boolean; onClose: () => void; onPick: (name: string) => void }) {
-  const { t } = useTranslation();
-  const [q, setQ] = useState("");
-  const query = normalizeName(q);
-  const groups = SUB_CATALOG.map((g) => ({ ...g, names: g.names.filter((n) => !query || normalizeName(n).includes(query)) })).filter((g) => g.names.length);
+function CatalogSheet({
+  open,
+  onClose,
+  onPick,
+}: {
+  open: boolean
+  onClose: () => void
+  onPick: (name: string) => void
+}) {
+  const { t } = useTranslation()
+  const [q, setQ] = useState("")
+  const query = normalizeName(q)
+  const groups = SUB_CATALOG.map((g) => ({
+    ...g,
+    names: g.names.filter((n) => !query || normalizeName(n).includes(query)),
+  })).filter((g) => g.names.length)
   return (
     <Sheet open={open} onClose={onClose} title={t("subs.pickService")}>
       <label className="flex min-h-11 items-center gap-2 rounded-xl border border-line bg-card px-3">
         <Icon name="search" size={16} strokeWidth={2} className="text-faint" />
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("subs.searchPlaceholder")} aria-label={t("subs.searchService")} className="min-w-0 grow bg-transparent text-sm outline-none" />
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder={t("subs.searchPlaceholder")}
+          aria-label={t("subs.searchService")}
+          className="min-w-0 grow bg-transparent text-sm outline-none"
+        />
       </label>
       {groups.length === 0 ? <Empty>{t("subs.noService")}</Empty> : null}
       {groups.map((g) => (
@@ -348,7 +421,12 @@ function CatalogSheet({ open, onClose, onPick }: { open: boolean; onClose: () =>
           <h3 className="text-[13px] font-semibold text-muted">{g.title}</h3>
           <ListCard>
             {g.names.map((n) => (
-              <button key={n} type="button" onClick={() => onPick(n)} className="flex min-h-[52px] w-full items-center gap-3 text-left">
+              <button
+                key={n}
+                type="button"
+                onClick={() => onPick(n)}
+                className="flex min-h-[52px] w-full items-center gap-3 text-left"
+              >
                 <SubMono s={{ name: n, tone: toneFor(n) }} size={32} />
                 <span className="grow text-[15px]">{n}</span>
               </button>
@@ -357,5 +435,5 @@ function CatalogSheet({ open, onClose, onPick }: { open: boolean; onClose: () =>
         </section>
       ))}
     </Sheet>
-  );
+  )
 }

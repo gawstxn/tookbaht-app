@@ -1,53 +1,57 @@
-"use client";
+"use client"
 
-import { PushScreen } from "@/components/app";
-import { SavingsGoals } from "@/components/SavingsGoals";
-import { MonthSwitcher } from "@/components/pickers";
-import { Icon } from "@/components/ui/Icon";
-import { Bar, Empty, HeroCard, IconButton, ListCard, PushHeader } from "@/components/ui/primitives";
-import { categoryLabel } from "@/lib/constants";
-import { baht, todayISO } from "@/lib/format";
-import { rolloverCarry } from "@/lib/budget";
-import { daysLeftInMonth, monthPace, monthTransactions, spendByCategory, summarize } from "@/lib/selectors";
-import { useTranslation } from "react-i18next";
-import { useStore, useViewPeriod } from "@/lib/store";
+import { PushScreen } from "@/components/app"
+import { SavingsGoals } from "@/components/SavingsGoals"
+import { MonthSwitcher } from "@/components/pickers"
+import { Icon } from "@/components/ui/Icon"
+import { Bar, Empty, HeroCard, IconButton, ListCard, PushHeader } from "@/components/ui/primitives"
+import { categoryLabel } from "@/lib/constants"
+import { baht, todayISO } from "@/lib/format"
+import { rolloverCarry } from "@/lib/budget"
+import { daysLeftInMonth, monthPace, monthTransactions, spendByCategory, summarize } from "@/lib/selectors"
+import { useTranslation } from "react-i18next"
+import { useStore, useViewPeriod } from "@/lib/store"
 
 export default function GoalsPage() {
-  const { transactions, goals } = useStore();
-  const period = useViewPeriod();
-  const { t: tr } = useTranslation();
-  const today = todayISO();
-  const month = monthTransactions(transactions, period);
-  const sum = summarize(month);
-  const byCat = spendByCategory(month);
-  const pace = monthPace(period, today);
-  const left = daysLeftInMonth(period, today);
+  const { transactions, goals } = useStore()
+  const period = useViewPeriod()
+  const { t: tr } = useTranslation()
+  const today = todayISO()
+  const month = monthTransactions(transactions, period)
+  const sum = summarize(month)
+  const byCat = spendByCategory(month)
+  const pace = monthPace(period, today)
+  const left = daysLeftInMonth(period, today)
 
-  const incomePct = goals.incomeTarget ? sum.income / goals.incomeTarget : 0;
-  const expensePct = goals.expenseBudget ? sum.expense / goals.expenseBudget : 0;
-  const plannedByNow = goals.expenseBudget * pace;
-  const ahead = sum.expense - plannedByNow;
-  const remaining = goals.expenseBudget - sum.expense;
-  const perDay = left > 0 ? Math.max(0, remaining) / left : 0;
+  const incomePct = goals.incomeTarget ? sum.income / goals.incomeTarget : 0
+  const expensePct = goals.expenseBudget ? sum.expense / goals.expenseBudget : 0
+  const plannedByNow = goals.expenseBudget * pace
+  const ahead = sum.expense - plannedByNow
+  const remaining = goals.expenseBudget - sum.expense
+  const perDay = left > 0 ? Math.max(0, remaining) / left : 0
 
-  const carry = rolloverCarry(goals, transactions, period);
+  const carry = rolloverCarry(goals, transactions, period)
   const cats = Object.entries(goals.categoryBudgets)
     .filter(([, b]) => b > 0)
     .map(([key, base]) => {
-      const budget = base + (carry[key] ?? 0);
-      const spent = byCat[key] ?? 0;
-      const r = spent / budget;
-      const over = r > 1;
-      const fast = !over && r > pace && pace < 1;
-      return { key, budget, spent, r, over, fast };
+      const budget = base + (carry[key] ?? 0)
+      const spent = byCat[key] ?? 0
+      const r = spent / budget
+      const over = r > 1
+      const fast = !over && r > pace && pace < 1
+      return { key, budget, spent, r, over, fast }
     })
-    .sort((a, b) => b.r - a.r);
+    .sort((a, b) => b.r - a.r)
 
-  const hasGoals = goals.incomeTarget > 0 || goals.expenseBudget > 0;
+  const hasGoals = goals.incomeTarget > 0 || goals.expenseBudget > 0
 
   return (
     <PushScreen>
-      <PushHeader title={tr("goals.title")} backHref="/" action={<IconButton href="/goals/edit" icon="pencil" label={tr("goals.set")} variant="dark" />} />
+      <PushHeader
+        title={tr("goals.title")}
+        backHref="/"
+        action={<IconButton href="/goals/edit" icon="pencil" label={tr("goals.set")} variant="dark" />}
+      />
       <div className="-mt-2 flex items-center justify-center gap-1 text-[13px] text-muted">
         <MonthSwitcher />
         {left > 0 ? <span>{tr("goals.left", { count: left })}</span> : null}
@@ -61,15 +65,25 @@ export default function GoalsPage() {
               <Amount value={sum.income} of={goals.incomeTarget} />
               <Bar value={incomePct} color="var(--color-lime)" />
               <span className="text-xs text-on-ink-muted">
-                {sum.income >= goals.incomeTarget ? tr("goals.reached") : tr("goals.toGo", { amount: baht(goals.incomeTarget - sum.income) })}
+                {sum.income >= goals.incomeTarget
+                  ? tr("goals.reached")
+                  : tr("goals.toGo", { amount: baht(goals.incomeTarget - sum.income) })}
               </span>
             </div>
           ) : null}
           {goals.expenseBudget > 0 ? (
-            <div className={goals.incomeTarget > 0 ? "flex flex-col gap-2 border-t border-ink-line pt-4" : "flex flex-col gap-2"}>
+            <div
+              className={
+                goals.incomeTarget > 0 ? "flex flex-col gap-2 border-t border-ink-line pt-4" : "flex flex-col gap-2"
+              }
+            >
               <MeterHead icon="out" color="var(--color-peach)" label={tr("goals.expenseBudget")} pct={expensePct} />
               <Amount value={sum.expense} of={goals.expenseBudget} />
-              <Bar value={expensePct} color="var(--color-peach)" marker={pace > 0 && pace < 1 ? { at: pace, color: "var(--color-on-hero)" } : undefined} />
+              <Bar
+                value={expensePct}
+                color="var(--color-peach)"
+                marker={pace > 0 && pace < 1 ? { at: pace, color: "var(--color-on-hero)" } : undefined}
+              />
               <div className="flex items-center justify-between text-xs text-on-ink-muted">
                 {remaining < 0 ? (
                   <span className="font-semibold text-peach">{tr("goals.over", { amount: baht(-remaining) })}</span>
@@ -110,9 +124,13 @@ export default function GoalsPage() {
                   color={c.over ? "var(--color-expense)" : c.fast ? "var(--color-warn)" : "var(--color-income)"}
                   marker={pace > 0 && pace < 1 ? { at: pace, color: "var(--color-ink)" } : undefined}
                 />
-                {carry[c.key] ? <span className="text-xs text-income">{tr("goals.carried", { amount: baht(carry[c.key]) })}</span> : null}
+                {carry[c.key] ? (
+                  <span className="text-xs text-income">{tr("goals.carried", { amount: baht(carry[c.key]) })}</span>
+                ) : null}
                 <span className={c.over ? "text-xs font-semibold text-danger" : "text-xs text-muted"}>
-                  {c.over ? tr("goals.over", { amount: baht(c.spent - c.budget) }) : tr("goals.catLeft", { amount: baht(c.budget - c.spent) }) + (c.fast ? tr("goals.fast") : "")}
+                  {c.over
+                    ? tr("goals.over", { amount: baht(c.spent - c.budget) })
+                    : tr("goals.catLeft", { amount: baht(c.budget - c.spent) }) + (c.fast ? tr("goals.fast") : "")}
                 </span>
               </div>
             ))}
@@ -122,7 +140,7 @@ export default function GoalsPage() {
 
       <SavingsGoals />
     </PushScreen>
-  );
+  )
 }
 
 function MeterHead({ icon, color, label, pct }: { icon: "in" | "out"; color: string; label: string; pct: number }) {
@@ -136,14 +154,14 @@ function MeterHead({ icon, color, label, pct }: { icon: "in" | "out"; color: str
         {Math.round(pct * 100)}%
       </span>
     </div>
-  );
+  )
 }
 
 function Amount({ value, of }: { value: number; of: number }) {
   return (
-    <span className="font-mono text-[28px] font-semibold leading-tight tracking-tight">
+    <span className="font-mono text-[28px] leading-tight font-semibold tracking-tight">
       {baht(value)}
       <span className="text-[15px] text-on-ink-faint"> / {baht(of)}</span>
     </span>
-  );
+  )
 }

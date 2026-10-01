@@ -1,20 +1,23 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { useTranslation } from "react-i18next";
-import { CONTACT_EMAIL } from "../LegalPage";
+import Link from "next/link"
+import { useTranslation } from "react-i18next"
+import { CONTACT_EMAIL } from "../LegalPage"
 
 /** Terms of use body in the current language. */
 export function TermsContent() {
-  const { i18n } = useTranslation();
-  return i18n.language === "en" ? <TermsEn /> : <TermsTh />;
+  const { i18n } = useTranslation()
+  return i18n.language === "en" ? <TermsEn /> : <TermsTh />
 }
 
 function TermsTh() {
   return (
     <>
       <section>
-        <p>การเข้าสู่ระบบและใช้งาน Tookbaht (&quot;แอป&quot;) ถือว่าคุณยอมรับข้อกำหนดเหล่านี้ หากไม่ยอมรับ โปรดหยุดใช้งานแอป</p>
+        <p>
+          การเข้าสู่ระบบและใช้งาน Tookbaht (&quot;แอป&quot;) ถือว่าคุณยอมรับข้อกำหนดเหล่านี้ หากไม่ยอมรับ
+          โปรดหยุดใช้งานแอป
+        </p>
       </section>
 
       <section>
@@ -28,8 +31,8 @@ function TermsTh() {
       <section>
         <h2>2. ไม่ใช่คำแนะนำทางการเงิน</h2>
         <p>
-          สรุป งบประมาณ การแจ้งเตือน และตัวเลขต่างๆ ในแอปมีไว้ช่วยติดตามเท่านั้น ไม่ใช่คำแนะนำทางการเงิน ภาษี หรือการลงทุน
-          โปรดตรวจสอบกับรายการเดินบัญชีจริงของคุณก่อนตัดสินใจเรื่องการเงิน
+          สรุป งบประมาณ การแจ้งเตือน และตัวเลขต่างๆ ในแอปมีไว้ช่วยติดตามเท่านั้น ไม่ใช่คำแนะนำทางการเงิน ภาษี
+          หรือการลงทุน โปรดตรวจสอบกับรายการเดินบัญชีจริงของคุณก่อนตัดสินใจเรื่องการเงิน
         </p>
       </section>
 
@@ -61,9 +64,9 @@ function TermsTh() {
       <section>
         <h2>5. การให้บริการ</h2>
         <p>
-          แอปให้บริการตามสภาพที่เป็นอยู่ เราพยายามให้แอปทำงานได้ต่อเนื่องและข้อมูลถูกต้อง แต่ไม่รับประกันว่าจะไม่มีข้อผิดพลาด
-          ไม่หยุดชะงัก หรือการแจ้งเตือนจะถึงตรงเวลาทุกครั้ง เราอาจปรับปรุง เปลี่ยน หรือหยุดฟีเจอร์ได้
-          แนะนำให้สำรองข้อมูลเป็นไฟล์ JSON ที่หน้าโปรไฟล์เก็บไว้เป็นระยะ
+          แอปให้บริการตามสภาพที่เป็นอยู่ เราพยายามให้แอปทำงานได้ต่อเนื่องและข้อมูลถูกต้อง
+          แต่ไม่รับประกันว่าจะไม่มีข้อผิดพลาด ไม่หยุดชะงัก หรือการแจ้งเตือนจะถึงตรงเวลาทุกครั้ง เราอาจปรับปรุง เปลี่ยน
+          หรือหยุดฟีเจอร์ได้ แนะนำให้สำรองข้อมูลเป็นไฟล์ JSON ที่หน้าโปรไฟล์เก็บไว้เป็นระยะ
         </p>
       </section>
 
@@ -85,37 +88,53 @@ function TermsTh() {
 
       <section>
         <h2>8. การเปลี่ยนแปลงข้อกำหนด</h2>
-        <p>เราอาจปรับปรุงข้อกำหนดนี้ หากเปลี่ยนแปลงสาระสำคัญจะแจ้งในแอป การใช้งานต่อหลังจากนั้นถือว่ายอมรับข้อกำหนดใหม่</p>
+        <p>
+          เราอาจปรับปรุงข้อกำหนดนี้ หากเปลี่ยนแปลงสาระสำคัญจะแจ้งในแอป การใช้งานต่อหลังจากนั้นถือว่ายอมรับข้อกำหนดใหม่
+        </p>
       </section>
 
       <section>
         <h2>9. กฎหมายที่ใช้บังคับ</h2>
-        <p>ข้อกำหนดนี้อยู่ภายใต้กฎหมายไทย{CONTACT_EMAIL ? <> หากมีคำถาม ติดต่อ <a href={`mailto:${CONTACT_EMAIL}`} className="font-semibold underline">{CONTACT_EMAIL}</a></> : null}</p>
+        <p>
+          ข้อกำหนดนี้อยู่ภายใต้กฎหมายไทย
+          {CONTACT_EMAIL ? (
+            <>
+              {" "}
+              หากมีคำถาม ติดต่อ{" "}
+              <a href={`mailto:${CONTACT_EMAIL}`} className="font-semibold underline">
+                {CONTACT_EMAIL}
+              </a>
+            </>
+          ) : null}
+        </p>
       </section>
     </>
-  );
+  )
 }
 
 function TermsEn() {
   return (
     <>
       <section>
-        <p>By signing in to and using Tookbaht (&quot;the app&quot;), you agree to these terms. If you don&apos;t agree, please stop using the app.</p>
+        <p>
+          By signing in to and using Tookbaht (&quot;the app&quot;), you agree to these terms. If you don&apos;t agree,
+          please stop using the app.
+        </p>
       </section>
 
       <section>
         <h2>1. What the app is</h2>
         <p>
-          Tookbaht helps you record income, expenses, transfers, subscriptions and personal money goals. It doesn&apos;t connect to banks
-          and never moves or holds money for you. Every number comes from what you enter.
+          Tookbaht helps you record income, expenses, transfers, subscriptions and personal money goals. It doesn&apos;t
+          connect to banks and never moves or holds money for you. Every number comes from what you enter.
         </p>
       </section>
 
       <section>
         <h2>2. Not financial advice</h2>
         <p>
-          Summaries, budgets, alerts and figures in the app are tracking aids only, not financial, tax or investment advice. Check your
-          actual statements before making money decisions.
+          Summaries, budgets, alerts and figures in the app are tracking aids only, not financial, tax or investment
+          advice. Check your actual statements before making money decisions.
         </p>
       </section>
 
@@ -124,7 +143,10 @@ function TermsEn() {
         <ul>
           <li>You sign in with your Google account and are responsible for keeping it secure.</li>
           <li>The data you enter is yours. You can export or delete it at any time in Profile.</li>
-          <li>When tracking money friends owe you, enter only the name you need and no other personal details about other people.</li>
+          <li>
+            When tracking money friends owe you, enter only the name you need and no other personal details about other
+            people.
+          </li>
           <li>
             How we collect and use data is described in the{" "}
             <Link href="/privacy" className="font-semibold underline">
@@ -147,37 +169,52 @@ function TermsEn() {
       <section>
         <h2>5. The service</h2>
         <p>
-          The app is provided as is. We work to keep it running and your data accurate, but can&apos;t guarantee it will be error-free,
-          uninterrupted, or that every notification arrives on time. We may improve, change or stop features. Backing up your data as a
-          JSON file from Profile from time to time is recommended.
+          The app is provided as is. We work to keep it running and your data accurate, but can&apos;t guarantee it will
+          be error-free, uninterrupted, or that every notification arrives on time. We may improve, change or stop
+          features. Backing up your data as a JSON file from Profile from time to time is recommended.
         </p>
       </section>
 
       <section>
         <h2>6. Limitation of liability</h2>
         <p>
-          To the extent the law allows, we aren&apos;t liable for damages from using or being unable to use the app, including money
-          decisions based on it or data loss outside our control.
+          To the extent the law allows, we aren&apos;t liable for damages from using or being unable to use the app,
+          including money decisions based on it or data loss outside our control.
         </p>
       </section>
 
       <section>
         <h2>7. Ending use</h2>
         <p>
-          You can stop using the app and ask to delete your account at any time in Profile. The account closes at once and can be restored
-          by signing in within 30 days; after that all data is deleted for good and can&apos;t be recovered.
+          You can stop using the app and ask to delete your account at any time in Profile. The account closes at once
+          and can be restored by signing in within 30 days; after that all data is deleted for good and can&apos;t be
+          recovered.
         </p>
       </section>
 
       <section>
         <h2>8. Changes</h2>
-        <p>We may update these terms and will let you know in the app about significant changes. Continuing to use the app means you accept them.</p>
+        <p>
+          We may update these terms and will let you know in the app about significant changes. Continuing to use the
+          app means you accept them.
+        </p>
       </section>
 
       <section>
         <h2>9. Governing law</h2>
-        <p>These terms are governed by the laws of Thailand.{CONTACT_EMAIL ? <> Questions? Email <a href={`mailto:${CONTACT_EMAIL}`} className="font-semibold underline">{CONTACT_EMAIL}</a></> : null}</p>
+        <p>
+          These terms are governed by the laws of Thailand.
+          {CONTACT_EMAIL ? (
+            <>
+              {" "}
+              Questions? Email{" "}
+              <a href={`mailto:${CONTACT_EMAIL}`} className="font-semibold underline">
+                {CONTACT_EMAIL}
+              </a>
+            </>
+          ) : null}
+        </p>
       </section>
     </>
-  );
+  )
 }

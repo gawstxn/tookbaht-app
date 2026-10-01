@@ -6,19 +6,19 @@
  */
 export class RealtimeClient {
   constructor(..._args: unknown[]) {
-    void _args;
+    void _args
   }
   channel(): never {
-    throw new Error("Supabase Realtime is not bundled in Tookbaht");
+    throw new Error("Supabase Realtime is not bundled in Tookbaht")
   }
   getChannels() {
-    return [];
+    return []
   }
   async removeChannel() {
-    return "ok" as const;
+    return "ok" as const
   }
   async removeAllChannels() {
-    return [];
+    return []
   }
   async setAuth() {}
 }

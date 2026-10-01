@@ -1,28 +1,28 @@
-"use client";
+"use client"
 
-import { useRouter } from "next/navigation";
-import { useState, useSyncExternalStore } from "react";
-import { balanceLabel, monoFor } from "@/components/AccountEditSheet";
-import { AccountMark } from "@/components/app";
-import { InstallPrompt } from "@/components/InstallPrompt";
-import { MoneyField } from "@/components/MoneyField";
-import { PushToggle } from "@/components/PushToggle";
-import { TermsCheckbox } from "@/components/TermsConsent";
-import { Card, Chip, ListCard, PrimaryButton, SecondaryButton } from "@/components/ui/primitives";
-import { baht } from "@/lib/format";
-import { dismissLegacyData, importData, importLegacyData, readLegacyData } from "@/lib/legacyImport";
-import { seedData } from "@/lib/seed";
-import { useTranslation } from "react-i18next";
-import { useStore } from "@/lib/store";
-import type { AccountKind } from "@/lib/types";
-import { BahtInput } from "@/components/BahtInput";
+import { useRouter } from "next/navigation"
+import { useState, useSyncExternalStore } from "react"
+import { balanceLabel, monoFor } from "@/components/AccountEditSheet"
+import { AccountMark } from "@/components/app"
+import { InstallPrompt } from "@/components/InstallPrompt"
+import { MoneyField } from "@/components/MoneyField"
+import { PushToggle } from "@/components/PushToggle"
+import { TermsCheckbox } from "@/components/TermsConsent"
+import { Card, Chip, ListCard, PrimaryButton, SecondaryButton } from "@/components/ui/primitives"
+import { baht } from "@/lib/format"
+import { dismissLegacyData, importData, importLegacyData, readLegacyData } from "@/lib/legacyImport"
+import { seedData } from "@/lib/seed"
+import { useTranslation } from "react-i18next"
+import { useStore } from "@/lib/store"
+import type { AccountKind } from "@/lib/types"
+import { BahtInput } from "@/components/BahtInput"
 
 interface Starter {
-  name: string;
-  kind: AccountKind;
-  tone: string;
-  on: boolean;
-  balance: string;
+  name: string
+  kind: AccountKind
+  tone: string
+  on: boolean
+  balance: string
 }
 
 // Names are filled in the current language when the screen opens.
@@ -31,15 +31,15 @@ const STARTERS: (Omit<Starter, "name"> & { nameKey: string })[] = [
   { nameKey: "onboarding.starterCash", kind: "cash", tone: "#5f6259", on: true, balance: "" },
   { nameKey: "onboarding.starterSaving", kind: "saving", tone: "#33558f", on: false, balance: "" },
   { nameKey: "onboarding.starterCredit", kind: "credit", tone: "#8a2e22", on: false, balance: "" },
-];
+]
 
 // localStorage only exists in the browser; read it once after hydration.
-const noop = () => () => {};
-let legacyCache: ReturnType<typeof readLegacyData> | undefined;
-const getLegacy = () => (legacyCache === undefined ? (legacyCache = readLegacyData()) : legacyCache);
+const noop = () => () => {}
+let legacyCache: ReturnType<typeof readLegacyData> | undefined
+const getLegacy = () => (legacyCache === undefined ? (legacyCache = readLegacyData()) : legacyCache)
 
 /** Suggested spending budgets, as a share of income. */
-const BUDGET_SHARES = [70, 80, 90];
+const BUDGET_SHARES = [70, 80, 90]
 
 /**
  * First run: pick starter accounts, then monthly goals (skippable), then
@@ -47,56 +47,67 @@ const BUDGET_SHARES = [70, 80, 90];
  * device-only version.
  */
 export default function OnboardingPage() {
-  const router = useRouter();
-  const { user, userId, accounts, addAccount, load, acceptTerms } = useStore();
+  const router = useRouter()
+  const { user, userId, accounts, addAccount, load, acceptTerms } = useStore()
   // Accounts already exist when the page is reopened after step 1.
-  const [step, setStep] = useState<"accounts" | "goals" | "notify">(() => (accounts.length ? "goals" : "accounts"));
-  const [agreed, setAgreed] = useState(false);
-  const { t: tr } = useTranslation();
-  const legacy = useSyncExternalStore(noop, getLegacy, () => null);
-  const [skipLegacy, setSkipLegacy] = useState(false);
-  const [starters, setStarters] = useState<Starter[]>(() => STARTERS.map(({ nameKey, ...s }) => ({ ...s, name: tr(nameKey) })));
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(false);
-  const chosen = starters.filter((s) => s.on && s.name.trim());
+  const [step, setStep] = useState<"accounts" | "goals" | "notify">(() => (accounts.length ? "goals" : "accounts"))
+  const [agreed, setAgreed] = useState(false)
+  const { t: tr } = useTranslation()
+  const legacy = useSyncExternalStore(noop, getLegacy, () => null)
+  const [skipLegacy, setSkipLegacy] = useState(false)
+  const [starters, setStarters] = useState<Starter[]>(() =>
+    STARTERS.map(({ nameKey, ...s }) => ({ ...s, name: tr(nameKey) })),
+  )
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(false)
+  const chosen = starters.filter((s) => s.on && s.name.trim())
 
-  const update = (i: number, p: Partial<Starter>) => setStarters((xs) => xs.map((x, j) => (j === i ? { ...x, ...p } : x)));
+  const update = (i: number, p: Partial<Starter>) =>
+    setStarters((xs) => xs.map((x, j) => (j === i ? { ...x, ...p } : x)))
 
   const start = () => {
-    acceptTerms();
+    acceptTerms()
     for (const s of chosen) {
-      addAccount({ name: s.name.trim(), kind: s.kind, openingBalance: parseFloat(s.balance) || 0, mono: monoFor(s.name), tone: s.tone, fxFeePct: 0 });
+      addAccount({
+        name: s.name.trim(),
+        kind: s.kind,
+        openingBalance: parseFloat(s.balance) || 0,
+        mono: monoFor(s.name),
+        tone: s.tone,
+        fxFeePct: 0,
+      })
     }
     // The per-account toasts would sit over step 2; one "ready" message comes at the end.
-    useStore.getState().dismissToast();
-    setStep("goals");
-  };
+    useStore.getState().dismissToast()
+    setStep("goals")
+  }
 
   const runImport = async (sample = false) => {
-    if (!userId || (!sample && !legacy)) return;
-    acceptTerms();
-    setBusy(true);
-    setError(false);
+    if (!userId || (!sample && !legacy)) return
+    acceptTerms()
+    setBusy(true)
+    setError(false)
     try {
-      if (sample) await importData(userId, seedData());
-      else await importLegacyData(userId, legacy!);
-      await load(userId);
-      router.replace("/");
+      if (sample) await importData(userId, seedData())
+      else await importLegacyData(userId, legacy!)
+      await load(userId)
+      router.replace("/")
     } catch (e) {
-      console.error(e);
-      setError(true);
-      setBusy(false);
+      console.error(e)
+      setError(true)
+      setBusy(false)
     }
-  };
+  }
 
   if (legacy && !skipLegacy) {
     return (
-      <main className="flex min-h-dvh flex-col gap-5 px-6 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[calc(40px+env(safe-area-inset-top)+var(--standalone-top,0px))]">
+      <main className="flex min-h-dvh flex-col gap-5 px-6 pt-[calc(40px+env(safe-area-inset-top)+var(--standalone-top,0px))] pb-[calc(32px+env(safe-area-inset-bottom))]">
         <Heading name={user?.name} />
         <Card className="flex flex-col gap-2 p-5">
           <h2 className="text-base font-semibold">{tr("onboarding.legacyFound")}</h2>
           <p className="text-sm text-muted">
-            {tr("common.accounts", { count: legacy.accounts.length })} · {tr("common.items", { count: legacy.transactions.length })} · {legacy.subscriptions.length} subscriptions
+            {tr("common.accounts", { count: legacy.accounts.length })} ·{" "}
+            {tr("common.items", { count: legacy.transactions.length })} · {legacy.subscriptions.length} subscriptions
           </p>
           <p className="text-sm text-muted">{tr("onboarding.legacyLead")}</p>
         </Card>
@@ -112,22 +123,22 @@ export default function OnboardingPage() {
           </PrimaryButton>
           <SecondaryButton
             onClick={() => {
-              dismissLegacyData();
-              setSkipLegacy(true);
+              dismissLegacyData()
+              setSkipLegacy(true)
             }}
           >
             {tr("onboarding.skip")}
           </SecondaryButton>
         </div>
       </main>
-    );
+    )
   }
 
-  if (step === "goals") return <GoalsStep name={user?.name} onNext={() => setStep("notify")} />;
-  if (step === "notify") return <NotifyStep name={user?.name} accountCount={accounts.length} />;
+  if (step === "goals") return <GoalsStep name={user?.name} onNext={() => setStep("notify")} />
+  if (step === "notify") return <NotifyStep name={user?.name} accountCount={accounts.length} />
 
   return (
-    <main className="flex min-h-dvh flex-col gap-5 px-6 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[calc(40px+env(safe-area-inset-top)+var(--standalone-top,0px))]">
+    <main className="flex min-h-dvh flex-col gap-5 px-6 pt-[calc(40px+env(safe-area-inset-top)+var(--standalone-top,0px))] pb-[calc(32px+env(safe-area-inset-bottom))]">
       <Heading name={user?.name} step={1} />
       <section className="flex flex-col gap-2">
         <h2 className="text-base font-semibold">{tr("onboarding.pick")}</h2>
@@ -176,35 +187,41 @@ export default function OnboardingPage() {
           {tr("onboarding.start")}
         </PrimaryButton>
         {process.env.NEXT_PUBLIC_DEV_LOGIN === "true" ? (
-          <SecondaryButton onClick={() => agreed && void runImport(true)}>{busy ? tr("onboarding.sampling") : tr("onboarding.sample")}</SecondaryButton>
+          <SecondaryButton onClick={() => agreed && void runImport(true)}>
+            {busy ? tr("onboarding.sampling") : tr("onboarding.sample")}
+          </SecondaryButton>
         ) : null}
       </div>
     </main>
-  );
+  )
 }
 
 /** Step 2: monthly income target and spending budget, which drive the budget banner and alerts. */
 function GoalsStep({ name, onNext }: { name?: string; onNext: () => void }) {
-  const { t: tr } = useTranslation();
-  const goals = useStore((s) => s.goals);
-  const setGoals = useStore((s) => s.setGoals);
-  const [income, setIncome] = useState(goals.incomeTarget);
-  const [expense, setExpense] = useState(goals.expenseBudget);
+  const { t: tr } = useTranslation()
+  const goals = useStore((s) => s.goals)
+  const setGoals = useStore((s) => s.setGoals)
+  const [income, setIncome] = useState(goals.incomeTarget)
+  const [expense, setExpense] = useState(goals.expenseBudget)
   const finish = (save: boolean) => {
-    if (save) setGoals({ ...goals, incomeTarget: income, expenseBudget: expense });
+    if (save) setGoals({ ...goals, incomeTarget: income, expenseBudget: expense })
     // One message for the whole setup comes at the end.
-    useStore.getState().dismissToast();
-    onNext();
-  };
-  const left = income - expense;
+    useStore.getState().dismissToast()
+    onNext()
+  }
+  const left = income - expense
 
   return (
-    <main className="flex min-h-dvh flex-col gap-5 px-6 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[calc(40px+env(safe-area-inset-top)+var(--standalone-top,0px))]">
+    <main className="flex min-h-dvh flex-col gap-5 px-6 pt-[calc(40px+env(safe-area-inset-top)+var(--standalone-top,0px))] pb-[calc(32px+env(safe-area-inset-bottom))]">
       <Heading
         name={name}
         step={2}
         action={
-          <button type="button" onClick={() => finish(false)} className="min-h-9 rounded-full px-1 text-sm font-semibold text-muted">
+          <button
+            type="button"
+            onClick={() => finish(false)}
+            className="min-h-9 rounded-full px-1 text-sm font-semibold text-muted"
+          >
             {tr("onboarding.skipGoals")}
           </button>
         }
@@ -214,18 +231,30 @@ function GoalsStep({ name, onNext }: { name?: string; onNext: () => void }) {
         <p className="text-sm text-muted">{tr("onboarding.goalsLead")}</p>
       </section>
       <div className="grid grid-cols-2 gap-2.5">
-        <MoneyField label={tr("goals.incomePerMonth")} icon="in" color="var(--color-income)" value={income} onChange={setIncome} />
-        <MoneyField label={tr("goals.expensePerMonth")} icon="out" color="var(--color-expense)" value={expense} onChange={setExpense} />
+        <MoneyField
+          label={tr("goals.incomePerMonth")}
+          icon="in"
+          color="var(--color-income)"
+          value={income}
+          onChange={setIncome}
+        />
+        <MoneyField
+          label={tr("goals.expensePerMonth")}
+          icon="out"
+          color="var(--color-expense)"
+          value={expense}
+          onChange={setExpense}
+        />
       </div>
       {income > 0 ? (
         <div className="flex flex-wrap gap-1.5">
           {BUDGET_SHARES.map((pct) => {
-            const amount = Math.round((income * pct) / 100 / 100) * 100;
+            const amount = Math.round((income * pct) / 100 / 100) * 100
             return (
               <Chip key={pct} size="sm" on={expense === amount} onClick={() => setExpense(amount)}>
                 {tr("onboarding.suggest", { pct })} · {baht(amount)}
               </Chip>
-            );
+            )
           })}
         </div>
       ) : null}
@@ -245,19 +274,19 @@ function GoalsStep({ name, onNext }: { name?: string; onNext: () => void }) {
         </PrimaryButton>
       </div>
     </main>
-  );
+  )
 }
 
 /** Step 3: add the app to the home screen and turn on reminders (both optional). */
 function NotifyStep({ name, accountCount }: { name?: string; accountCount: number }) {
-  const router = useRouter();
-  const { t: tr } = useTranslation();
+  const router = useRouter()
+  const { t: tr } = useTranslation()
   const finish = () => {
-    useStore.getState().notify(tr("onboarding.ready", { count: accountCount }));
-    router.replace("/");
-  };
+    useStore.getState().notify(tr("onboarding.ready", { count: accountCount }))
+    router.replace("/")
+  }
   return (
-    <main className="flex min-h-dvh flex-col gap-5 px-6 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[calc(40px+env(safe-area-inset-top)+var(--standalone-top,0px))]">
+    <main className="flex min-h-dvh flex-col gap-5 px-6 pt-[calc(40px+env(safe-area-inset-top)+var(--standalone-top,0px))] pb-[calc(32px+env(safe-area-inset-bottom))]">
       <Heading
         name={name}
         step={3}
@@ -281,26 +310,33 @@ function NotifyStep({ name, accountCount }: { name?: string; accountCount: numbe
         </PrimaryButton>
       </div>
     </main>
-  );
+  )
 }
 
 function Heading({ name, step, action }: { name?: string; step?: 1 | 2 | 3; action?: React.ReactNode }) {
-  const { t: tr } = useTranslation();
+  const { t: tr } = useTranslation()
   return (
     <header className="flex flex-col gap-1">
       <div className="flex min-h-9 items-center justify-between gap-3">
-        <span className="text-sm text-muted">{tr("onboarding.welcome")}{name ? ` ${name}` : ""}</span>
+        <span className="text-sm text-muted">
+          {tr("onboarding.welcome")}
+          {name ? ` ${name}` : ""}
+        </span>
         {action}
       </div>
-      <h1 className="font-serif text-[28px] font-bold leading-tight">{tr("onboarding.title")}</h1>
+      <h1 className="font-serif text-[28px] leading-tight font-bold">{tr("onboarding.title")}</h1>
       {step ? (
         <div className="mt-1 flex items-center gap-2" aria-label={tr("onboarding.step", { n: step })}>
           {[1, 2, 3].map((n) => (
-            <span key={n} aria-hidden="true" className={n <= step ? "h-1.5 w-6 rounded-full bg-ink" : "h-1.5 w-6 rounded-full bg-chip"} />
+            <span
+              key={n}
+              aria-hidden="true"
+              className={n <= step ? "h-1.5 w-6 rounded-full bg-ink" : "h-1.5 w-6 rounded-full bg-chip"}
+            />
           ))}
           <span className="text-xs text-muted">{tr("onboarding.step", { n: step })}</span>
         </div>
       ) : null}
     </header>
-  );
+  )
 }

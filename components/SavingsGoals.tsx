@@ -1,31 +1,35 @@
-"use client";
+"use client"
 
-import { useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { accountBalance } from "@/lib/selectors";
-import { MONO_TONES } from "@/lib/constants";
-import { baht, monthKey, monthLabel, todayISO } from "@/lib/format";
-import { endOfMonth, savingsProgress } from "@/lib/savings";
-import { useStore } from "@/lib/store";
-import type { SavingsGoal } from "@/lib/types";
-import { AmountInput } from "./AmountInput";
-import { ConfirmSheet } from "./ConfirmSheet";
-import { MonthSheet } from "./pickers";
-import { Icon } from "./ui/Icon";
-import { Bar, Card, Chip, PickerRow, PrimaryButton, SecondaryButton, Sheet, cx } from "./ui/primitives";
+import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
+import { accountBalance } from "@/lib/selectors"
+import { MONO_TONES } from "@/lib/constants"
+import { baht, monthKey, monthLabel, todayISO } from "@/lib/format"
+import { endOfMonth, savingsProgress } from "@/lib/savings"
+import { useStore } from "@/lib/store"
+import type { SavingsGoal } from "@/lib/types"
+import { AmountInput } from "./AmountInput"
+import { ConfirmSheet } from "./ConfirmSheet"
+import { MonthSheet } from "./pickers"
+import { Icon } from "./ui/Icon"
+import { Bar, Card, Chip, PickerRow, PrimaryButton, SecondaryButton, Sheet, cx } from "./ui/primitives"
 
 /** Savings goals on the goals screen: progress, what to save per month, add / top up / edit. */
 export function SavingsGoals() {
-  const { t } = useTranslation();
-  const goals = useStore((s) => s.savingsGoals);
-  const [editing, setEditing] = useState<SavingsGoal | "new" | null>(null);
-  const [open, setOpen] = useState<SavingsGoal | null>(null);
+  const { t } = useTranslation()
+  const goals = useStore((s) => s.savingsGoals)
+  const [editing, setEditing] = useState<SavingsGoal | "new" | null>(null)
+  const [open, setOpen] = useState<SavingsGoal | null>(null)
 
   return (
     <section className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold">{t("savings.title")}</h2>
-        <button type="button" onClick={() => setEditing("new")} className="flex min-h-9 items-center gap-1 text-[13px] font-semibold">
+        <button
+          type="button"
+          onClick={() => setEditing("new")}
+          className="flex min-h-9 items-center gap-1 text-[13px] font-semibold"
+        >
           <Icon name="plus" size={16} strokeWidth={2.2} />
           {t("savings.add")}
         </button>
@@ -33,7 +37,11 @@ export function SavingsGoals() {
       {goals.length ? (
         goals.map((g) => <GoalCard key={g.id} goal={g} onClick={() => setOpen(g)} />)
       ) : (
-        <button type="button" onClick={() => setEditing("new")} className="rounded-[20px] border border-dashed border-line-strong px-4 py-5 text-center text-sm text-muted">
+        <button
+          type="button"
+          onClick={() => setEditing("new")}
+          className="rounded-[20px] border border-dashed border-line-strong px-4 py-5 text-center text-sm text-muted"
+        >
           {t("savings.empty")}
         </button>
       )}
@@ -41,26 +49,26 @@ export function SavingsGoals() {
         goal={open ? (goals.find((g) => g.id === open.id) ?? null) : null}
         onClose={() => setOpen(null)}
         onEdit={(g) => {
-          setOpen(null);
-          setEditing(g);
+          setOpen(null)
+          setEditing(g)
         }}
       />
       <GoalFormSheet goal={editing} onClose={() => setEditing(null)} />
     </section>
-  );
+  )
 }
 
 function useProgress(goal: SavingsGoal) {
-  const accounts = useStore((s) => s.accounts);
-  const txs = useStore((s) => s.transactions);
-  const account = goal.accountId ? accounts.find((a) => a.id === goal.accountId) : undefined;
-  const balance = useMemo(() => (account ? accountBalance(account, txs) : undefined), [account, txs]);
-  return { progress: savingsProgress(goal, todayISO(), balance), account };
+  const accounts = useStore((s) => s.accounts)
+  const txs = useStore((s) => s.transactions)
+  const account = goal.accountId ? accounts.find((a) => a.id === goal.accountId) : undefined
+  const balance = useMemo(() => (account ? accountBalance(account, txs) : undefined), [account, txs])
+  return { progress: savingsProgress(goal, todayISO(), balance), account }
 }
 
 function GoalCard({ goal, onClick }: { goal: SavingsGoal; onClick: () => void }) {
-  const { t } = useTranslation();
-  const { progress: p } = useProgress(goal);
+  const { t } = useTranslation()
+  const { progress: p } = useProgress(goal)
   return (
     <button type="button" onClick={onClick} className="text-left">
       <Card className="flex flex-col gap-2 px-4 py-3.5">
@@ -72,28 +80,39 @@ function GoalCard({ goal, onClick }: { goal: SavingsGoal; onClick: () => void })
           </span>
         </div>
         <Bar value={p.pct} height={6} track="var(--color-divider)" color={p.done ? "var(--color-income)" : goal.tone} />
-        <span className={cx("text-xs", p.overdue ? "font-semibold text-danger" : "text-muted")}>{statusText(t, goal, p)}</span>
+        <span className={cx("text-xs", p.overdue ? "font-semibold text-danger" : "text-muted")}>
+          {statusText(t, goal, p)}
+        </span>
       </Card>
     </button>
-  );
+  )
 }
 
-type T = ReturnType<typeof useTranslation>["t"];
+type T = ReturnType<typeof useTranslation>["t"]
 function statusText(t: T, goal: SavingsGoal, p: ReturnType<typeof savingsProgress>) {
-  if (p.done) return t("savings.done");
-  if (p.overdue) return t("savings.overdue", { amount: baht(p.left) });
-  if (p.perMonth !== null && goal.deadline) return t("savings.perMonth", { amount: baht(p.perMonth), month: monthLabel(monthKey(goal.deadline)) });
-  return t("savings.left", { amount: baht(p.left) });
+  if (p.done) return t("savings.done")
+  if (p.overdue) return t("savings.overdue", { amount: baht(p.left) })
+  if (p.perMonth !== null && goal.deadline)
+    return t("savings.perMonth", { amount: baht(p.perMonth), month: monthLabel(monthKey(goal.deadline)) })
+  return t("savings.left", { amount: baht(p.left) })
 }
 
 /** A goal's detail: add to it (manual goals), edit or delete. */
-function GoalSheet({ goal, onClose, onEdit }: { goal: SavingsGoal | null; onClose: () => void; onEdit: (g: SavingsGoal) => void }) {
-  const { t } = useTranslation();
-  const deleteSavingsGoal = useStore((s) => s.deleteSavingsGoal);
-  const [shown, setShown] = useState<SavingsGoal | null>(goal);
-  if (goal && goal !== shown) setShown(goal);
-  const [confirming, setConfirming] = useState(false);
-  if (!goal && confirming) setConfirming(false);
+function GoalSheet({
+  goal,
+  onClose,
+  onEdit,
+}: {
+  goal: SavingsGoal | null
+  onClose: () => void
+  onEdit: (g: SavingsGoal) => void
+}) {
+  const { t } = useTranslation()
+  const deleteSavingsGoal = useStore((s) => s.deleteSavingsGoal)
+  const [shown, setShown] = useState<SavingsGoal | null>(goal)
+  if (goal && goal !== shown) setShown(goal)
+  const [confirming, setConfirming] = useState(false)
+  if (!goal && confirming) setConfirming(false)
   return (
     <>
       <Sheet open={!!goal && !confirming} onClose={onClose} title={shown?.name ?? ""}>
@@ -106,30 +125,40 @@ function GoalSheet({ goal, onClose, onEdit }: { goal: SavingsGoal | null; onClos
         lead={t("savings.deleteLead")}
         confirmLabel={t("savings.delete")}
         onConfirm={() => {
-          if (shown) deleteSavingsGoal(shown.id);
-          onClose();
+          if (shown) deleteSavingsGoal(shown.id)
+          onClose()
         }}
       />
     </>
-  );
+  )
 }
 
-function GoalDetail({ goal, onDelete, onEdit }: { goal: SavingsGoal; onDelete: () => void; onEdit: (g: SavingsGoal) => void }) {
-  const { t } = useTranslation();
-  const addToSavings = useStore((s) => s.addToSavings);
-  const { progress: p, account } = useProgress(goal);
-  const [amount, setAmount] = useState("");
-  const value = parseFloat(amount) || 0;
+function GoalDetail({
+  goal,
+  onDelete,
+  onEdit,
+}: {
+  goal: SavingsGoal
+  onDelete: () => void
+  onEdit: (g: SavingsGoal) => void
+}) {
+  const { t } = useTranslation()
+  const addToSavings = useStore((s) => s.addToSavings)
+  const { progress: p, account } = useProgress(goal)
+  const [amount, setAmount] = useState("")
+  const value = parseFloat(amount) || 0
 
   return (
     <>
       <div className="flex flex-col gap-2">
-        <span className="font-mono text-[30px] font-semibold leading-tight">
+        <span className="font-mono text-[30px] leading-tight font-semibold">
           {baht(p.saved)}
           <span className="text-[15px] text-muted"> / {baht(goal.target)}</span>
         </span>
         <Bar value={p.pct} height={8} track="var(--color-divider)" color={p.done ? "var(--color-income)" : goal.tone} />
-        <span className={cx("text-sm", p.overdue ? "font-semibold text-danger" : "text-muted")}>{statusText(t, goal, p)}</span>
+        <span className={cx("text-sm", p.overdue ? "font-semibold text-danger" : "text-muted")}>
+          {statusText(t, goal, p)}
+        </span>
         {account ? <span className="text-xs text-faint">{t("savings.linkedHint", { name: account.name })}</span> : null}
       </div>
       {!goal.accountId ? (
@@ -138,8 +167,8 @@ function GoalDetail({ goal, onDelete, onEdit }: { goal: SavingsGoal; onDelete: (
           <div className="grid grid-cols-2 gap-2">
             <SecondaryButton
               onClick={() => {
-                addToSavings(goal.id, -Math.min(value, goal.saved));
-                setAmount("");
+                addToSavings(goal.id, -Math.min(value, goal.saved))
+                setAmount("")
               }}
             >
               {t("savings.takeOut")}
@@ -147,8 +176,8 @@ function GoalDetail({ goal, onDelete, onEdit }: { goal: SavingsGoal; onDelete: (
             <PrimaryButton
               disabled={value <= 0}
               onClick={() => {
-                addToSavings(goal.id, value);
-                setAmount("");
+                addToSavings(goal.id, value)
+                setAmount("")
               }}
             >
               {t("savings.putIn")}
@@ -161,44 +190,53 @@ function GoalDetail({ goal, onDelete, onEdit }: { goal: SavingsGoal; onDelete: (
         {t("savings.delete")}
       </SecondaryButton>
     </>
-  );
+  )
 }
 
 /** New goal or edit: name, target, month to reach it by, and where the money is kept. */
 function GoalFormSheet({ goal, onClose }: { goal: SavingsGoal | "new" | null; onClose: () => void }) {
-  const { t } = useTranslation();
-  const accounts = useStore((s) => s.accounts);
-  const addSavingsGoal = useStore((s) => s.addSavingsGoal);
-  const updateSavingsGoal = useStore((s) => s.updateSavingsGoal);
-  const existing = goal && goal !== "new" ? goal : null;
-  const [name, setName] = useState("");
-  const [target, setTarget] = useState("");
-  const [month, setMonth] = useState("");
-  const [accountId, setAccountId] = useState("");
-  const [picking, setPicking] = useState(false);
-  const [shown, setShown] = useState<typeof goal>(null);
+  const { t } = useTranslation()
+  const accounts = useStore((s) => s.accounts)
+  const addSavingsGoal = useStore((s) => s.addSavingsGoal)
+  const updateSavingsGoal = useStore((s) => s.updateSavingsGoal)
+  const existing = goal && goal !== "new" ? goal : null
+  const [name, setName] = useState("")
+  const [target, setTarget] = useState("")
+  const [month, setMonth] = useState("")
+  const [accountId, setAccountId] = useState("")
+  const [picking, setPicking] = useState(false)
+  const [shown, setShown] = useState<typeof goal>(null)
   if (goal && goal !== shown) {
-    setShown(goal);
-    setName(existing?.name ?? "");
-    setTarget(existing ? String(existing.target) : "");
-    setMonth(existing?.deadline ? monthKey(existing.deadline) : "");
-    setAccountId(existing?.accountId ?? "");
+    setShown(goal)
+    setName(existing?.name ?? "")
+    setTarget(existing ? String(existing.target) : "")
+    setMonth(existing?.deadline ? monthKey(existing.deadline) : "")
+    setAccountId(existing?.accountId ?? "")
   }
-  const thisMonth = monthKey(todayISO());
-  const value = parseFloat(target) || 0;
-  const canSave = name.trim().length > 0 && value > 0;
-  const savers = accounts.filter((a) => a.kind !== "credit");
+  const thisMonth = monthKey(todayISO())
+  const value = parseFloat(target) || 0
+  const canSave = name.trim().length > 0 && value > 0
+  const savers = accounts.filter((a) => a.kind !== "credit")
 
   const save = () => {
-    const fields = { name: name.trim(), target: value, deadline: month ? endOfMonth(month) : null, accountId: accountId || null };
-    if (existing) updateSavingsGoal(existing.id, fields);
-    else addSavingsGoal({ ...fields, saved: 0, tone: MONO_TONES[1] });
-    onClose();
-  };
+    const fields = {
+      name: name.trim(),
+      target: value,
+      deadline: month ? endOfMonth(month) : null,
+      accountId: accountId || null,
+    }
+    if (existing) updateSavingsGoal(existing.id, fields)
+    else addSavingsGoal({ ...fields, saved: 0, tone: MONO_TONES[1] })
+    onClose()
+  }
 
   return (
     <>
-      <Sheet open={!!goal && !picking} onClose={onClose} title={existing ? t("savings.editTitle") : t("savings.newTitle")}>
+      <Sheet
+        open={!!goal && !picking}
+        onClose={onClose}
+        title={existing ? t("savings.editTitle") : t("savings.newTitle")}
+      >
         <input
           value={name}
           maxLength={60}
@@ -209,7 +247,11 @@ function GoalFormSheet({ goal, onClose }: { goal: SavingsGoal | "new" | null; on
         />
         <AmountInput label={t("savings.target")} value={target} onChange={setTarget} />
         <Card className="px-4">
-          <PickerRow label={t("savings.by")} value={month ? monthLabel(month) : t("savings.noDeadline")} onClick={() => setPicking(true)} />
+          <PickerRow
+            label={t("savings.by")}
+            value={month ? monthLabel(month) : t("savings.noDeadline")}
+            onClick={() => setPicking(true)}
+          />
         </Card>
         <div className="flex flex-col gap-2">
           <span className="text-[13px] text-muted">{t("savings.keptIn")}</span>
@@ -223,7 +265,9 @@ function GoalFormSheet({ goal, onClose }: { goal: SavingsGoal | "new" | null; on
               </Chip>
             ))}
           </div>
-          <span className="text-xs leading-relaxed text-faint">{accountId ? t("savings.linkedLead") : t("savings.manualLead")}</span>
+          <span className="text-xs leading-relaxed text-faint">
+            {accountId ? t("savings.linkedLead") : t("savings.manualLead")}
+          </span>
         </div>
         <PrimaryButton disabled={!canSave} onClick={save}>
           {t("common.save")}
@@ -240,5 +284,5 @@ function GoalFormSheet({ goal, onClose }: { goal: SavingsGoal | "new" | null; on
         clearLabel={t("savings.noDeadline")}
       />
     </>
-  );
+  )
 }

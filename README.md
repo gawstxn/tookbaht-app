@@ -31,6 +31,7 @@
 ## Features
 
 ### Logging money
+
 - Income, expenses and transfers on a number pad that also adds up (`120+85` saves 205). Edit, delete, undo.
 - New entries preselect the category and account you use most.
 - **Read a slip:** pick a bank transfer slip photo and the amount, date and memo are filled in, or pick up to 10 and save them together after a check. Read on the device with tesseract.js (Thai); the photos never leave the phone.
@@ -40,17 +41,20 @@
 - Activity list with search and filters (type, account, category, tag, date range).
 
 ### Every month
+
 - **Shared subscriptions:** add the friends who share a subscription or recurring bill; each charge the database logs also records what they owe.
 - **Subscriptions** with service logos, priced in baht or USD (converted at that day's rate plus the card's fee, optional +7% VAT); a week before a yearly one renews the app asks whether it's still used, and each shows what it has cost so far.
 - **Recurring entries** (salary, rent, monthly saving) logged by the database on schedule, even when the app is closed.
 - **Installments** counted in the month each one is paid, stopping after the last.
 
 ### Cards and pay-later (e.g. SPayLater)
+
 - Real remaining limit (the full price comes off on purchase, then back one installment at a time).
 - Buy in installments: enter the price, months and the per-installment amount the shop shows; interest is worked out.
 - Due day, what's due this cycle, and a "bill paid" transfer.
 
 ### Budgets, goals and insights
+
 - Monthly income target, overall and per-category budgets with a "spent by today" pace line, and what's left to spend today.
 - Budget rollover per category, savings goals with the amount to put aside each month.
 - **Tax deductions:** mark expenses as life / health insurance, RMF, ThaiESG, donations, home loan interest and more, and see each tax year's totals against the fixed caps.
@@ -62,6 +66,7 @@
 - In-app notification center and Web Push: charges due tomorrow, payment due dates, budgets at 80% / over, price rises, the monthly summary, and an optional 8 pm "anything to log?" nudge.
 
 ### Your data
+
 - Google sign-in, row-level security on every table, app lock with a 6-digit PIN or Face ID (passkey).
 - JSON backup and restore, CSV export, account deletion with a 30-day grace period.
 - Light / dark / system theme, Thai / English, and a "what's new" dialog after each update.
@@ -93,24 +98,24 @@ After pulling new migrations run `npx supabase migration up`; to start over, `np
 
 ### Environment variables
 
-| Variable | Where it's used |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser and server |
-| `SUPABASE_SECRET_KEY` | Server only: cron jobs, exchange rates |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web Push (`npx web-push generate-vapid-keys`) |
-| `CRON_SECRET` | Vercel Cron authorization |
-| `NEXT_PUBLIC_CONTACT_EMAIL` | Contact on the privacy and terms pages (optional) |
-| `NEXT_PUBLIC_DEV_LOGIN` | Local one-tap sign-in. **Never set in production.** |
+| Variable                                                             | Where it's used                                     |
+| -------------------------------------------------------------------- | --------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`   | Browser and server                                  |
+| `SUPABASE_SECRET_KEY`                                                | Server only: cron jobs, exchange rates              |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web Push (`npx web-push generate-vapid-keys`)       |
+| `CRON_SECRET`                                                        | Vercel Cron authorization                           |
+| `NEXT_PUBLIC_CONTACT_EMAIL`                                          | Contact on the privacy and terms pages (optional)   |
+| `NEXT_PUBLIC_DEV_LOGIN`                                              | Local one-tap sign-in. **Never set in production.** |
 
 ## Commands and tests
 
-| Command | What it does |
-|---|---|
-| `npm run dev` | Dev server |
-| `npm test` | Vitest: unit tests (`tests/unit`) and database tests (`tests/db`) that apply every migration to an in-memory Postgres (PGlite), starting from Supabase's default privileges. No Docker needed. |
-| `npm run lint` | ESLint |
-| `npm run build` | Production build (also type-checks) |
-| `npm run start` | Serve the production build: use it to check the service worker, push and animation smoothness |
+| Command         | What it does                                                                                                                                                                                   |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`   | Dev server                                                                                                                                                                                     |
+| `npm test`      | Vitest: unit tests (`tests/unit`) and database tests (`tests/db`) that apply every migration to an in-memory Postgres (PGlite), starting from Supabase's default privileges. No Docker needed. |
+| `npm run lint`  | ESLint                                                                                                                                                                                         |
+| `npm run build` | Production build (also type-checks)                                                                                                                                                            |
+| `npm run start` | Serve the production build: use it to check the service worker, push and animation smoothness                                                                                                  |
 
 CI (GitHub Actions) runs lint, tests and a build on every pull request. Conventions for contributors (and coding agents) are in [AGENTS.md](AGENTS.md).
 

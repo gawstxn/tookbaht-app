@@ -1,44 +1,56 @@
-"use client";
+"use client"
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { PushScreen } from "@/components/app";
-import { MoneyField } from "@/components/MoneyField";
-import { Icon } from "@/components/ui/Icon";
-import { ListCard, PrimaryButton, PushHeader, SwitchRow, cx } from "@/components/ui/primitives";
-import { EXPENSE_CATEGORIES } from "@/lib/constants";
-import { baht } from "@/lib/format";
-import { useTranslation } from "react-i18next";
-import { useGoBack } from "@/lib/nav";
-import { useStore } from "@/lib/store";
+import { useRouter } from "next/navigation"
+import { useState } from "react"
+import { PushScreen } from "@/components/app"
+import { MoneyField } from "@/components/MoneyField"
+import { Icon } from "@/components/ui/Icon"
+import { ListCard, PrimaryButton, PushHeader, SwitchRow, cx } from "@/components/ui/primitives"
+import { EXPENSE_CATEGORIES } from "@/lib/constants"
+import { baht } from "@/lib/format"
+import { useTranslation } from "react-i18next"
+import { useGoBack } from "@/lib/nav"
+import { useStore } from "@/lib/store"
 
-const toNum = (s: string) => parseInt(s.replace(/[^0-9]/g, ""), 10) || 0;
-const fmt = (n: number) => (n ? n.toLocaleString("en-US") : "");
+const toNum = (s: string) => parseInt(s.replace(/[^0-9]/g, ""), 10) || 0
+const fmt = (n: number) => (n ? n.toLocaleString("en-US") : "")
 
 export default function GoalEditPage() {
-  const router = useRouter();
-  const goBack = useGoBack("/goals");
-  const goals = useStore((s) => s.goals);
-  const setGoals = useStore((s) => s.setGoals);
-  const { t: tr } = useTranslation();
-  const [income, setIncome] = useState(goals.incomeTarget);
-  const [expense, setExpense] = useState(goals.expenseBudget);
-  const [alert, setAlert] = useState(goals.alertAt80);
-  const [budgets, setBudgets] = useState<Record<string, number>>(goals.categoryBudgets);
-  const [rollover, setRollover] = useState<string[]>(goals.rolloverKeys ?? []);
+  const router = useRouter()
+  const goBack = useGoBack("/goals")
+  const goals = useStore((s) => s.goals)
+  const setGoals = useStore((s) => s.setGoals)
+  const { t: tr } = useTranslation()
+  const [income, setIncome] = useState(goals.incomeTarget)
+  const [expense, setExpense] = useState(goals.expenseBudget)
+  const [alert, setAlert] = useState(goals.alertAt80)
+  const [budgets, setBudgets] = useState<Record<string, number>>(goals.categoryBudgets)
+  const [rollover, setRollover] = useState<string[]>(goals.rolloverKeys ?? [])
 
-  const cats = EXPENSE_CATEGORIES.filter((c) => c.key !== "other");
-  const allocated = Object.values(budgets).reduce((a, b) => a + b, 0);
-  const over = expense > 0 && allocated > expense;
-  const save = income - expense;
+  const cats = EXPENSE_CATEGORIES.filter((c) => c.key !== "other")
+  const allocated = Object.values(budgets).reduce((a, b) => a + b, 0)
+  const over = expense > 0 && allocated > expense
+  const save = income - expense
 
   return (
     <PushScreen>
       <PushHeader title={tr("goals.set")} onBack={() => goBack()} />
 
       <div className="grid grid-cols-2 gap-2.5">
-        <MoneyField label={tr("goals.incomePerMonth")} icon="in" color="var(--color-income)" value={income} onChange={setIncome} />
-        <MoneyField label={tr("goals.expensePerMonth")} icon="out" color="var(--color-expense)" value={expense} onChange={setExpense} />
+        <MoneyField
+          label={tr("goals.incomePerMonth")}
+          icon="in"
+          color="var(--color-income)"
+          value={income}
+          onChange={setIncome}
+        />
+        <MoneyField
+          label={tr("goals.expensePerMonth")}
+          icon="out"
+          color="var(--color-expense)"
+          value={expense}
+          onChange={setExpense}
+        />
       </div>
 
       <div className="flex items-center gap-2.5 rounded-2xl bg-hero px-4 py-3.5 text-[13px] text-on-hero">
@@ -54,7 +66,10 @@ export default function GoalEditPage() {
         <div className="flex items-baseline justify-between">
           <h2 className="text-base font-semibold">{tr("goals.perCategory")}</h2>
           <span className={over ? "text-xs font-medium text-danger" : "text-xs font-medium text-muted"}>
-            {over ? tr("goals.overTotal", { amount: baht(allocated - expense) }) : tr("goals.allocated", { amount: baht(allocated) }) + (expense ? tr("goals.allocatedOf", { amount: baht(expense) }) : "")}
+            {over
+              ? tr("goals.overTotal", { amount: baht(allocated - expense) })
+              : tr("goals.allocated", { amount: baht(allocated) }) +
+                (expense ? tr("goals.allocatedOf", { amount: baht(expense) }) : "")}
           </span>
         </div>
         <ListCard>
@@ -68,8 +83,8 @@ export default function GoalEditPage() {
                   aria-pressed={rollover.includes(c.key)}
                   aria-label={tr("goals.rolloverFor", { label: c.label })}
                   onClick={(e) => {
-                    e.preventDefault();
-                    setRollover((r) => (r.includes(c.key) ? r.filter((k) => k !== c.key) : [...r, c.key]));
+                    e.preventDefault()
+                    setRollover((r) => (r.includes(c.key) ? r.filter((k) => k !== c.key) : [...r, c.key]))
                   }}
                   className={cx(
                     "flex h-9 shrink-0 items-center gap-1 rounded-full px-2.5 text-xs font-semibold",
@@ -105,13 +120,19 @@ export default function GoalEditPage() {
         <PrimaryButton
           once
           onClick={() => {
-            setGoals({ incomeTarget: income, expenseBudget: expense, categoryBudgets: budgets, alertAt80: alert, rolloverKeys: rollover.filter((k) => (budgets[k] ?? 0) > 0) });
-            router.replace("/goals");
+            setGoals({
+              incomeTarget: income,
+              expenseBudget: expense,
+              categoryBudgets: budgets,
+              alertAt80: alert,
+              rolloverKeys: rollover.filter((k) => (budgets[k] ?? 0) > 0),
+            })
+            router.replace("/goals")
           }}
         >
           {tr("goals.save")}
         </PrimaryButton>
       </div>
     </PushScreen>
-  );
+  )
 }

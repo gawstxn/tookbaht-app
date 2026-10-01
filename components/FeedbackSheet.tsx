@@ -1,22 +1,22 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { lastPathExcept } from "@/lib/nav";
-import { useStore } from "@/lib/store";
-import { PrimaryButton, Sheet } from "./ui/primitives";
+import { useState } from "react"
+import { useTranslation } from "react-i18next"
+import { lastPathExcept } from "@/lib/nav"
+import { useStore } from "@/lib/store"
+import { PrimaryButton, Sheet } from "./ui/primitives"
 
 /** "แจ้งปัญหา": a message plus the app version and the screen before the profile. */
 export function FeedbackSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { t } = useTranslation();
-  const sendFeedback = useStore((s) => s.sendFeedback);
-  const [message, setMessage] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [page, setPage] = useState("");
-  const [wasOpen, setWasOpen] = useState(open);
+  const { t } = useTranslation()
+  const sendFeedback = useStore((s) => s.sendFeedback)
+  const [message, setMessage] = useState("")
+  const [busy, setBusy] = useState(false)
+  const [page, setPage] = useState("")
+  const [wasOpen, setWasOpen] = useState(open)
   if (open !== wasOpen) {
-    setWasOpen(open);
-    if (open) setPage(lastPathExcept("/profile"));
+    setWasOpen(open)
+    if (open) setPage(lastPathExcept("/profile"))
   }
 
   return (
@@ -37,16 +37,16 @@ export function FeedbackSheet({ open, onClose }: { open: boolean; onClose: () =>
       <PrimaryButton
         disabled={!message.trim() || busy}
         onClick={async () => {
-          setBusy(true);
-          const sent = await sendFeedback(message, page);
-          setBusy(false);
-          if (!sent) return;
-          setMessage("");
-          onClose();
+          setBusy(true)
+          const sent = await sendFeedback(message, page)
+          setBusy(false)
+          if (!sent) return
+          setMessage("")
+          onClose()
         }}
       >
         {busy ? t("feedback.sending") : t("feedback.send")}
       </PrimaryButton>
     </Sheet>
-  );
+  )
 }

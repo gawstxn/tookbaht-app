@@ -1,6 +1,6 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
+import { defineConfig, globalIgnores } from "eslint/config"
+import nextVitals from "eslint-config-next/core-web-vitals"
+import nextTs from "eslint-config-next/typescript"
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -15,6 +15,6 @@ const eslintConfig = defineConfig([
     // OCR engine copied from node_modules (scripts/copy-ocr-assets.mjs).
     "public/ocr/**",
   ]),
-]);
+])
 
-export default eslintConfig;
+export default eslintConfig

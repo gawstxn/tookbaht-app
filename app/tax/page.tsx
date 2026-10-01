@@ -1,29 +1,29 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { PushScreen, TxRow } from "@/components/app";
-import { TxDetailSheet } from "@/components/TxDetailSheet";
-import { Icon } from "@/components/ui/Icon";
-import { Bar, Card, Chip, Empty, HeroCard, ListCard, PushHeader, Sheet } from "@/components/ui/primitives";
-import { baht, displayYear, todayISO } from "@/lib/format";
-import { useGoBack } from "@/lib/nav";
-import { useStore } from "@/lib/store";
-import { LIFE_HEALTH_CAP, taxYear, taxYears, type TaxLine, type TaxType } from "@/lib/tax";
-import type { Transaction } from "@/lib/types";
+import { useState } from "react"
+import { useTranslation } from "react-i18next"
+import { PushScreen, TxRow } from "@/components/app"
+import { TxDetailSheet } from "@/components/TxDetailSheet"
+import { Icon } from "@/components/ui/Icon"
+import { Bar, Card, Chip, Empty, HeroCard, ListCard, PushHeader, Sheet } from "@/components/ui/primitives"
+import { baht, displayYear, todayISO } from "@/lib/format"
+import { useGoBack } from "@/lib/nav"
+import { useStore } from "@/lib/store"
+import { LIFE_HEALTH_CAP, taxYear, taxYears, type TaxLine, type TaxType } from "@/lib/tax"
+import type { Transaction } from "@/lib/types"
 
 /** Expenses marked as tax deductions, totalled per kind for a tax (calendar) year. */
 export default function TaxPage() {
-  const { t } = useTranslation();
-  const goBack = useGoBack("/insights");
-  const transactions = useStore((s) => s.transactions);
-  const current = todayISO().slice(0, 4);
-  const years = taxYears(transactions, current);
-  const [year, setYear] = useState(current);
-  const { lines, total, lifeHealthOver } = taxYear(transactions, year);
-  const [open, setOpen] = useState<TaxType | null>(null);
-  const [selected, setSelected] = useState<Transaction | null>(null);
-  const line = lines.find((l) => l.key === open) ?? null;
+  const { t } = useTranslation()
+  const goBack = useGoBack("/insights")
+  const transactions = useStore((s) => s.transactions)
+  const current = todayISO().slice(0, 4)
+  const years = taxYears(transactions, current)
+  const [year, setYear] = useState(current)
+  const { lines, total, lifeHealthOver } = taxYear(transactions, year)
+  const [open, setOpen] = useState<TaxType | null>(null)
+  const [selected, setSelected] = useState<Transaction | null>(null)
+  const line = lines.find((l) => l.key === open) ?? null
 
   return (
     <PushScreen>
@@ -42,7 +42,7 @@ export default function TaxPage() {
       <HeroCard label={t("tax.title")}>
         <div className="flex flex-col gap-1">
           <span className="text-[13px] text-on-ink-muted">{t("tax.totalIn", { year: displayYear(Number(year)) })}</span>
-          <span className="font-mono text-4xl font-semibold leading-tight tracking-tight">{baht(total)}</span>
+          <span className="font-mono text-4xl leading-tight font-semibold tracking-tight">{baht(total)}</span>
         </div>
         <span className="text-xs text-on-ink-muted">{t("tax.fileBy", { year: displayYear(Number(year) + 1) })}</span>
       </HeroCard>
@@ -58,7 +58,10 @@ export default function TaxPage() {
       )}
 
       {lifeHealthOver > 0 ? (
-        <p className="flex items-start gap-2 rounded-2xl bg-warn-tint px-3.5 py-3 text-xs leading-relaxed" style={{ color: "var(--color-warn-ink)" }}>
+        <p
+          className="flex items-start gap-2 rounded-2xl bg-warn-tint px-3.5 py-3 text-xs leading-relaxed"
+          style={{ color: "var(--color-warn-ink)" }}
+        >
           <Icon name="alert" size={16} strokeWidth={2} className="mt-px shrink-0" />
           {t("tax.lifeHealthOver", { cap: baht(LIFE_HEALTH_CAP), amount: baht(lifeHealthOver) })}
         </p>
@@ -80,12 +83,12 @@ export default function TaxPage() {
       </Sheet>
       <TxDetailSheet tx={selected} onClose={() => setSelected(null)} />
     </PushScreen>
-  );
+  )
 }
 
 function LineCard({ line, onOpen }: { line: TaxLine; onOpen: () => void }) {
-  const { t } = useTranslation();
-  const over = line.cap ? line.amount - line.cap : 0;
+  const { t } = useTranslation()
+  const over = line.cap ? line.amount - line.cap : 0
   return (
     <button type="button" onClick={onOpen} className="text-left">
       <Card className="flex flex-col gap-2 px-4 py-3.5">
@@ -95,9 +98,16 @@ function LineCard({ line, onOpen }: { line: TaxLine; onOpen: () => void }) {
         </div>
         {line.cap ? (
           <>
-            <Bar value={Math.min(1, line.amount / line.cap)} height={6} track="var(--color-divider)" color={over > 0 ? "var(--color-warn-ink)" : "var(--color-income)"} />
+            <Bar
+              value={Math.min(1, line.amount / line.cap)}
+              height={6}
+              track="var(--color-divider)"
+              color={over > 0 ? "var(--color-warn-ink)" : "var(--color-income)"}
+            />
             <span className="text-xs text-muted">
-              {over > 0 ? t("tax.overCap", { cap: baht(line.cap), amount: baht(over) }) : t("tax.roomLeft", { cap: baht(line.cap), amount: baht(line.cap - line.amount) })}
+              {over > 0
+                ? t("tax.overCap", { cap: baht(line.cap), amount: baht(over) })
+                : t("tax.roomLeft", { cap: baht(line.cap), amount: baht(line.cap - line.amount) })}
             </span>
           </>
         ) : (
@@ -109,5 +119,5 @@ function LineCard({ line, onOpen }: { line: TaxLine; onOpen: () => void }) {
         </span>
       </Card>
     </button>
-  );
+  )
 }
