@@ -113,6 +113,22 @@ export function dayHeading(s: ISODate, today: ISODate): string {
   if (diff === 1) return `${t("common.yesterday")} · ${base}`
   return `${weekdayNames()[d.getDay()]} ${base}`
 }
+/** "02/10/2569" / "02/10/2026" */
+export function numericDate(d: Date): string {
+  const two = (n: number) => String(n).padStart(2, "0")
+  return `${two(d.getDate())}/${two(d.getMonth() + 1)}/${displayYear(d.getFullYear())}`
+}
+/** How long ago `ms` was: minutes, hours, then days; after a week, the date itself. */
+export function timeAgo(ms: number, now: number): string {
+  const minutes = Math.floor(Math.max(0, now - ms) / 60_000)
+  if (minutes < 1) return t("common.justNow")
+  if (minutes < 60) return t("common.minutesAgo", { count: minutes })
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return t("common.hoursAgo", { count: hours })
+  const days = Math.floor(hours / 24)
+  if (days <= 7) return t("common.daysAgo", { count: days })
+  return numericDate(new Date(ms))
+}
 export function relativeDue(days: number): string {
   if (days <= 0) return t("common.today")
   if (days === 1) return t("common.tomorrow")

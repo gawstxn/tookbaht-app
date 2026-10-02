@@ -7,7 +7,7 @@
  * bumped a day at a time and ran weeks ahead of the calendar. Next time set
  * it to the next in "r1", "r2", "r3", and so on.
  */
-export const TERMS_VERSION = "r2"
+export const TERMS_VERSION = "r3"
 
 /**
  * The date shown as "last updated" on the terms and privacy pages: the real
@@ -15,4 +15,4 @@ export const TERMS_VERSION = "r2"
  * (`TZ=Asia/Bangkok date +%F`), never from a migration name or the old value.
  * A unit test fails if it's in the future.
  */
-export const TERMS_UPDATED = "2026-10-01"
+export const TERMS_UPDATED = "2026-10-02"

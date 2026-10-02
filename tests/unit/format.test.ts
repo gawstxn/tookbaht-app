@@ -6,8 +6,10 @@ import {
   dueDatesUntil,
   monthlyEquivalent,
   nextDueDate,
+  numericDate,
   shiftMonth,
   stepCycle,
+  timeAgo,
 } from "@/lib/format"
 import { baht, baht2, splitDecimals } from "@/lib/money"
 
@@ -66,5 +68,33 @@ describe("money formatting", () => {
     expect(baht(1234.5)).toBe("฿1,235")
     expect(baht2(1234.5)).toBe("฿1,234.50")
     expect(splitDecimals(21930)).toEqual(["฿21,930", ".00"])
+  })
+})
+
+describe("how long ago", () => {
+  const now = new Date(2026, 9, 2, 12, 0, 0).getTime()
+  const ago = (ms: number) => timeAgo(now - ms, now)
+  const MIN = 60_000
+  const HOUR = 60 * MIN
+  const DAY = 24 * HOUR
+
+  it("counts minutes, then hours, then days", () => {
+    expect(ago(20_000)).toBe("เมื่อสักครู่")
+    expect(ago(MIN)).toBe("1 นาทีที่แล้ว")
+    expect(ago(59 * MIN + 59_000)).toBe("59 นาทีที่แล้ว")
+    expect(ago(HOUR)).toBe("1 ชม.ที่แล้ว")
+    expect(ago(23 * HOUR + 59 * MIN)).toBe("23 ชม.ที่แล้ว")
+    expect(ago(DAY)).toBe("1 วันที่แล้ว")
+    expect(ago(7 * DAY + 23 * HOUR)).toBe("7 วันที่แล้ว")
+  })
+
+  it("shows the date once it's more than a week", () => {
+    expect(ago(8 * DAY)).toBe("24/09/2569")
+    expect(ago(400 * DAY)).toBe(numericDate(new Date(now - 400 * DAY)))
+    expect(numericDate(new Date(2026, 0, 5))).toBe("05/01/2569")
+  })
+
+  it("treats a clock a little behind the server as just now", () => {
+    expect(timeAgo(now + 30_000, now)).toBe("เมื่อสักครู่")
   })
 })

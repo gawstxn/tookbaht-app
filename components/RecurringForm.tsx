@@ -16,7 +16,10 @@ export type RecurringDraft = Omit<Subscription, "id">
 
 const MAX_INSTALLMENTS = 60
 
-/** Salary, rent, a regular transfer or an installment plan, logged on schedule by the database. */
+/**
+ * Salary, rent, a regular transfer or an installment plan, logged on schedule by the database,
+ * or a bill of changing amount (water, electricity) that reminds and waits for what was paid.
+ */
 export function RecurringForm({
   title,
   saveLabel,
@@ -58,6 +61,7 @@ export function RecurringForm({
 
   const type = d.entryType
   const plan = type === "out" && !!d.installments
+  const variable = type === "out" && !plan && !!d.variable
   const categories = type === "in" ? incomeCategories() : expenseCategories()
   const lastDate = d.installments ? stepCycle(d.startDate, d.cycle, d.installments - 1) : null
   const canSave =
@@ -77,6 +81,9 @@ export function RecurringForm({
       remind: entryType === "in" ? false : d.remind,
       // Only expenses are shared with friends.
       splitWith: entryType === "out" ? d.splitWith : [],
+      // Only expenses come as bills of changing amount; the others go back to being logged on schedule.
+      variable: entryType === "out" ? d.variable : false,
+      autoLog: entryType !== "out" && d.variable ? true : d.autoLog,
     })
   const setCount = (text: string) => {
     const clean = text.replace(/[^0-9]/g, "").slice(0, 2)
@@ -115,7 +122,9 @@ export function RecurringForm({
           />
         </label>
         <label className="flex items-baseline gap-2">
-          <span className="shrink-0 text-[13px] text-muted">{t(plan ? "rec.amountInstallment" : "rec.amount")}</span>
+          <span className="shrink-0 text-[13px] text-muted">
+            {t(plan ? "rec.amountInstallment" : variable ? "rec.amountEstimate" : "rec.amount")}
+          </span>
           <span className="flex grow items-baseline justify-end gap-0.5 font-mono text-[26px] font-semibold">
             ฿
             <BahtInput
@@ -126,7 +135,7 @@ export function RecurringForm({
                 set({ amount: parseFloat(v) || 0 })
               }}
               placeholder="0"
-              aria-label={t(plan ? "rec.amountInstallment" : "rec.amount")}
+              aria-label={t(plan ? "rec.amountInstallment" : variable ? "rec.amountEstimate" : "rec.amount")}
               className="w-full min-w-0 bg-transparent text-right outline-none"
             />
           </span>
@@ -165,12 +174,23 @@ export function RecurringForm({
 
       {type === "out" ? (
         <ListCard>
-          <SwitchRow
-            label={t("rec.installments")}
-            hint={t("rec.installmentsHint")}
-            checked={plan}
-            onChange={(on) => set({ installments: on ? parseInt(countText, 10) || 3 : null })}
-          />
+          {plan ? null : (
+            <SwitchRow
+              label={t("rec.variable")}
+              hint={t("rec.variableHint")}
+              checked={variable}
+              // Nothing is logged until the user enters what the bill came to.
+              onChange={(on) => set({ variable: on, autoLog: !on, splitWith: on ? [] : d.splitWith })}
+            />
+          )}
+          {variable ? null : (
+            <SwitchRow
+              label={t("rec.installments")}
+              hint={t("rec.installmentsHint")}
+              checked={plan}
+              onChange={(on) => set({ installments: on ? parseInt(countText, 10) || 3 : null, variable: false })}
+            />
+          )}
           {plan ? (
             <label className="flex min-h-14 items-center gap-3">
               <span className="flex grow flex-col">
@@ -197,15 +217,17 @@ export function RecurringForm({
         {type !== "in" ? (
           <SwitchRow label={t("rec.remind")} checked={d.remind} onChange={(remind) => set({ remind })} />
         ) : null}
-        <SwitchRow
-          label={t(type === "in" ? "rec.autoLogIn" : type === "move" ? "rec.autoLogMove" : "rec.autoLogOut")}
-          hint={t("rec.autoLogHint")}
-          checked={d.autoLog}
-          onChange={(autoLog) => set({ autoLog })}
-        />
+        {variable ? null : (
+          <SwitchRow
+            label={t(type === "in" ? "rec.autoLogIn" : type === "move" ? "rec.autoLogMove" : "rec.autoLogOut")}
+            hint={t("rec.autoLogHint")}
+            checked={d.autoLog}
+            onChange={(autoLog) => set({ autoLog })}
+          />
+        )}
       </ListCard>
 
-      {type === "out" && !plan ? (
+      {type === "out" && !plan && !variable ? (
         <SplitWithField
           names={d.splitWith ?? []}
           onChange={(splitWith) => set({ splitWith })}
@@ -218,7 +240,16 @@ export function RecurringForm({
         <PrimaryButton
           once
           disabled={!canSave}
-          onClick={() => onSave({ ...d, name: d.name.trim(), installments: plan ? d.installments : null })}
+          onClick={() =>
+            onSave({
+              ...d,
+              name: d.name.trim(),
+              installments: plan ? d.installments : null,
+              variable,
+              autoLog: variable ? false : d.autoLog,
+              splitWith: variable ? [] : d.splitWith,
+            })
+          }
         >
           {saveLabel}
         </PrimaryButton>

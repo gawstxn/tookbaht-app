@@ -13,6 +13,7 @@ import { setUnlocked, writeLock } from "@/lib/appLock"
 import { preloadBrandLogos } from "@/lib/brandLogos"
 import { shortDate, toISO } from "@/lib/format"
 import { TERMS_VERSION } from "@/lib/legal"
+import { CONTACT_EMAIL } from "./LegalPage"
 import { TermsGate } from "./TermsConsent"
 import { LockGate } from "./AppLock"
 import { getSupabase } from "@/lib/supabase/client"
@@ -55,7 +56,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // to the foreground, and every 10 s while some are still waiting.
   useEffect(() => {
     const sync = () => void useStore.getState().sync()
-    const onVisible = () => document.visibilityState === "visible" && sync()
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return
+      sync()
+      useStore.getState().touchActive()
+    }
     // The connection is often not usable yet when "online" fires; try again shortly.
     let retry: ReturnType<typeof setTimeout> | undefined
     const onOnline = () => {
@@ -139,9 +144,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     })
   }, [status, router, i18n])
   const deletionRequestedAt = useStore((s) => s.deletionRequestedAt)
+  const suspended = useStore((s) => s.suspended)
 
   let content: React.ReactNode
   if (noData) content = children
+  else if (suspended) content = <Suspended />
   else if (status === "error") content = <LoadError />
   else if (status === "ready" && deletionRequestedAt) content = <DeletionPending requestedAt={deletionRequestedAt} />
   else if (needsTerms) content = <TermsGate />
@@ -159,7 +166,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </PageTransition>
       </div>
       {status === "ready" && TAB_ROOTS.includes(pathname) ? <OfflinePill /> : null}
-      <LockGate active={!noData} />
+      <LockGate active={!noData && !suspended} />
       <ToastHost />
     </div>
   )
@@ -231,6 +238,52 @@ function DeletionPending({ requestedAt }: { requestedAt: string }) {
         <button
           type="button"
           onClick={async () => {
+            await signOut()
+            router.replace("/login")
+          }}
+          className="min-h-11 text-sm font-medium text-muted"
+        >
+          {t("profile.logout")}
+        </button>
+      </div>
+    </main>
+  )
+}
+
+/** An admin suspended the account: nothing loads until it's lifted. */
+function Suspended() {
+  const { t } = useTranslation()
+  const router = useRouter()
+  const signOut = useStore((s) => s.signOut)
+  const [busy, setBusy] = useState(false)
+  const retry = () => {
+    const { userId, load } = useStore.getState()
+    if (!userId) return
+    useStore.setState({ suspended: false })
+    void load(userId)
+  }
+  return (
+    <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
+      <span
+        aria-hidden="true"
+        className="flex h-14 w-14 items-center justify-center rounded-2xl bg-expense-tint text-danger"
+      >
+        <Icon name="lock" size={26} strokeWidth={2} />
+      </span>
+      <h1 className="font-serif text-2xl font-bold">{t("suspended.title")}</h1>
+      <p className="text-sm leading-relaxed text-muted">{t("suspended.lead")}</p>
+      {CONTACT_EMAIL ? (
+        <a href={`mailto:${CONTACT_EMAIL}`} className="text-sm font-semibold underline underline-offset-2">
+          {CONTACT_EMAIL}
+        </a>
+      ) : null}
+      <div className="mt-4 flex w-full flex-col gap-2.5">
+        <PrimaryButton onClick={retry}>{t("common.retry")}</PrimaryButton>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true)
             await signOut()
             router.replace("/login")
           }}

@@ -46,6 +46,7 @@
 - **Subscriptions** with service logos, priced in baht or USD (converted at that day's rate plus the card's fee, optional +7% VAT); a week before a yearly one renews the app asks whether it's still used, and each shows what it has cost so far.
 - **Recurring entries** (salary, rent, monthly saving) logged by the database on schedule, even when the app is closed.
 - **Installments** counted in the month each one is paid, stopping after the last.
+- **Bills that change every month** (water, electricity): a recurring entry marked "amount changes every time" reminds you when it's due and waits for what you actually paid; the latest bill becomes the estimate for the next one.
 
 ### Cards and pay-later (e.g. SPayLater)
 
@@ -71,12 +72,19 @@
 - JSON backup and restore, CSV export, account deletion with a 30-day grace period.
 - Light / dark / system theme, Thai / English, and a "what's new" dialog after each update.
 
+### Admin
+
+- An account with `profiles.role = 'admin'` gets two more rows on the profile screen: **users** (name, email, sign-up date, last active, notification devices, how many rows of each kind the account keeps against its cap, how many entries were added in the last day and week, and the approximate size, never the entries themselves; totals and the database size against the 500 MB free tier) and **feedback** (the problem reports users send, with a done / not done mark).
+- An admin can **suspend** an account that abuses the app: the database then refuses every request from it until the suspension is lifted, and the user sees an "account suspended" screen.
+- Make an admin by hand in the Supabase SQL editor: `update public.profiles set role = 'admin' where email = '<email>';`
+
 ## How it works
 
 - **Screens read an in-memory store** (`lib/store.ts`, Zustand). A change shows immediately, then is written to Supabase; if the write is refused the change is rolled back with a toast.
 - **Offline:** every write is described as an operation (`lib/offline.ts`). Without a connection it waits in a per-user outbox and is replayed in order later. The last loaded data is kept on the device so the app opens instantly and offline; both are cleared on sign-out.
 - **Service worker** (`public/sw.js`) keeps build files, screens and navigation data for offline use; app data never goes through it.
 - **The database does the scheduled work:** SQL functions log due entries (pg_cron) and decide which reminders are due; Vercel Cron only delivers the pushes.
+- **Admin and suspension:** the admin screens only call `admin_*` SQL functions, which refuse anyone who isn't an admin. Suspension is enforced by PostgREST's pre-request hook (`check_request()`), so it covers every table and function without per-table policies.
 - **Security:** RLS on every table with composite `(id, user_id)` foreign keys, explicit table grants (no default API access, no TRUNCATE), per-user row caps, a static CSP (`'wasm-unsafe-eval'` only for the slip reader), and push only to known push services.
 
 ## Getting started

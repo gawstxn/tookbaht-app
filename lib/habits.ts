@@ -19,14 +19,17 @@ export interface RecurringCandidate {
   /** When the next one is expected. */
   next: string
   months: number
+  /** The amount differs from month to month (electricity): `amount` is the latest one. */
+  variable: boolean
 }
 
 const norm = (s: string) => s.trim().toLocaleLowerCase()
 
 /**
  * Expenses logged by hand once a month for at least `minMonths` months running
- * (same title and amount, around the same day) that aren't a subscription or
- * recurring entry yet, e.g. rent paid by transfer. Most months first.
+ * (same title, around the same day) that aren't a subscription or recurring
+ * entry yet: the same amount each time (rent paid by transfer), or a bill
+ * whose amount changes (electricity). Most months first.
  */
 export function recurringCandidates(
   txs: Transaction[],
@@ -37,30 +40,34 @@ export function recurringCandidates(
 ): RecurringCandidate[] {
   const known = new Set(subs.map((s) => norm(s.name)))
   const groups = new Map<string, Transaction[]>()
+  const byTitle = new Map<string, Transaction[]>()
   for (const t of txs) {
     if (t.type !== "out" || t.subscriptionId) continue
     const key = `${norm(t.title)}|${t.amount}`
     groups.set(key, [...(groups.get(key) ?? []), t])
+    if (norm(t.title)) byTitle.set(norm(t.title), [...(byTitle.get(norm(t.title)) ?? []), t])
   }
   const out: RecurringCandidate[] = []
   const thisMonth = monthKey(today)
-  for (const [key, list] of groups) {
-    if (dismissed.includes(key) || known.has(norm(list[0].title))) continue
+  const consider = (key: string, list: Transaction[], variable: boolean) => {
+    if (dismissed.includes(key) || known.has(norm(list[0].title))) return
     const byMonth = new Map<string, Transaction[]>()
     for (const t of list) byMonth.set(monthKey(t.date), [...(byMonth.get(monthKey(t.date)) ?? []), t])
     // Once a month: a coffee bought every few days isn't a bill.
-    if ([...byMonth.values()].some((m) => m.length > 1)) continue
+    if ([...byMonth.values()].some((m) => m.length > 1)) return
     // Count the run of months ending at the latest one, which must be this month or last.
     const months = [...byMonth.keys()].sort()
     const last = months[months.length - 1]
-    if (last !== thisMonth && last !== shiftMonth(thisMonth, -1)) continue
+    if (last !== thisMonth && last !== shiftMonth(thisMonth, -1)) return
     let run = 1
     while (byMonth.has(shiftMonth(last, -run))) run++
-    if (run < minMonths) continue
+    if (run < minMonths) return
     const recent = months.slice(-run).map((m) => byMonth.get(m)![0])
+    // The same amount every time is a fixed bill, found under its own key.
+    if (variable && new Set(recent.map((t) => t.amount)).size < 2) return
     const days = recent.map((t) => Number(t.date.slice(8, 10))).sort((a, b) => a - b)
     // Paid around the same time each month.
-    if (days[days.length - 1] - days[0] > 5) continue
+    if (days[days.length - 1] - days[0] > 5) return
     const day = days[Math.floor(days.length / 2)]
     const latest = recent[recent.length - 1]
     const nextMonth = shiftMonth(monthKey(latest.date), 1)
@@ -75,8 +82,13 @@ export function recurringCandidates(
       day,
       next,
       months: run,
+      variable,
     })
   }
+  for (const [key, list] of groups) consider(key, list, false)
+  // Same title, different amounts: a bill that changes every month. Dismissed as "title|~".
+  const fixed = new Set(out.map((c) => norm(c.title)))
+  for (const [title, list] of byTitle) if (!fixed.has(title)) consider(`${title}|~`, list, true)
   return out.sort((a, b) => b.months - a.months || b.amount - a.amount)
 }
 

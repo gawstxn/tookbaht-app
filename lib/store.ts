@@ -2,6 +2,8 @@
 
 import { useMemo } from "react"
 import { create } from "zustand"
+import { isSuspended } from "./admin"
+import { billRoundId } from "./bills"
 import { TYPE_META, registerCustomCategories } from "./constants"
 import { fetchAll, fromRow, toRow, type IouRow, type TransactionRow } from "./db"
 import { applyLang, currentLang, t, type Lang } from "./i18n"
@@ -51,6 +53,8 @@ interface State {
   pending: number
   /** Showing data saved on this device because the server couldn't be reached. */
   offline: boolean
+  /** An admin suspended the account: the server refuses every request until it's lifted. */
+  suspended: boolean
 }
 
 interface Actions {
@@ -100,6 +104,15 @@ interface Actions {
   deleteSubscription: (id: string) => void
   /** Log due subscription charges as expenses (idempotent across devices). */
   runAutoLog: () => Promise<void>
+  /**
+   * Log what a bill of changing amount came to this time (lib/bills.ts). The latest
+   * payment becomes the bill's estimate. Returns false when that day already has one.
+   */
+  payBill: (id: string, paid: { amount: number; accountId: string; date: string }) => boolean
+  /** Stop asking about one round of a changing bill without logging anything. */
+  skipBill: (id: string, due: string) => void
+  /** Tell the server the app is in use (at most every five minutes), for "last active" on the admin screen. */
+  touchActive: () => void
 
   /** Record what friends owe (one row per friend when splitting a bill). */
   addIous: (items: Omit<Iou, "id" | "createdAt">[]) => void
@@ -161,6 +174,7 @@ const initial: State = {
   deletionRequestedAt: null,
   pending: 0,
   offline: false,
+  suspended: false,
 }
 
 /** What is kept on the device so the app opens offline. */
@@ -199,6 +213,8 @@ const within = <T>(promise: Promise<T>, ms: number) =>
   Promise.race([promise, new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timed out")), ms))])
 const UNDO = () => t("common.undo")
 let toastSeq = 0
+const TOUCH_EVERY = 5 * 60_000
+let lastTouch = 0
 
 export const useStore = create<State & Actions>()((set, get) => {
   const sb = () => getSupabase()
@@ -214,6 +230,13 @@ export const useStore = create<State & Actions>()((set, get) => {
     match: { col: "id", eq: id },
   })
   const del = (table: string, id: string): Op => ({ table, kind: "delete", match: { col: "id", eq: id } })
+
+  /** The server said the account is suspended: block the app, and don't open from this device's copy next time. */
+  const suspend = () => {
+    const userId = get().userId
+    if (userId) snapshot(userId).clear()
+    set({ suspended: true })
+  }
 
   const queue = (op: Op) => {
     const userId = get().userId
@@ -235,7 +258,8 @@ export const useStore = create<State & Actions>()((set, get) => {
     }
     console.error(res.error)
     undo()
-    get().notify(res.error.hint === "row_limit" ? t("toast.rowLimit") : message, { tone: "error" })
+    if (isSuspended(res.error)) suspend()
+    else get().notify(res.error.hint === "row_limit" ? t("toast.rowLimit") : message, { tone: "error" })
     return false
   }
   let lastSave: Promise<unknown> = Promise.resolve()
@@ -260,6 +284,7 @@ export const useStore = create<State & Actions>()((set, get) => {
     // The profile's language wins; if it has none yet, store the one in use.
     if (data.settings.lang) applyLang(data.settings.lang)
     else get().setSettings({ lang: currentLang() })
+    get().touchActive()
     void get().runAutoLog()
     if (data.subscriptions.some((s) => s.currency === "USD")) void get().ensureUsdRate()
   }
@@ -334,7 +359,9 @@ export const useStore = create<State & Actions>()((set, get) => {
         afterFetch(data)
       } catch (e) {
         console.error(e)
-        if (get().userId === userId) set({ status: "error" })
+        if (get().userId !== userId) return
+        if (isSuspended(e)) suspend()
+        else set({ status: "error" })
       }
     },
     flush: async () => {
@@ -350,7 +377,9 @@ export const useStore = create<State & Actions>()((set, get) => {
         await sb().auth.getSession()
         for (let next = box.list()[0]; next; next = box.list()[0]) {
           const res = await runOp(sb(), next.op)
-          if (res.error && keepQueued(res, next.at)) {
+          // Suspended: keep the changes for when the account is back.
+          if (res.error && isSuspended(res.error)) suspend()
+          if (get().suspended || (res.error && keepQueued(res, next.at))) {
             stalled = true
             break
           }
@@ -380,7 +409,8 @@ export const useStore = create<State & Actions>()((set, get) => {
         if ((await get().flush()) > 0) refetch = true
         const userId = get().userId
         // Showing this device's copy, or the server turned changes down: fetch.
-        if (!userId || get().status !== "ready" || get().pending > 0 || !(refetch || get().offline)) return
+        if (!userId || get().status !== "ready" || get().suspended || get().pending > 0 || !(refetch || get().offline))
+          return
         if (!online()) return void set({ offline: true })
         // Swap in fresh data without leaving the screen (no loading state).
         try {
@@ -390,7 +420,9 @@ export const useStore = create<State & Actions>()((set, get) => {
           afterFetch(data)
         } catch (e) {
           console.error(e)
-          if (get().userId === userId) set({ offline: true })
+          if (get().userId !== userId) return
+          if (isSuspended(e)) suspend()
+          else set({ offline: true })
         }
       } finally {
         syncing = false
@@ -401,7 +433,23 @@ export const useStore = create<State & Actions>()((set, get) => {
       if (userId) snapshot(userId).clear()
       get().reset()
     },
-    reset: () => set({ ...initial, viewMonth: todayISO().slice(0, 7) }),
+    reset: () => {
+      lastTouch = 0
+      set({ ...initial, viewMonth: todayISO().slice(0, 7) })
+    },
+    touchActive: () => {
+      const now = Date.now()
+      if (!get().userId || get().suspended || !online() || now - lastTouch < TOUCH_EVERY) return
+      lastTouch = now
+      void sb()
+        .rpc("touch_active")
+        .then(({ error }) => {
+          if (!error) return
+          lastTouch = 0
+          // Also how an open app learns it was suspended while in the background.
+          if (isSuspended(error)) suspend()
+        })
+    },
     signOut: async () => {
       const userId = get().userId
       await sb().auth.signOut()
@@ -664,6 +712,69 @@ export const useStore = create<State & Actions>()((set, get) => {
       if (owedError) return console.error(owedError)
       const have = new Set(get().ious.map((i) => i.id))
       set((s) => ({ ious: [...s.ious, ...owed.map(fromRow.iou).filter((i) => !have.has(i.id))] }))
+    },
+
+    payBill: (id, { amount, accountId, date }) => {
+      const sub = get().subscriptions.find((x) => x.id === id)
+      if (!sub || !(amount > 0)) return false
+      const logged = get().transactions.filter((x) => x.subscriptionId === id)
+      // The database keeps one entry per schedule per day.
+      if (logged.some((x) => x.date === date)) {
+        get().notify(t("bill.sameDay"), { tone: "error" })
+        return false
+      }
+      const tx: Transaction = {
+        id: crypto.randomUUID(),
+        type: "out",
+        amount,
+        date,
+        title: sub.name,
+        category: sub.category,
+        accountId,
+        subscriptionId: id,
+        createdAt: Date.now(),
+      }
+      const saved = insertTransaction(tx)
+      // The newest bill is the best guess at the next one; where it was paid from is remembered too.
+      const latest = !logged.some((x) => x.date > date)
+      const before = { amount: sub.amount, accountId: sub.accountId }
+      const after = latest ? { amount, accountId } : before
+      const changed = after.amount !== before.amount || after.accountId !== before.accountId
+      const setSub = (p: typeof before) =>
+        set((s) => ({ subscriptions: s.subscriptions.map((x) => (x.id === id ? { ...x, ...p } : x)) }))
+      if (changed) {
+        setSub(after)
+        void saved.then((done) => {
+          if (done) void save(upd("subscriptions", toRow.subscription(after), id), () => setSub(before))
+          else setSub(before)
+        })
+      }
+      ok(t("toast.billPaid", { name: sub.name, amount: baht(amount) }), {
+        label: UNDO(),
+        run: () =>
+          void saved.then((done) => {
+            if (!done) return
+            set((s) => ({ transactions: s.transactions.filter((x) => x.id !== tx.id) }))
+            void save(del("transactions", tx.id), () => set((s) => ({ transactions: [...s.transactions, tx] })))
+            if (!changed) return
+            setSub(before)
+            void save(upd("subscriptions", toRow.subscription(before), id), () => setSub(after))
+          }),
+      })
+      return true
+    },
+    skipBill: (id, due) => {
+      const sub = get().subscriptions.find((x) => x.id === id)
+      if (!sub) return
+      const list = get().settings.billSkipped ?? []
+      const round = billRoundId(sub, due)
+      if (list.includes(round)) return
+      // Only recent rounds can still be open; keep the list short.
+      get().setSettings({ billSkipped: [...list, round].slice(-40) })
+      ok(t("toast.billSkipped", { name: sub.name }), {
+        label: UNDO(),
+        run: () => get().setSettings({ billSkipped: (get().settings.billSkipped ?? []).filter((x) => x !== round) }),
+      })
     },
 
     addIous: (items) => {
@@ -930,14 +1041,15 @@ export const useStore = create<State & Actions>()((set, get) => {
 let snapshotTimer: ReturnType<typeof setTimeout> | undefined
 if (typeof window !== "undefined") {
   useStore.subscribe((state, prev) => {
-    if (state.status !== "ready" || !state.userId) return
+    if (state.status !== "ready" || !state.userId || state.suspended) return
     const changed = (Object.keys(toSnapshot(state)) as (keyof Snapshot)[]).some((k) => state[k] !== prev[k])
     if (!changed && prev.status === "ready") return
     clearTimeout(snapshotTimer)
     const userId = state.userId
     snapshotTimer = setTimeout(() => {
       const now = useStore.getState()
-      if (now.userId === userId && now.status === "ready") snapshot<Snapshot>(userId).save(toSnapshot(now))
+      if (now.userId === userId && now.status === "ready" && !now.suspended)
+        snapshot<Snapshot>(userId).save(toSnapshot(now))
     }, 800)
   })
 }

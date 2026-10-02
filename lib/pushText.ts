@@ -18,6 +18,8 @@ export interface PendingReminder {
   installments: number | null
   /** The first charge after a free trial. */
   trial?: boolean
+  /** A bill whose amount changes every time: `amount` is what it came to last time. */
+  variable?: boolean
 }
 export interface PendingDue {
   account_id: string
@@ -61,6 +63,11 @@ export function chargeText(lang: Lang, r: PendingReminder) {
       ? ` (${r.installment_no} of ${r.installments})`
       : ` (งวด ${r.installment_no}/${r.installments})`
     : ""
+  if (r.variable) {
+    return lang === "en"
+      ? { title: `${r.name} is due tomorrow`, body: `Last time ${amount}. Once paid, tap to log what it came to` }
+      : { title: `${r.name} ถึงกำหนดจ่ายพรุ่งนี้`, body: `ครั้งก่อน ${amount} · จ่ายแล้วแตะเพื่อจดยอดจริง` }
+  }
   if (r.kind === "recurring") {
     return lang === "en"
       ? { title: `${r.name}${plan} is due tomorrow`, body: `${amount} from ${r.account_name}` }

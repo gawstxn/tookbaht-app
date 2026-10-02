@@ -1,3 +1,4 @@
+import { billRoundId, openBills } from "./bills"
 import { budgetLines, rolloverCarry, withCarry } from "./budget"
 import { baht, addDays, fromISO, monthLabel, relativeDue, toISO } from "./format"
 import { periodOf, shiftPeriod } from "./period"
@@ -53,15 +54,19 @@ export function buildNotifications(input: {
   wishes?: Wish[]
   /** First day of the user's month (settings.cycleStartDay). */
   startDay?: number
+  /** Rounds of changing bills the user skipped (settings.billSkipped). */
+  billSkipped?: string[]
 }): AppNotification[] {
-  const { accounts, transactions, subscriptions, goals, today, now, wishes = [], startDay = 1 } = input
+  const { accounts, transactions, subscriptions, goals, today, now, wishes = [], startDay = 1, billSkipped } = input
+  // Bills of changing amount are paid by hand: they have their own reminder, and their entries aren't "auto-logged".
+  const variable = new Set(subscriptions.filter((s) => s.variable).map((s) => s.id))
   const accName = (id?: string) => accounts.find((a) => a.id === id)?.name ?? ""
   const out: AppNotification[] = []
 
   // Charges due today or tomorrow (announced 09:00 the day before).
   for (const s of subscriptions) {
     // Money coming in isn't a charge to prepare for.
-    if (s.paused || s.entryType === "in") continue
+    if (s.paused || s.entryType === "in" || s.variable) continue
     const next = nextCharge(s, today)
     if (!next || next.due > addDays(today, 1)) continue
     const due = next.due
@@ -72,6 +77,21 @@ export function buildNotifications(input: {
       title: t(due === today ? "notif.dueToday" : "notif.dueTomorrow", { name: s.name }),
       body: t("notif.fromAccount", { amount: formatMoney(s.amount, s.currency), account: accName(s.accountId) }),
       href: `/subscriptions/${s.id}`,
+    })
+  }
+
+  // Bills of changing amount: from 09:00 the day before, and for as long as the round is unpaid.
+  for (const b of openBills(subscriptions, transactions, today, billSkipped)) {
+    out.push({
+      id: `bill:${billRoundId(b.sub, b.due)}`,
+      kind: "due",
+      at: at(addDays(b.due, -1), 9),
+      title:
+        b.days < 0
+          ? t("bill.late", { name: b.sub.name, count: -b.days })
+          : t(b.days === 0 ? "bill.dueToday" : "bill.dueTomorrow", { name: b.sub.name }),
+      body: t("bill.notifBody", { amount: baht(b.sub.amount) }),
+      href: `/subscriptions/${b.sub.id}`,
     })
   }
 
@@ -162,7 +182,7 @@ export function buildNotifications(input: {
 
   // Charges the database logged automatically.
   for (const tx of transactions) {
-    if (!tx.subscriptionId || now - tx.createdAt > 30 * DAY) continue
+    if (!tx.subscriptionId || variable.has(tx.subscriptionId) || now - tx.createdAt > 30 * DAY) continue
     out.push({
       id: `autolog:${tx.id}`,
       kind: "autolog",
@@ -176,6 +196,8 @@ export function buildNotifications(input: {
   // A service that charged more than last time. Dollar prices compare in dollars,
   // so exchange-rate swings don't count as a price rise.
   for (const s of subscriptions) {
+    // A bill that changes every time going up isn't a price rise.
+    if (s.variable) continue
     const logged = transactions
       .filter((tx) => tx.subscriptionId === s.id)
       .sort((a, b) => a.date.localeCompare(b.date) || a.createdAt - b.createdAt)

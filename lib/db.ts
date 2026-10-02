@@ -67,6 +67,7 @@ interface SubscriptionRow {
   paused: boolean
   tone: string
   split_with: string[] | null
+  variable: boolean | null
 }
 export interface IouRow {
   id: string
@@ -111,6 +112,7 @@ interface ProfileRow {
   email: string
   settings: Partial<Settings> | null
   deletion_requested_at: string | null
+  role: User["role"] | null
 }
 
 const opt = <T>(v: T | null): T | undefined => (v === null ? undefined : v)
@@ -166,6 +168,7 @@ export const fromRow = {
     paused: r.paused,
     tone: r.tone,
     splitWith: r.split_with ?? [],
+    variable: r.variable ?? false,
   }),
   iou: (r: IouRow): Iou => ({
     id: r.id,
@@ -263,6 +266,7 @@ export const toRow = {
       paused: s.paused,
       tone: s.tone,
       split_with: s.splitWith,
+      variable: s.variable,
     }),
   iou: (i: Partial<Iou>) =>
     strip({
@@ -321,7 +325,11 @@ const PAGE = 1000
 export async function fetchAll(sb: SupabaseClient, userId: string) {
   const [profile, accounts, subscriptions, goals, transactions, rate, session, ious, savings, wishes] =
     await Promise.all([
-      sb.from("profiles").select("name, email, settings, deletion_requested_at").eq("id", userId).single<ProfileRow>(),
+      sb
+        .from("profiles")
+        .select("name, email, settings, deletion_requested_at, role")
+        .eq("id", userId)
+        .single<ProfileRow>(),
       sb.from("accounts").select("*").order("sort_order").order("created_at").returns<AccountRow[]>(),
       sb.from("subscriptions").select("*").order("created_at").returns<SubscriptionRow[]>(),
       sb.from("goals").select("*").eq("user_id", userId).maybeSingle<GoalsRow>(),
@@ -345,6 +353,7 @@ export async function fetchAll(sb: SupabaseClient, userId: string) {
     name: profile.data!.name,
     email: profile.data!.email,
     provider: session.data.session?.user.app_metadata.provider,
+    role: profile.data!.role ?? "user",
   }
   return {
     user,

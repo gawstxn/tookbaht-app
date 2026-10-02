@@ -44,9 +44,10 @@ function NewRecurring() {
       installments: null,
       category: c.category ?? "bill",
       remind: true,
-      autoLog: true,
+      autoLog: !c.variable,
       paused: false,
       tone: MONO_TONES[5],
+      variable: c.variable,
     }
   })
   return (
