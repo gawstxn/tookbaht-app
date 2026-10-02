@@ -29,6 +29,18 @@ describe("push texts", () => {
     expect(chargeText("en", charge({}))).toEqual({ title: "Netflix bills tomorrow", body: "฿419 from บัตรเครดิต" })
   })
 
+  it("asks for the real amount of a bill that changes every time", () => {
+    const r = charge({ kind: "recurring", name: "ค่าไฟ", amount: 1290, account_name: "กสิกร", variable: true })
+    expect(chargeText("th", r)).toEqual({
+      title: "ค่าไฟ ถึงกำหนดจ่ายพรุ่งนี้",
+      body: "ครั้งก่อน ฿1,290 · จ่ายแล้วแตะเพื่อจดยอดจริง",
+    })
+    expect(chargeText("en", r)).toEqual({
+      title: "ค่าไฟ is due tomorrow",
+      body: "Last time ฿1,290. Once paid, tap to log what it came to",
+    })
+  })
+
   it("numbers installments", () => {
     const r = charge({
       kind: "recurring",

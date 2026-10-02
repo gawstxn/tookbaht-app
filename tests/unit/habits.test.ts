@@ -61,10 +61,45 @@ describe("bills paid by hand every month", () => {
     const three = [rent("2026-07-03"), rent("2026-08-03"), rent("2026-09-03")]
     expect(recurringCandidates(three, [{ name: " ค่าหอ" } as Subscription], TODAY)).toEqual([])
     expect(recurringCandidates(three, [], TODAY, ["ค่าหอ|6500"])).toEqual([])
-    // A different amount is a different bill.
-    expect(recurringCandidates([rent("2026-07-03"), rent("2026-08-03", 7000), rent("2026-09-03")], [], TODAY)).toEqual(
-      [],
+  })
+
+  it("finds a bill whose amount changes from month to month", () => {
+    const power = (date: string, amount: number) => tx({ title: "ค่าไฟ", amount, date, category: "bill" })
+    const txs = [power("2026-07-05", 1180), power("2026-08-06", 1420), power("2026-09-05", 1290)]
+    const c = recurringCandidates(txs, [], TODAY)
+    expect(c).toHaveLength(1)
+    expect(c[0]).toMatchObject({
+      key: "ค่าไฟ|~",
+      title: "ค่าไฟ",
+      // The latest bill is the estimate.
+      amount: 1290,
+      day: 5,
+      next: "2026-10-05",
+      months: 3,
+      variable: true,
+    })
+    // One odd month among equal ones still makes it a changing bill.
+    expect(
+      recurringCandidates([rent("2026-07-03"), rent("2026-08-03", 7000), rent("2026-09-03")], [], TODAY),
+    ).toMatchObject([{ title: "ค่าหอ", amount: 6500, variable: true }])
+    // A fixed bill is suggested once, as fixed.
+    expect(recurringCandidates([rent("2026-07-03"), rent("2026-08-03"), rent("2026-09-03")], [], TODAY)).toMatchObject([
+      { key: "ค่าหอ|6500", variable: false },
+    ])
+  })
+
+  it("leaves out changing bills that are dismissed, already set up or not monthly", () => {
+    const power = (date: string, amount: number) => tx({ title: "ค่าไฟ", amount, date, category: "bill" })
+    const txs = [power("2026-07-05", 1180), power("2026-08-06", 1420), power("2026-09-05", 1290)]
+    expect(recurringCandidates(txs, [], TODAY, ["ค่าไฟ|~"])).toEqual([])
+    expect(recurringCandidates(txs, [{ name: "ค่าไฟ" } as Subscription], TODAY)).toEqual([])
+    // Twice in one month: everyday spending, not a bill.
+    expect(recurringCandidates([...txs, power("2026-09-18", 300)], [], TODAY)).toEqual([])
+    // Entries without a title can't be told apart.
+    const untitled = ["2026-07-05", "2026-08-05", "2026-09-05"].map((date, i) =>
+      tx({ title: "", amount: 100 + i, date }),
     )
+    expect(recurringCandidates(untitled, [], TODAY)).toEqual([])
   })
 
   it("ignores auto-logged charges", () => {

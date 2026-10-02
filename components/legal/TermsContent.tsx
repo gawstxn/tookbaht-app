@@ -58,7 +58,10 @@ function TermsTh() {
           <li>ส่งคำขอจำนวนมากผิดปกติ หรือกระทำการที่ทำให้ระบบทำงานผิดปกติ</li>
           <li>ใช้แอปเพื่อกิจกรรมที่ผิดกฎหมาย</li>
         </ul>
-        <p>เราอาจระงับบัญชีที่ละเมิดข้อกำหนดเหล่านี้</p>
+        <p>
+          เราอาจระงับบัญชีที่ละเมิดข้อกำหนดเหล่านี้ บัญชีที่ถูกระงับจะเปิดแอปไม่ได้จนกว่าจะยกเลิกการระงับ
+          ข้อมูลยังอยู่ครบ และติดต่อเราได้หากคิดว่าเป็นความผิดพลาด
+        </p>
       </section>
 
       <section>
@@ -163,7 +166,10 @@ function TermsEn() {
           <li>Sending unusually large numbers of requests or disrupting the service</li>
           <li>Using the app for anything illegal</li>
         </ul>
-        <p>We may suspend accounts that break these terms.</p>
+        <p>
+          We may suspend accounts that break these terms. A suspended account can&apos;t open the app until the
+          suspension is lifted; its data is kept, and you can contact us if you think it is a mistake.
+        </p>
       </section>
 
       <section>

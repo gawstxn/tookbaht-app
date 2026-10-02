@@ -37,13 +37,13 @@ export function setUpVapid(): string | null {
  */
 export async function pusherFor(db: SupabaseClient, userIds: string[]) {
   // Each user's chosen language (profiles.settings.lang); Thai when unset.
-  const { data: profiles } = await db.from("profiles").select("id, settings").in("id", userIds)
+  const { data: profiles } = await db.from("profiles").select("id, settings, suspended_at").in("id", userIds)
+  type ProfileRow = { id: string; settings: { lang?: string } | null; suspended_at: string | null }
   const langOf = new Map<string, Lang>(
-    (profiles ?? []).map((p: { id: string; settings: { lang?: string } | null }) => [
-      p.id,
-      p.settings?.lang === "en" ? "en" : "th",
-    ]),
+    ((profiles ?? []) as ProfileRow[]).map((p) => [p.id, p.settings?.lang === "en" ? "en" : "th"]),
   )
+  // A suspended account can't open the app, so it isn't reminded to.
+  const suspended = new Set(((profiles ?? []) as ProfileRow[]).filter((p) => p.suspended_at).map((p) => p.id))
   const { data: targets, error } = await db
     .from("push_subscriptions")
     .select("id, user_id, endpoint, p256dh, auth")
@@ -59,6 +59,7 @@ export async function pusherFor(db: SupabaseClient, userIds: string[]) {
     async push(userId: string, message: PushMessage) {
       const payload = JSON.stringify(message)
       let ok = false
+      if (suspended.has(userId)) return ok
       for (const t of targets.filter(
         (x) => x.user_id === userId && !gone.has(x.id) && PUSH_ENDPOINT.test(x.endpoint),
       )) {

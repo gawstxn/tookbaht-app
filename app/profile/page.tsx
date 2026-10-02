@@ -267,6 +267,13 @@ export default function ProfilePage() {
         <NavRow label={tr("settings.title")} onClick={() => router.push("/settings")} />
       </ListCard>
 
+      {user?.role === "admin" ? (
+        <Group title={tr("admin.title")}>
+          <NavRow label={tr("admin.users")} onClick={() => router.push("/admin/users")} />
+          <NavRow label={tr("admin.feedback")} onClick={() => router.push("/admin/feedback")} />
+        </Group>
+      ) : null}
+
       <Group title={tr("profile.about")}>
         <NavRow label={tr("login.terms")} onClick={() => router.push("/terms")} />
         <NavRow label={tr("login.privacy")} onClick={() => router.push("/privacy")} />

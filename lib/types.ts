@@ -12,6 +12,8 @@ export interface User {
   email: string
   /** How the user signs in ("google", or "email" for the local dev login). */
   provider?: string
+  /** "admin" adds the user list and problem reports to the profile screen (set by hand in the database). */
+  role?: "user" | "admin"
 }
 
 export interface Account {
@@ -89,6 +91,11 @@ export interface Subscription {
   tone: string
   /** Friends who share it: each logged charge records what they owe (split evenly with the user). */
   splitWith?: string[]
+  /**
+   * Recurring expenses only: a bill whose amount changes every time (water, electricity). Never
+   * logged automatically; the user enters what they paid, and `amount` is the latest bill (lib/bills.ts).
+   */
+  variable?: boolean
 }
 
 /** Something the user wants, parked until `decideOn` before buying. */
@@ -180,6 +187,8 @@ export interface Settings {
   cycleStartDay?: number
   /** Yearly renewals the user said they still use (lib/renewals.ts ids), so the review card stays away. */
   renewKept?: string[]
+  /** Rounds of a changing bill the user chose not to log (lib/bills.ts ids), so it stops asking. */
+  billSkipped?: string[]
   /** Last month ("YYYY-MM") whose leftover the user saved or skipped (lib/leftover.ts). */
   leftoverMonth?: string
   /** Picked profile picture (lib/avatars.ts key); the initial shows when unset. */

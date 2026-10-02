@@ -52,7 +52,7 @@ function PrivacyTh() {
           </li>
           <li>
             <b>การตั้งค่าในแอป</b> — เช่น สถานะการอ่านการแจ้งเตือน เขตเวลาที่ใช้คำนวณวันตัดบัญชี หมวดหมู่ที่คุณสร้างเอง
-            และรายการที่คุณบอกว่าไม่ใช่บิลรายเดือน
+            รายการที่คุณบอกว่าไม่ใช่บิลรายเดือน และรอบบิลที่คุณกดข้าม
           </li>
           <li>
             <b>พร้อมเพย์ของคุณ</b> — ถ้าคุณตั้งไว้ เราเก็บเบอร์มือถือ เลขบัตรประชาชน หรือเลข e-Wallet ที่คุณใส่
@@ -65,6 +65,12 @@ function PrivacyTh() {
           </li>
           <li>
             <b>สถานะการลบบัญชี</b> — วันที่คุณขอลบบัญชี เพื่อให้กู้คืนได้ภายใน 30 วัน
+          </li>
+          <li>
+            <b>การใช้งานล่าสุด</b> — เวลาที่คุณเปิดแอปครั้งล่าสุด ใช้ดูแลระบบเท่านั้น
+          </li>
+          <li>
+            <b>สถานะการระงับบัญชี</b> — ถ้าบัญชีถูกระงับเพราะละเมิดข้อกำหนดการใช้งาน เราเก็บวันที่ระงับและเหตุผลสั้นๆ
           </li>
         </ul>
         <p>
@@ -85,6 +91,7 @@ function PrivacyTh() {
             สรุปของเดือนที่แล้วในต้นเดือน และเตือนให้จดรายการตอนค่ำถ้าวันนั้นยังไม่ได้จด (เฉพาะเมื่อคุณเปิดไว้)
           </li>
           <li>อ่านข้อความแจ้งปัญหาเพื่อแก้ไขและปรับปรุงแอป</li>
+          <li>ดูแลระบบและป้องกันการใช้งานในทางที่ผิด เช่น ระงับบัญชีที่ละเมิดข้อกำหนดการใช้งาน</li>
         </ul>
         <p>
           เราประมวลผลข้อมูลเพื่อให้บริการตามที่คุณใช้งาน (ฐานสัญญา) และตามความยินยอมของคุณสำหรับการแจ้งเตือน
@@ -111,6 +118,11 @@ function PrivacyTh() {
         </ul>
         <p>
           ผู้ให้บริการเหล่านี้ประมวลผลข้อมูลแทนเราเพื่อให้แอปทำงานได้เท่านั้น การรับส่งข้อมูลทั้งหมดเข้ารหัสด้วย HTTPS
+        </p>
+        <p>
+          ผู้ดูแลแอปมีหน้าสำหรับดูแลระบบ ซึ่งแสดงชื่อ อีเมล วันที่สมัคร เวลาใช้งานล่าสุด จำนวนอุปกรณ์ที่เปิดแจ้งเตือน
+          สถานะบัญชี จำนวนข้อมูลแต่ละประเภทที่คุณเก็บไว้และขนาดโดยประมาณ (เป็นตัวเลขเท่านั้น)
+          และข้อความแจ้งปัญหาที่คุณส่ง หน้านั้นไม่แสดงรายการ ยอดเงิน ชื่อบัญชี ชื่อเพื่อน โน้ต หรือพร้อมเพย์ของคุณ
         </p>
       </section>
 
@@ -222,7 +234,7 @@ function PrivacyEn() {
           </li>
           <li>
             <b>App settings</b> — such as notification read state, language, the time zone used for billing dates,
-            categories you create, and suggestions you marked as not a monthly bill.
+            categories you create, suggestions you marked as not a monthly bill, and bill rounds you skipped.
           </li>
           <li>
             <b>Your PromptPay ID</b> — if you set one, the mobile number, national ID or e-wallet ID you enter, used
@@ -236,6 +248,13 @@ function PrivacyEn() {
           <li>
             <b>Account deletion status</b> — when you asked to delete your account, so it can be restored within 30
             days.
+          </li>
+          <li>
+            <b>Last use</b> — when you last opened the app, used only to look after the service.
+          </li>
+          <li>
+            <b>Suspension status</b> — if an account is suspended for breaking the terms of use, the date and a short
+            reason.
           </li>
         </ul>
         <p>
@@ -260,6 +279,7 @@ function PrivacyEn() {
             evening reminder to log when you haven&apos;t that day (only if you turn it on)
           </li>
           <li>To read problem reports so we can fix and improve the app</li>
+          <li>To look after the service and prevent abuse, such as suspending accounts that break the terms of use</li>
         </ul>
         <p>
           We process your data to provide the service you use (contract) and, for notifications, with your consent. We
@@ -285,6 +305,12 @@ function PrivacyEn() {
           </li>
         </ul>
         <p>These providers process data on our behalf only to run the app. All traffic is encrypted with HTTPS.</p>
+        <p>
+          The app&apos;s maintainers have an admin screen that shows your name, email, sign-up date, last use, how many
+          devices have notifications on, your account status, how much of each kind of data you keep and its approximate
+          size (numbers only), and the problem reports you sent. It does not show your entries, amounts, account names,
+          friends&apos; names, notes or PromptPay ID.
+        </p>
       </section>
 
       <section>

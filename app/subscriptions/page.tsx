@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useState } from "react"
 import { DuePill, SubMono, TabScreen, TxIcon } from "@/components/app"
+import { billStatus, useOpenBills } from "@/components/bills"
 import { RecurringSuggestions } from "@/components/RecurringSuggestions"
 import { Icon } from "@/components/ui/Icon"
 import { Empty, HeroCard, IconButton, ListCard, TabHeader, cx } from "@/components/ui/primitives"
@@ -44,6 +45,8 @@ export default function SubscriptionsPage() {
       color: SEG_COLORS[i % SEG_COLORS.length],
     }))
   const accName = (id: string) => accounts.find((a) => a.id === id)?.name ?? ""
+  // Bills of changing amount whose round hasn't been paid yet.
+  const openBills = useOpenBills()
 
   return (
     <TabScreen>
@@ -167,17 +170,29 @@ export default function SubscriptionsPage() {
         </div>
         {recurring.length ? (
           <ListCard>
-            {upcomingRecurring.map(({ sub, due, days, n }) => (
-              <RecurringRow key={sub.id} sub={sub} account={accName(sub.accountId)} detail={shortDate(due, false)}>
-                {sub.installments ? (
-                  <span className="rounded-full bg-chip px-2 py-px text-[11px] font-semibold whitespace-nowrap">
-                    {tr("rec.progress", { n, total: sub.installments })}
-                  </span>
-                ) : (
-                  <DuePill days={days} />
-                )}
-              </RecurringRow>
-            ))}
+            {upcomingRecurring.map(({ sub, due, days, n }) => {
+              const open = openBills.find((b) => b.sub.id === sub.id)
+              return (
+                <RecurringRow
+                  key={sub.id}
+                  sub={sub}
+                  account={accName(sub.accountId)}
+                  detail={shortDate(open ? open.due : due, false)}
+                >
+                  {open && open.days < 0 ? (
+                    <span className="rounded-full bg-expense-tint px-2 py-px text-[11px] font-semibold whitespace-nowrap text-danger">
+                      {billStatus(open.days)}
+                    </span>
+                  ) : sub.installments ? (
+                    <span className="rounded-full bg-chip px-2 py-px text-[11px] font-semibold whitespace-nowrap">
+                      {tr("rec.progress", { n, total: sub.installments })}
+                    </span>
+                  ) : (
+                    <DuePill days={open ? open.days : days} />
+                  )}
+                </RecurringRow>
+              )
+            })}
             {finished.map((sub) => (
               <RecurringRow key={sub.id} sub={sub} account={accName(sub.accountId)} detail={tr("rec.paidOff")} dim>
                 <span className="rounded-full bg-income-tint px-2 py-px text-[11px] font-semibold whitespace-nowrap text-income">
@@ -242,7 +257,7 @@ function RecurringRow({
       </div>
       <div className="flex flex-col items-end gap-0.5">
         <span className="font-mono text-[15px] font-semibold" style={{ color: meta.color }}>
-          {meta.sign}
+          {sub.variable ? "≈ " : meta.sign}
           {baht(sub.amount)}
           <span className="font-sans text-[11px] font-normal text-muted"> {cyclePer(sub.cycle)}</span>
         </span>

@@ -32,6 +32,7 @@ export function useNotifications() {
             today: todayISO(),
             now,
             startDay: cycleStartDay(settings),
+            billSkipped: settings.billSkipped,
           })
         : [],
     [accounts, transactions, subscriptions, goals, wishes, now, settings],

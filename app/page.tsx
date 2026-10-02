@@ -5,6 +5,7 @@ import { useMemo, useState } from "react"
 import { SubMono, TabScreen, TxIcon, TxRow } from "@/components/app"
 import { MonthSwitcher } from "@/components/pickers"
 import { Icon } from "@/components/ui/Icon"
+import { BillsDue } from "@/components/bills"
 import { BudgetBannerCard } from "@/components/BudgetBanner"
 import { LeftoverCard } from "@/components/LeftoverCard"
 import { CashFlowAlert } from "@/components/cashflow"
@@ -165,6 +166,7 @@ export default function OverviewPage() {
       {/* "On plan" repeats the allowance card's per-day figure; show the banner only when it adds something. */}
       {allowance && banner.tone === "ok" ? null : <BudgetBannerCard banner={banner} />}
       <CashFlowAlert />
+      <BillsDue />
       <LeftoverCard />
 
       {owed.length ? (
@@ -234,7 +236,10 @@ export default function OverviewPage() {
                 </div>
                 <div className="flex min-w-0 flex-col">
                   <span className="truncate text-[13px] font-medium">{sub.name}</span>
-                  <span className="font-mono text-sm font-semibold">{formatMoney(sub.amount, sub.currency)}</span>
+                  <span className="font-mono text-sm font-semibold">
+                    {sub.variable ? "≈ " : ""}
+                    {formatMoney(sub.amount, sub.currency)}
+                  </span>
                 </div>
               </Link>
             ))}

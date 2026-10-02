@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { useState } from "react"
 import { PushScreen, SubMono, TxIcon, TxRow } from "@/components/app"
+import { BillSheet, billStatus } from "@/components/bills"
 import { Icon } from "@/components/ui/Icon"
 import {
   Card,
@@ -27,6 +28,7 @@ import {
   shortDate,
   todayISO,
 } from "@/lib/format"
+import { billAverage, billPayments, openBill } from "@/lib/bills"
 import { renewalNotifId, spentSoFar, upcomingRenewal, yearlyCost } from "@/lib/renewals"
 import { chargesSoFar, nextCharge, planInterest } from "@/lib/selectors"
 import { inTrial } from "@/lib/trial"
@@ -44,11 +46,15 @@ export default function SubscriptionDetailPage() {
   const remove = useStore((s) => s.deleteSubscription)
   const usdRate = useStore((s) => s.usdRate)
   const renewKept = useStore((s) => s.settings.renewKept)
+  const billSkipped = useStore((s) => s.settings.billSkipped)
+  const skipBill = useStore((s) => s.skipBill)
   const setSettings = useStore((s) => s.setSettings)
   const markRead = useStore((s) => s.markNotificationRead)
   const notify = useStore((s) => s.notify)
   const { t: tr } = useTranslation()
   const [confirm, setConfirm] = useState(false)
+  // Logging what a bill of changing amount came to: for the round that's waiting ("due"), or any time ("any").
+  const [paying, setPaying] = useState<"" | "due" | "any">("")
   const today = todayISO()
 
   if (!sub) {
@@ -80,6 +86,10 @@ export default function SubscriptionDetailPage() {
   const askReview = renewal && reviewId && !(renewKept ?? []).includes(reviewId)
   const spent = recurring ? null : spentSoFar(sub, transactions, today)
   const trial = inTrial(sub, today)
+  // A bill of changing amount: the round waiting to be paid, and what it usually comes to.
+  const bill = sub.variable ? openBill(sub, transactions, today, billSkipped) : null
+  const billCount = sub.variable ? billPayments(sub, transactions).length : 0
+  const average = billCount > 1 ? billAverage(sub, transactions) : null
   const dayRule =
     sub.cycle === "week"
       ? tr("subs.everyWeek")
@@ -108,7 +118,7 @@ export default function SubscriptionDetailPage() {
           className="font-mono text-[30px] font-semibold tracking-tight"
           style={recurring ? { color: meta.color } : undefined}
         >
-          {recurring ? meta.sign : ""}
+          {sub.variable ? "≈ " : recurring ? meta.sign : ""}
           {formatMoney(sub.amount, sub.currency, true).replace(/.00$/, "")}
           <span className="font-sans text-[15px] font-medium tracking-normal text-muted"> {cyclePer(sub.cycle)}</span>
         </span>
@@ -120,12 +130,14 @@ export default function SubscriptionDetailPage() {
         <span className="rounded-full bg-chip px-3 py-1 text-[13px] font-semibold">
           {sub.paused
             ? tr("subs.pausedNow")
-            : !next
-              ? tr("rec.paidOff")
-              : tr(recurring ? "rec.next" : trial ? "subs.trialNext" : "subs.next", {
-                  date: shortDate(next.due),
-                  rel: relativeDue(days),
-                })}
+            : bill && bill.days < 0
+              ? billStatus(bill.days)
+              : !next
+                ? tr("rec.paidOff")
+                : tr(recurring ? "rec.next" : trial ? "subs.trialNext" : "subs.next", {
+                    date: shortDate(next.due),
+                    rel: relativeDue(days),
+                  })}
         </span>
         {sub.installments ? (
           <span className="text-[13px] text-muted">
@@ -136,6 +148,42 @@ export default function SubscriptionDetailPage() {
           </span>
         ) : null}
       </section>
+
+      {sub.variable && !sub.paused ? (
+        bill ? (
+          <Card className="flex flex-col gap-3 p-4">
+            <div className="flex items-start gap-3">
+              <span
+                className={
+                  bill.days < 0
+                    ? "flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-expense-tint text-danger"
+                    : "flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-warn-tint text-warn-ink"
+                }
+              >
+                <Icon name="bell" size={20} strokeWidth={2} />
+              </span>
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <span className="font-semibold">{billStatus(bill.days)}</span>
+                <span className="text-sm leading-relaxed text-muted">
+                  {tr("bill.cardLead", { date: shortDate(bill.due) })}
+                </span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <SecondaryButton onClick={() => skipBill(sub.id, bill.due)}>{tr("bill.skip")}</SecondaryButton>
+              <button
+                type="button"
+                onClick={() => setPaying("due")}
+                className="min-h-[52px] w-full rounded-2xl bg-ink text-[15px] font-semibold text-on-ink"
+              >
+                {tr("bill.log")}
+              </button>
+            </div>
+          </Card>
+        ) : (
+          <SecondaryButton onClick={() => setPaying("any")}>{tr("bill.log")}</SecondaryButton>
+        )
+      ) : null}
 
       {askReview ? (
         <Card className="flex flex-col gap-3 p-4">
@@ -188,6 +236,13 @@ export default function SubscriptionDetailPage() {
         {sub.trialFrom ? (
           <Row label={tr("subs.trialPeriod")} value={`${shortDate(sub.trialFrom)} – ${shortDate(sub.startDate)}`} />
         ) : null}
+        {sub.variable ? <Row label={tr("bill.kind")} value={tr("bill.kindValue")} /> : null}
+        {average !== null ? (
+          <Row
+            label={tr("bill.average")}
+            value={tr("bill.averageOf", { amount: baht2(average), count: Math.min(billCount, 6) })}
+          />
+        ) : null}
         <Row label={tr("subs.cycle")} value={cycleLabel(sub.cycle)} />
         <Row label={tr("subs.billingDay")} value={dayRule} />
         {!recurring && sub.cycle !== "year" ? (
@@ -238,20 +293,22 @@ export default function SubscriptionDetailPage() {
             onChange={(remind) => update(sub.id, { remind })}
           />
         ) : null}
-        <SwitchRow
-          label={tr(
-            !recurring
-              ? "subs.autoLog"
-              : sub.entryType === "in"
-                ? "rec.autoLogIn"
-                : sub.entryType === "move"
-                  ? "rec.autoLogMove"
-                  : "rec.autoLogOut",
-          )}
-          hint={tr(recurring ? "rec.autoLogHint" : "subs.autoLogHint")}
-          checked={sub.autoLog}
-          onChange={(autoLog) => update(sub.id, { autoLog })}
-        />
+        {sub.variable ? null : (
+          <SwitchRow
+            label={tr(
+              !recurring
+                ? "subs.autoLog"
+                : sub.entryType === "in"
+                  ? "rec.autoLogIn"
+                  : sub.entryType === "move"
+                    ? "rec.autoLogMove"
+                    : "rec.autoLogOut",
+            )}
+            hint={tr(recurring ? "rec.autoLogHint" : "subs.autoLogHint")}
+            checked={sub.autoLog}
+            onChange={(autoLog) => update(sub.id, { autoLog })}
+          />
+        )}
       </ListCard>
 
       {recurring ? (
@@ -295,6 +352,12 @@ export default function SubscriptionDetailPage() {
           {tr(recurring ? "rec.delete" : "subs.cancel")}
         </SecondaryButton>
       </div>
+
+      <BillSheet
+        sub={paying ? sub : null}
+        due={paying === "due" ? bill?.due : undefined}
+        onClose={() => setPaying("")}
+      />
 
       <Sheet
         open={confirm}

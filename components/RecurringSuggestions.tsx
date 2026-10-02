@@ -41,9 +41,15 @@ export function RecurringSuggestions() {
             <TxIcon type="out" category={c.category} size={36} />
             <span className="flex min-w-0 grow flex-col">
               <span className="truncate text-[15px] font-semibold">{c.title}</span>
-              <span className="text-xs text-muted">{t("suggest.detail", { day: c.day, count: c.months })}</span>
+              <span className="text-xs text-muted">
+                {t("suggest.detail", { day: c.day, count: c.months })}
+                {c.variable ? ` · ${t("suggest.variable")}` : ""}
+              </span>
             </span>
-            <span className="font-mono text-[15px] font-semibold">{baht(c.amount)}</span>
+            <span className="font-mono text-[15px] font-semibold">
+              {c.variable ? "≈ " : ""}
+              {baht(c.amount)}
+            </span>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <button
