@@ -51,6 +51,12 @@ function PrivacyTh() {
             และชื่อรุ่นเบราว์เซอร์
           </li>
           <li>
+            <b>ข้อผิดพลาดของแอป</b> — เมื่อแอปทำงานผิดพลาดบนอุปกรณ์ของคุณ แอปส่งข้อความข้อผิดพลาด ตำแหน่งในโค้ดที่เกิด
+            หน้าที่เปิดอยู่ เวอร์ชันแอป และชนิดอุปกรณ์ให้เราโดยอัตโนมัติ เพื่อแก้ไขได้แม้คุณไม่ได้แจ้ง ไม่มีรายการ
+            ยอดเงิน หรือชื่อของคุณ (อีเมล ตัวเลขยาว และข้อความภาษาไทยถูกตัดออกก่อนเก็บ)
+            เราเก็บว่าบัญชีของคุณพบข้อผิดพลาดใดเพื่อนับจำนวนคนที่พบเท่านั้น และลบทิ้งภายใน 14 วัน
+          </li>
+          <li>
             <b>การตั้งค่าในแอป</b> — เช่น สถานะการอ่านการแจ้งเตือน เขตเวลาที่ใช้คำนวณวันตัดบัญชี หมวดหมู่ที่คุณสร้างเอง
             รายการที่คุณบอกว่าไม่ใช่บิลรายเดือน และรอบบิลที่คุณกดข้าม
           </li>
@@ -114,6 +120,14 @@ function PrivacyTh() {
           </li>
           <li>
             <b>บริการแจ้งเตือนของเบราว์เซอร์</b> (เช่น Apple, Google) — ส่งข้อความแจ้งเตือนที่เข้ารหัสไปยังอุปกรณ์ของคุณ
+          </li>
+          <li>
+            <b>Discord</b> — เมื่อคุณส่งข้อความแจ้งปัญหา ข้อความนั้น ชื่อที่แสดง เวอร์ชันแอป หน้าที่เปิดล่าสุด
+            และชนิดอุปกรณ์ จะถูกส่งไปยังห้องส่วนตัวของผู้ดูแลแอป เพื่อให้เห็นและแก้ไขได้เร็ว (ไม่ส่งอีเมลของคุณ)
+            จึงไม่ควรใส่ข้อมูลส่วนตัวหรือข้อมูลการเงินในข้อความแจ้งปัญหา ผู้ดูแลยังได้รับข้อผิดพลาดของแอป
+            (ไม่มีชื่อของคุณ) และการแจ้งเตือนของระบบทาง Discord ซึ่งมีชื่อที่แสดงของคุณกับจำนวนข้อมูล
+            (เป็นตัวเลขเท่านั้น) เฉพาะเมื่อบัญชีถูกระงับ หรือมีการใช้งานผิดปกติ เช่น
+            มีรายการเพิ่มหลายพันรายการในวันเดียว
           </li>
         </ul>
         <p>
@@ -233,6 +247,13 @@ function PrivacyEn() {
             your browser version.
           </li>
           <li>
+            <b>App errors</b> — when the app fails on your device it sends us the error message, where in the code it
+            happened, the screen you were on, the app version and your device type, automatically, so we can fix it even
+            if you don&apos;t report it. It carries no entries, amounts or your name (emails, long numbers and Thai text
+            are removed before it is kept). We record that your account met the error only to count how many people did,
+            and delete it within 14 days.
+          </li>
+          <li>
             <b>App settings</b> — such as notification read state, language, the time zone used for billing dates,
             categories you create, suggestions you marked as not a monthly bill, and bill rounds you skipped.
           </li>
@@ -302,6 +323,14 @@ function PrivacyEn() {
           </li>
           <li>
             <b>Browser push services</b> (e.g. Apple, Google) — deliver encrypted notifications to your device
+          </li>
+          <li>
+            <b>Discord</b> — when you send a problem report, the message, your display name, the app version, the last
+            screen you opened and your device type are posted to the maintainers&apos; private channel so it is seen and
+            fixed quickly (your email is not sent). Please don&apos;t put personal or financial details in a report. The
+            maintainers also get app errors there (without your name) and system alerts, which carry your display name
+            and a count (numbers only), and only when your account is suspended or is used in an unusual way, such as
+            thousands of entries added in one day.
           </li>
         </ul>
         <p>These providers process data on our behalf only to run the app. All traffic is encrypted with HTTPS.</p>

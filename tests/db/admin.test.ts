@@ -43,6 +43,7 @@ describe.sequential("admin role", () => {
       `select * from public.admin_users()`,
       `select * from public.admin_overview()`,
       `select * from public.admin_feedback()`,
+      `select * from public.admin_health()`,
       `select public.admin_set_suspended('${OTHER}', true)`,
       `select public.admin_resolve_feedback(gen_random_uuid(), true)`,
     ]) {
@@ -94,6 +95,36 @@ describe.sequential("admin role", () => {
     expect(await t.as(ADMIN, `select * from public.admin_user_detail(gen_random_uuid())`)).toEqual([])
     await expect(t.as(USER, `select * from public.admin_user_detail('${USER}')`)).rejects.toThrow(/admin only/)
     await expect(t.as(null, `select * from public.admin_user_detail('${USER}')`)).rejects.toThrow(/permission/)
+  })
+
+  it("reports the database size and each scheduled job's last run", async () => {
+    type Health = { job: string | null; active: boolean; last_status: string | null; failed_week: number | null }
+    // Without pg_cron (as here): just the database.
+    const bare = await t.as<Health & { db_bytes: number }>(ADMIN, `select * from public.admin_health()`)
+    expect(bare).toHaveLength(1)
+    expect(bare[0].job).toBeNull()
+    expect(Number(bare[0].db_bytes)).toBeGreaterThan(0)
+
+    await t.db.exec(`
+      create schema cron;
+      create table cron.job (jobid bigint primary key, jobname text, schedule text, active boolean);
+      create table cron.job_run_details (jobid bigint, status text, start_time timestamptz, end_time timestamptz);
+      insert into cron.job values (1, 'log-due-subscriptions', '5 * * * *', true), (2, 'purge-old-logs', '41 3 * * *', true),
+        (3, 'purge-cron-history', '43 3 * * *', false);
+      insert into cron.job_run_details values
+        (1, 'failed', now() - interval '3 hours', now() - interval '3 hours'),
+        (1, 'succeeded', now() - interval '1 hour', now() - interval '1 hour'),
+        (1, 'running', now(), null),
+        (2, 'failed', now() - interval '2 hours', now() - interval '2 hours');
+    `)
+    const rows = await t.as<Health>(ADMIN, `select * from public.admin_health()`)
+    const jobs = rows.filter((r) => r.job !== null).map((r) => [r.job, r.active, r.last_status, Number(r.failed_week)])
+    expect(jobs).toEqual([
+      ["log-due-subscriptions", true, "succeeded", 1],
+      ["purge-cron-history", false, null, 0],
+      ["purge-old-logs", true, "failed", 1],
+    ])
+    await t.db.exec(`drop schema cron cascade`)
   })
 
   it("searches by name or email and pages", async () => {

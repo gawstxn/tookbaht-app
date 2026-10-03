@@ -5,6 +5,7 @@ import { create } from "zustand"
 import { isSuspended } from "./admin"
 import { billRoundId } from "./bills"
 import { TYPE_META, registerCustomCategories } from "./constants"
+import { reportError } from "./errorReport"
 import { fetchAll, fromRow, toRow, type IouRow, type TransactionRow } from "./db"
 import { applyLang, currentLang, t, type Lang } from "./i18n"
 import { TERMS_VERSION } from "./legal"
@@ -259,7 +260,11 @@ export const useStore = create<State & Actions>()((set, get) => {
     console.error(res.error)
     undo()
     if (isSuspended(res.error)) suspend()
-    else get().notify(res.error.hint === "row_limit" ? t("toast.rowLimit") : message, { tone: "error" })
+    else {
+      // A write the server refused: the user sees a toast, the maintainers hear about it (a full table is expected).
+      if (res.error.hint !== "row_limit") reportError("save", res.error)
+      get().notify(res.error.hint === "row_limit" ? t("toast.rowLimit") : message, { tone: "error" })
+    }
     return false
   }
   let lastSave: Promise<unknown> = Promise.resolve()
@@ -954,21 +959,28 @@ export const useStore = create<State & Actions>()((set, get) => {
     },
 
     sendFeedback: async (message, page) => {
-      const { error } = await sb()
-        .from("feedback")
-        .insert({
+      // Through the server, which saves it as this user and tells the maintainers (app/api/feedback).
+      const error = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           message: message.trim().slice(0, 2000),
-          app_version: `${process.env.NEXT_PUBLIC_APP_VERSION} (${process.env.NEXT_PUBLIC_APP_COMMIT})`.slice(0, 40),
+          appVersion: `${process.env.NEXT_PUBLIC_APP_VERSION} (${process.env.NEXT_PUBLIC_APP_COMMIT})`.slice(0, 40),
           page: page.slice(0, 200),
-          user_agent: navigator.userAgent.slice(0, 300),
-        })
+        }),
+      })
+        .then(async (res) => (res.ok ? null : String(((await res.json()) as { error?: string }).error)))
+        .catch(() => "failed")
       if (error) {
-        console.error(error)
+        if (error === "suspended") {
+          suspend()
+          return false
+        }
         get().notify(
           t(
-            error.hint === "feedback_limit"
+            error === "feedback_limit"
               ? "feedback.limit"
-              : error.hint === "row_limit"
+              : error === "row_limit"
                 ? "toast.rowLimit"
                 : "feedback.failed",
           ),

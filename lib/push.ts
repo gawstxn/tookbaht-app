@@ -52,6 +52,8 @@ export async function pusherFor(db: SupabaseClient, userIds: string[]) {
   if (error) throw error
 
   let sent = 0
+  // Devices that refused a push for a reason other than being gone.
+  let failed = 0
   const gone = new Set<string>()
   return {
     lang: (userId: string): Lang => langOf.get(userId) ?? "th",
@@ -73,7 +75,10 @@ export async function pusherFor(db: SupabaseClient, userIds: string[]) {
           const status = (e as { statusCode?: number }).statusCode
           // The browser dropped this subscription; stop sending to it.
           if (status === 404 || status === 410) gone.add(t.id)
-          else console.error("push failed", status, e)
+          else {
+            failed++
+            console.error("push failed", status, e)
+          }
         }
       }
       return ok
@@ -84,7 +89,7 @@ export async function pusherFor(db: SupabaseClient, userIds: string[]) {
           .from("push_subscriptions")
           .delete()
           .in("id", [...gone])
-      return { sent, removed: gone.size }
+      return { sent, failed, removed: gone.size }
     },
   }
 }

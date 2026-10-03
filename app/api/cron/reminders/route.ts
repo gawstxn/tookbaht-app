@@ -13,6 +13,7 @@ import {
   type PendingSummary,
 } from "@/lib/pushText"
 import { refreshUsdRate } from "@/lib/rates"
+import { afterCron } from "@/lib/alerts"
 import { createSupabaseAdmin } from "@/lib/supabase/admin"
 
 /**
@@ -23,7 +24,7 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin"
  * by Vercel Cron with `Authorization: Bearer $CRON_SECRET`.
  * Each kind is recorded once delivered, so a retried run doesn't repeat it.
  */
-export async function GET(request: NextRequest) {
+async function run(request: NextRequest) {
   const secret = process.env.CRON_SECRET
   if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 })
@@ -113,7 +114,7 @@ export async function GET(request: NextRequest) {
     if (ok) deliveredSummary.push({ user_id: r.user_id, month: r.month })
   }
 
-  const { sent, removed } = await pusher.finish()
+  const { sent, failed, removed } = await pusher.finish()
   const logs = await Promise.all([
     deliveredCharges.length ? db.from("reminders_sent").upsert(deliveredCharges, { ignoreDuplicates: true }) : null,
     deliveredRenewals.length
@@ -133,6 +134,10 @@ export async function GET(request: NextRequest) {
     budgets: pendingBudget.length,
     summaries: pendingSummary.length,
     sent,
+    failed,
     removed,
   })
 }
+
+/** Also tells the maintainers when the job failed or no push got through, and sends waiting alerts. */
+export const GET = async (request: NextRequest) => afterCron("reminders", await run(request))

@@ -271,6 +271,7 @@ export default function ProfilePage() {
         <Group title={tr("admin.title")}>
           <NavRow label={tr("admin.users")} onClick={() => router.push("/admin/users")} />
           <NavRow label={tr("admin.feedback")} onClick={() => router.push("/admin/feedback")} />
+          <NavRow label={tr("admin.healthTitle")} onClick={() => router.push("/admin/health")} />
         </Group>
       ) : null}
 

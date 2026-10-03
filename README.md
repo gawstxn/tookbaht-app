@@ -74,7 +74,17 @@
 
 ### Admin
 
-- An account with `profiles.role = 'admin'` gets two more rows on the profile screen: **users** (name, email, sign-up date, last active, notification devices, how many rows of each kind the account keeps against its cap, how many entries were added in the last day and week, and the approximate size, never the entries themselves; totals and the database size against the 500 MB free tier) and **feedback** (the problem reports users send, with a done / not done mark).
+- An account with `profiles.role = 'admin'` gets three more rows on the profile screen: **users** (name, email, sign-up date, last active, notification devices, how many rows of each kind the account keeps against its cap, how many entries were added in the last day and week, and the approximate size, never the entries themselves; totals and the database size against the 500 MB free tier) and **feedback** (the problem reports users send, with a done / not done mark), and **system status** (is the database reachable and how full it is, did each scheduled database job run, sign-in, the server keys, push, the Discord webhook and the exchange rate; it says whether a key is set and works, never the key).
+- Problem reports are also posted to a Discord channel when `DISCORD_FEEDBACK_WEBHOOK_URL` is set (Discord → channel settings → Integrations → Webhooks): the message, display name, app version, last screen and device, not the email.
+- **Alerts** go to a second channel when `DISCORD_ALERTS_WEBHOOK_URL` is set: a scheduled database job that failed or stopped, the database passing 80% and 95% of 500 MB, an account adding more than 2,000 entries in a day or filling a table to its cap, an account using up its 20 reports a day, more than 20 sign-ups in one hour, a suspension or its lifting (who did it), a daily cron that failed or whose pushes all failed, and a summary each morning. Each is raised once (a row in `admin_alerts`, kept 30 days) and carries display names and counts, never entries.
+- **Errors** users run into without reporting go to a third channel when `DISCORD_ERRORS_WEBHOOK_URL` is set: uncaught errors and rejected promises in the browser (`instrumentation-client.ts`), writes the server refused, and errors thrown on the server (`instrumentation.ts`). The text is scrubbed (emails, ids, long numbers, Thai text), the same error is one row a day in `error_reports` with a count of occurrences and people, and it is posted when new and again at 10, 100 and 1,000 occurrences. Kept 14 days. Stacks are from the minified build.
+- Alerts are sent by `/api/cron/alerts`. The two daily Vercel cron jobs call it at 09:00 and 20:00 Bangkok; to send every hour, let the database call it (Vercel Cron on the free plan runs once a day). Run once in the Supabase SQL editor, with the app's address and the same `CRON_SECRET` as on Vercel:
+
+  ```sql
+  select vault.create_secret('https://<domain>', 'app_url');
+  select vault.create_secret('<CRON_SECRET>', 'cron_secret');
+  ```
+
 - An admin can **suspend** an account that abuses the app: the database then refuses every request from it until the suspension is lifted, and the user sees an "account suspended" screen.
 - Make an admin by hand in the Supabase SQL editor: `update public.profiles set role = 'admin' where email = '<email>';`
 
@@ -106,14 +116,17 @@ After pulling new migrations run `npx supabase migration up`; to start over, `np
 
 ### Environment variables
 
-| Variable                                                             | Where it's used                                     |
-| -------------------------------------------------------------------- | --------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`   | Browser and server                                  |
-| `SUPABASE_SECRET_KEY`                                                | Server only: cron jobs, exchange rates              |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web Push (`npx web-push generate-vapid-keys`)       |
-| `CRON_SECRET`                                                        | Vercel Cron authorization                           |
-| `NEXT_PUBLIC_CONTACT_EMAIL`                                          | Contact on the privacy and terms pages (optional)   |
-| `NEXT_PUBLIC_DEV_LOGIN`                                              | Local one-tap sign-in. **Never set in production.** |
+| Variable                                                             | Where it's used                                                                        |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`   | Browser and server                                                                     |
+| `SUPABASE_SECRET_KEY`                                                | Server only: cron jobs, exchange rates                                                 |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web Push (`npx web-push generate-vapid-keys`)                                          |
+| `CRON_SECRET`                                                        | Vercel Cron authorization                                                              |
+| `DISCORD_FEEDBACK_WEBHOOK_URL`                                       | Server only: problem reports are also posted to this Discord webhook (optional)        |
+| `DISCORD_ALERTS_WEBHOOK_URL`                                         | Server only: system alerts and the daily summary go to this Discord webhook (optional) |
+| `DISCORD_ERRORS_WEBHOOK_URL`                                         | Server only: errors the app ran into go to this Discord webhook (optional)             |
+| `NEXT_PUBLIC_CONTACT_EMAIL`                                          | Contact on the privacy and terms pages (optional)                                      |
+| `NEXT_PUBLIC_DEV_LOGIN`                                              | Local one-tap sign-in. **Never set in production.**                                    |
 
 ## Commands and tests
 
