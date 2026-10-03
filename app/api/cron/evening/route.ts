@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { pusherFor, setUpVapid } from "@/lib/push"
 import { logReminderText, type StreakState } from "@/lib/pushText"
+import { afterCron } from "@/lib/alerts"
 import { createSupabaseAdmin } from "@/lib/supabase/admin"
 
 /**
@@ -8,7 +9,7 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin"
  * reminder on and haven't logged anything today. Sent at most once a day.
  * Called by Vercel Cron with `Authorization: Bearer $CRON_SECRET`.
  */
-export async function GET(request: NextRequest) {
+async function run(request: NextRequest) {
   const secret = process.env.CRON_SECRET
   if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 })
@@ -37,10 +38,13 @@ export async function GET(request: NextRequest) {
     if (await pusher.push(r.user_id, { ...text, tag: `log-${r.date}` }))
       delivered.push({ user_id: r.user_id, date: r.date })
   }
-  const { sent, removed } = await pusher.finish()
+  const { sent, failed, removed } = await pusher.finish()
   if (delivered.length) {
     const { error: logError } = await db.from("log_reminders_sent").upsert(delivered, { ignoreDuplicates: true })
     if (logError) console.error(logError)
   }
-  return NextResponse.json({ reminders: pending.length, sent, removed })
+  return NextResponse.json({ reminders: pending.length, sent, failed, removed })
 }
+
+/** Also tells the maintainers when the job failed or no push got through, and sends waiting alerts. */
+export const GET = async (request: NextRequest) => afterCron("evening", await run(request))
