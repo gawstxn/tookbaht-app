@@ -27,23 +27,21 @@ import { useStore } from "@/lib/store"
 
 export default function ProfilePage() {
   const router = useRouter()
-  const {
-    user,
-    userId,
-    accounts,
-    transactions,
-    subscriptions,
-    ious,
-    savingsGoals,
-    wishes,
-    goals,
-    settings,
-    usdRate,
-    pending,
-    signOut,
-    load,
-    notify,
-  } = useStore()
+  const user = useStore((s) => s.user)
+  const userId = useStore((s) => s.userId)
+  const accounts = useStore((s) => s.accounts)
+  const transactions = useStore((s) => s.transactions)
+  const subscriptions = useStore((s) => s.subscriptions)
+  const ious = useStore((s) => s.ious)
+  const savingsGoals = useStore((s) => s.savingsGoals)
+  const wishes = useStore((s) => s.wishes)
+  const goals = useStore((s) => s.goals)
+  const settings = useStore((s) => s.settings)
+  const usdRate = useStore((s) => s.usdRate)
+  const pending = useStore((s) => s.pending)
+  const signOut = useStore((s) => s.signOut)
+  const load = useStore((s) => s.load)
+  const notify = useStore((s) => s.notify)
   const owedCount = useMemo(() => debtsByPerson(ious).length, [ious])
   const cashFlows = useCashFlow()
   const cashShort = useMemo(() => firstShortfall(cashFlows), [cashFlows])

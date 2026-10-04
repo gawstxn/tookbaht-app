@@ -16,7 +16,13 @@ import { useStore } from "@/lib/store"
 
 export default function AccountsPage() {
   const { t } = useTranslation()
-  const { accounts, transactions, subscriptions, addAccount, updateAccount, removeAccount, notify } = useStore()
+  const accounts = useStore((s) => s.accounts)
+  const transactions = useStore((s) => s.transactions)
+  const subscriptions = useStore((s) => s.subscriptions)
+  const addAccount = useStore((s) => s.addAccount)
+  const updateAccount = useStore((s) => s.updateAccount)
+  const removeAccount = useStore((s) => s.removeAccount)
+  const notify = useStore((s) => s.notify)
   // "" = closed, "new" = adding, otherwise the account id being edited.
   const [editing, setEditing] = useState("")
   const current = accounts.find((a) => a.id === editing)

@@ -19,7 +19,10 @@ import { setThemePref, themePref, type ThemePref } from "@/lib/theme"
 export default function SettingsPage() {
   const { t: tr } = useTranslation()
   const goBack = useGoBack("/profile")
-  const { settings, setLanguage, setSettings, notify } = useStore()
+  const settings = useStore((s) => s.settings)
+  const setLanguage = useStore((s) => s.setLanguage)
+  const setSettings = useStore((s) => s.setSettings)
+  const notify = useStore((s) => s.notify)
   const [sheet, setSheet] = useState<"" | "lang" | "theme" | "lock" | "cycle">("")
   const startDay = useStartDay()
   // Per-device settings, read after mount.

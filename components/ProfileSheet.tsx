@@ -48,7 +48,9 @@ export function ProfileSheet({ open, onClose }: { open: boolean; onClose: () => 
 
 function ProfileFields({ onDone }: { onDone: () => void }) {
   const { t: tr } = useTranslation()
-  const { user, settings, updateProfile } = useStore()
+  const user = useStore((s) => s.user)
+  const settings = useStore((s) => s.settings)
+  const updateProfile = useStore((s) => s.updateProfile)
   const [name, setName] = useState(user?.name ?? "")
   const [avatar, setAvatar] = useState<string | undefined>(avatarSrc(settings.avatar) ? settings.avatar : undefined)
   const clean = cleanName(name)

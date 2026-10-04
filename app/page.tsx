@@ -25,7 +25,10 @@ import { setAmountsHidden, useAmountsHidden } from "@/lib/hideAmounts"
 import type { Transaction } from "@/lib/types"
 
 export default function OverviewPage() {
-  const { transactions, subscriptions, goals, ious } = useStore()
+  const transactions = useStore((s) => s.transactions)
+  const subscriptions = useStore((s) => s.subscriptions)
+  const goals = useStore((s) => s.goals)
+  const ious = useStore((s) => s.ious)
   const period = useViewPeriod()
   const owed = useMemo(() => debtsByPerson(ious), [ious])
   const owing = useMemo(() => debtsByPerson(ious, "i_owe"), [ious])

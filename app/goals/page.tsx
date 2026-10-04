@@ -13,7 +13,8 @@ import { useTranslation } from "react-i18next"
 import { useStore, useViewPeriod } from "@/lib/store"
 
 export default function GoalsPage() {
-  const { transactions, goals } = useStore()
+  const transactions = useStore((s) => s.transactions)
+  const goals = useStore((s) => s.goals)
   const period = useViewPeriod()
   const { t: tr } = useTranslation()
   const today = todayISO()

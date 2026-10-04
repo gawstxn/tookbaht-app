@@ -19,7 +19,8 @@ import { useStore } from "@/lib/store"
 const SEG_COLORS = ["var(--color-lime)", "var(--color-peach)", "var(--color-on-ink-faint)", "#7fa98f", "#8fa3c9"]
 
 export default function SubscriptionsPage() {
-  const { subscriptions, accounts } = useStore()
+  const subscriptions = useStore((s) => s.subscriptions)
+  const accounts = useStore((s) => s.accounts)
   const { t: tr } = useTranslation()
   const today = todayISO()
   const [sort, setSort] = useState<"due" | "price">("due")

@@ -18,7 +18,12 @@ const minuteNow = () => Math.floor(Date.now() / 60_000) * 60_000
 
 /** The user's notifications plus unread count. */
 export function useNotifications() {
-  const { accounts, transactions, subscriptions, goals, settings, wishes } = useStore()
+  const accounts = useStore((s) => s.accounts)
+  const transactions = useStore((s) => s.transactions)
+  const subscriptions = useStore((s) => s.subscriptions)
+  const goals = useStore((s) => s.goals)
+  const settings = useStore((s) => s.settings)
+  const wishes = useStore((s) => s.wishes)
   const now = useSyncExternalStore(subscribeMinute, minuteNow, () => 0)
   const items = useMemo(
     () =>

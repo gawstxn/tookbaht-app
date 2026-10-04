@@ -31,7 +31,8 @@ const PAGE_DAYS = 10
 type Filter = "all" | TxType
 
 export default function TransactionsPage() {
-  const { transactions, accounts } = useStore()
+  const transactions = useStore((s) => s.transactions)
+  const accounts = useStore((s) => s.accounts)
   const period = useViewPeriod()
   const { t: tr } = useTranslation()
   const [filter, setFilter] = useState<Filter>("all")
