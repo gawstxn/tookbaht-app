@@ -48,7 +48,12 @@ const BUDGET_SHARES = [70, 80, 90]
  */
 export default function OnboardingPage() {
   const router = useRouter()
-  const { user, userId, accounts, addAccount, load, acceptTerms } = useStore()
+  const user = useStore((s) => s.user)
+  const userId = useStore((s) => s.userId)
+  const accounts = useStore((s) => s.accounts)
+  const addAccount = useStore((s) => s.addAccount)
+  const load = useStore((s) => s.load)
+  const acceptTerms = useStore((s) => s.acceptTerms)
   // Accounts already exist when the page is reopened after step 1.
   const [step, setStep] = useState<"accounts" | "goals" | "notify">(() => (accounts.length ? "goals" : "accounts"))
   const [agreed, setAgreed] = useState(false)
