@@ -99,6 +99,20 @@ export default function AccountsPage() {
         <Icon name="chevronRight" size={16} strokeWidth={2} className="text-faint" />
       </Link>
 
+      <Link
+        href="/accounts/check"
+        className="flex min-h-[64px] items-center gap-3 rounded-[20px] border border-line bg-card px-4"
+      >
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-chip">
+          <Icon name="check" size={17} strokeWidth={2.2} />
+        </span>
+        <span className="flex min-w-0 grow flex-col">
+          <span className="text-[15px] font-semibold">{t("monthCheck.open")}</span>
+          <span className="text-xs text-muted">{t("monthCheck.openHint")}</span>
+        </span>
+        <Icon name="chevronRight" size={16} strokeWidth={2} className="text-faint" />
+      </Link>
+
       <AccountEditSheet
         open={editing !== ""}
         onClose={() => setEditing("")}
