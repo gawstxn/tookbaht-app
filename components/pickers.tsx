@@ -319,6 +319,7 @@ export function CategorySheet({
   options,
   value,
   onPick,
+  onAdd,
 }: {
   open: boolean
   onClose: () => void
@@ -326,7 +327,10 @@ export function CategorySheet({
   options: CategoryDef[]
   value: string
   onPick: (k: string) => void
+  /** Adds a "new category" tile; the caller opens its own editor. */
+  onAdd?: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <Sheet open={open} onClose={onClose} title={title}>
       <div role="radiogroup" aria-label={title} className="grid grid-cols-3 gap-2">
@@ -352,6 +356,19 @@ export function CategorySheet({
             </button>
           )
         })}
+        {onAdd ? (
+          <button
+            type="button"
+            onClick={() => {
+              onAdd()
+              onClose()
+            }}
+            className="flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-line px-1.5 text-[13px] font-medium text-muted"
+          >
+            <Icon name="plus" size={20} strokeWidth={2} />
+            {t("cats.add")}
+          </button>
+        ) : null}
       </div>
     </Sheet>
   )

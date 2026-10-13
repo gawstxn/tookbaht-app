@@ -1318,6 +1318,10 @@ const en: Messages = {
   },
   whatsNew: {
     title: "What's new in v{{version}}",
+    saveCategory: {
+      title: "A shorter add screen",
+      body: "No more scrolling. Tap Save, then pick the category in the sheet that opens. The one you use most is already selected.",
+    },
     variableBills: {
       title: "Bills that change every month",
       body: "Water, electricity, a phone bill: add it as a recurring entry and turn on “Amount changes every time”. The app reminds you when it's due and asks what you paid.",

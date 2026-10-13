@@ -11,7 +11,7 @@ import { SlipBatchSheet } from "@/components/SlipBatchSheet"
 import { SlipReader } from "@/components/SlipReader"
 import { TagField } from "@/components/TagField"
 import { TaxField } from "@/components/TaxField"
-import { AccountSheet, DateSheet } from "@/components/pickers"
+import { AccountSheet, CategorySheet, DateSheet } from "@/components/pickers"
 import { Icon } from "@/components/ui/Icon"
 import { Chip, PrimaryButton, PushHeader, Segmented, cx } from "@/components/ui/primitives"
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, TYPE_META, expenseCategories, incomeCategories } from "@/lib/constants"
@@ -88,7 +88,7 @@ function AddForm() {
   const tripCurrencies = useStore((s) => s.settings.tripCurrencies)
   const [cur, setCur] = useState<FxCurrency | "">("")
   const [rate, setRate] = useState<{ key: string; value: UsdRate | null } | null>(null)
-  const [sheet, setSheet] = useState<"" | "acc" | "from" | "to" | "date" | "cur">("")
+  const [sheet, setSheet] = useState<"" | "acc" | "from" | "to" | "date" | "cur" | "cat">("")
   // After saving, go straight on to splitting the bill with friends.
   const [split, setSplit] = useState(false)
   const [slips, setSlips] = useState<SlipFields[] | null>(null)
@@ -168,9 +168,12 @@ function AddForm() {
   const saving = useRef(false)
   const [duplicate, setDuplicate] = useState<{ tx: Transaction; minutes: number } | null>(null)
 
-  const save = (confirmedDuplicate = false) => {
+  // A new income or expense asks for its category after Save, so the screen itself stays short.
+  const asksCategory = !editing && type !== "move"
+
+  const save = (confirmedDuplicate = false, picked = cat) => {
     if (!canSave || saving.current) return
-    const catLabel = cats.find((c) => c.key === cat)?.label ?? ""
+    const catLabel = cats.find((c) => c.key === picked)?.label ?? ""
     const fallback = type === "move" ? t("add.transferTo", { name: accountOf(to)?.name ?? "" }) : catLabel
     // Keep a title the user or a subscription set (e.g. "Claude Pro") unless a note replaces it.
     const kept = editing && editing.type === type && !isDefaultTitle(editing, accounts) ? editing.title : ""
@@ -196,7 +199,7 @@ function AddForm() {
             date,
             title,
             note: note.trim() || undefined,
-            category: cat,
+            category: picked,
             accountId: acc,
             fromId: undefined,
             toId: undefined,
@@ -352,26 +355,13 @@ function AddForm() {
 
       {type !== "move" ? (
         <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap gap-2">
-            {cats.map((c) => (
-              <Chip key={c.key} on={c.key === cat} onClick={() => setCat(c.key)}>
-                <span className="flex items-center gap-1.5">
-                  <Icon name={c.icon} size={15} strokeWidth={2} />
-                  {c.label}
-                </span>
-              </Chip>
-            ))}
-            {!editing ? (
-              <button
-                type="button"
-                onClick={() => setNewCat({ type: type === "in" ? "in" : "out", label: "", icon: "tag" })}
-                className="flex min-h-9 items-center gap-1.5 rounded-full border border-dashed border-line px-3.5 text-[13px] font-medium text-muted"
-              >
-                <Icon name="plus" size={14} strokeWidth={2.2} />
-                {t("cats.add")}
-              </button>
-            ) : null}
-          </div>
+          {editing ? (
+            <FieldButton
+              label={t("common.category")}
+              value={cats.find((c) => c.key === cat)?.label ?? ""}
+              onClick={() => setSheet("cat")}
+            />
+          ) : null}
           <div className="grid grid-cols-2 gap-2">
             <FieldButton
               label={copy.acc}
@@ -501,7 +491,7 @@ function AddForm() {
         ))}
       </div>
 
-      <PrimaryButton onClick={() => save()} disabled={!canSave}>
+      <PrimaryButton onClick={() => (asksCategory ? setSheet("cat") : save())} disabled={!canSave}>
         {copy.save}
       </PrimaryButton>
 
@@ -547,7 +537,26 @@ function AddForm() {
         value={cur}
         onPick={setCur}
       />
-      <CategoryEditSheet draft={newCat} onClose={() => setNewCat(null)} onSaved={setCat} />
+      <CategorySheet
+        open={sheet === "cat"}
+        onClose={() => setSheet("")}
+        title={t("common.category")}
+        options={cats}
+        value={cat}
+        onPick={(k) => {
+          setCat(k)
+          if (asksCategory) save(false, k)
+        }}
+        onAdd={editing ? undefined : () => setNewCat({ type: type === "in" ? "in" : "out", label: "", icon: "tag" })}
+      />
+      <CategoryEditSheet
+        draft={newCat}
+        onClose={() => setNewCat(null)}
+        onSaved={(k) => {
+          setCat(k)
+          if (asksCategory) save(false, k)
+        }}
+      />
       <SlipBatchSheet
         slips={slips}
         category={cat}
@@ -572,7 +581,7 @@ function AddForm() {
         confirmLabel={t("dup.save")}
         onConfirm={() => {
           setDuplicate(null)
-          save(true)
+          save(true, cat)
         }}
       />
     </PushScreen>
