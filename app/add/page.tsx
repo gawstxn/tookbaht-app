@@ -172,7 +172,7 @@ function AddForm() {
   const [duplicate, setDuplicate] = useState<{ tx: Transaction; minutes: number } | null>(null)
 
   // A new income or expense asks for its category after Save, so the screen itself stays short.
-  const asksCategory = !editing && type !== "move"
+  const asksCategory = type !== "move"
 
   const save = (confirmedDuplicate = false, picked = cat) => {
     if (!canSave || saving.current) return
@@ -354,7 +354,7 @@ function AddForm() {
     )
 
   return (
-    <PushScreen className="h-dvh gap-3">
+    <PushScreen className="gap-3">
       {header}
 
       <Segmented
@@ -421,13 +421,6 @@ function AddForm() {
 
       {type !== "move" ? (
         <div className="flex flex-col gap-3">
-          {editing ? (
-            <FieldButton
-              label={t("common.category")}
-              value={cats.find((c) => c.key === cat)?.label ?? ""}
-              onClick={() => setSheet("cat")}
-            />
-          ) : null}
           <div className="grid grid-cols-2 gap-2">
             <FieldButton
               label={copy.acc}
@@ -476,29 +469,27 @@ function AddForm() {
           placeholder={copy.note}
           className="min-h-11 w-full rounded-xl border border-line bg-card px-3 text-sm outline-none"
         />
-        {/* One row that scrolls sideways, so the screen never grows taller than the phone. */}
-        <div className="flex items-center gap-2">
-          <div className="-ml-6 flex min-w-0 grow gap-2 overflow-x-auto pr-1 pl-6 *:shrink-0 *:whitespace-nowrap">
-            {shownChips.map((k) => (
-              <Fragment key={k}>{chipEls[k]}</Fragment>
-            ))}
-          </div>
+        {/* One row that scrolls sideways; the adjust button is its last item. */}
+        <div className="-mx-6 flex gap-2 overflow-x-auto px-6 *:shrink-0 *:whitespace-nowrap">
+          {shownChips.map((k) => (
+            <Fragment key={k}>{chipEls[k]}</Fragment>
+          ))}
           <button
             type="button"
             aria-haspopup="dialog"
             aria-label={t("addChips.open")}
             onClick={() => setSheet("chips")}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line bg-card text-muted"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-line bg-card text-muted"
           >
             <Icon name="sliders" size={16} strokeWidth={2.2} />
           </button>
         </div>
       </div>
 
-      {/* Takes what is left of the screen: the keys shrink on short phones and stop growing on tall ones. */}
+      {/* Takes what is left of the screen: the keys shrink down to 40 px on short phones and stop growing at 54 px; if the content is still too tall, the page scrolls instead of overlapping. */}
       <div
         className={cx(
-          "grid min-h-0 flex-1 auto-rows-[minmax(40px,54px)] content-end gap-1.5",
+          "grid min-h-[178px] grow basis-0 auto-rows-[minmax(40px,54px)] content-end gap-1.5",
           keypadMath ? "grid-cols-4" : "grid-cols-3",
         )}
       >
@@ -582,13 +573,13 @@ function AddForm() {
         title={t("common.category")}
         options={cats}
         value={cat}
-        // A new entry picks here and saves with the button; editing just changes the field.
+        // Save asks for the category here (new entries and edits alike): tap to select, the button saves.
         confirmLabel={asksCategory ? copy.save : undefined}
         onPick={(k) => {
           setCat(k)
           if (asksCategory) save(false, k)
         }}
-        onAdd={editing ? undefined : () => setNewCat({ type: type === "in" ? "in" : "out", label: "", icon: "tag" })}
+        onAdd={() => setNewCat({ type: type === "in" ? "in" : "out", label: "", icon: "tag" })}
       />
       <CategoryEditSheet
         draft={newCat}
