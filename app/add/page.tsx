@@ -547,6 +547,8 @@ function AddForm() {
         title={t("common.category")}
         options={cats}
         value={cat}
+        // A new entry picks here and saves with the button; editing just changes the field.
+        confirmLabel={asksCategory ? copy.save : undefined}
         onPick={(k) => {
           setCat(k)
           if (asksCategory) save(false, k)
@@ -558,7 +560,8 @@ function AddForm() {
         onClose={() => setNewCat(null)}
         onSaved={(k) => {
           setCat(k)
-          if (asksCategory) save(false, k)
+          // Back to the choice with the new category selected, to confirm with the button.
+          if (asksCategory) setSheet("cat")
         }}
       />
       <SlipBatchSheet

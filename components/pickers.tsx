@@ -320,22 +320,33 @@ export function CategorySheet({
   value,
   onPick,
   onAdd,
+  confirmLabel,
 }: {
   open: boolean
   onClose: () => void
   title: string
   options: CategoryDef[]
   value: string
+  /** Called with the category: on tap, or with `confirmLabel` set, when the button below is tapped. */
   onPick: (k: string) => void
   /** Adds a "new category" tile; the caller opens its own editor. */
   onAdd?: () => void
+  /** Taps only select; this button applies the choice (it starts on `value` each time the sheet opens). */
+  confirmLabel?: string
 }) {
   const { t } = useTranslation()
+  const [draft, setDraft] = useState(value)
+  const [wasOpen, setWasOpen] = useState(open)
+  if (open !== wasOpen) {
+    setWasOpen(open)
+    if (open) setDraft(value)
+  }
+  const shown = confirmLabel ? draft : value
   return (
     <Sheet open={open} onClose={onClose} title={title}>
       <div role="radiogroup" aria-label={title} className="grid grid-cols-3 gap-2">
         {options.map((c) => {
-          const on = c.key === value
+          const on = c.key === shown
           return (
             <button
               key={c.key}
@@ -343,6 +354,7 @@ export function CategorySheet({
               role="radio"
               aria-checked={on}
               onClick={() => {
+                if (confirmLabel) return setDraft(c.key)
                 onPick(c.key)
                 onClose()
               }}
@@ -370,6 +382,16 @@ export function CategorySheet({
           </button>
         ) : null}
       </div>
+      {confirmLabel ? (
+        <PrimaryButton
+          onClick={() => {
+            onPick(draft)
+            onClose()
+          }}
+        >
+          {confirmLabel}
+        </PrimaryButton>
+      ) : null}
     </Sheet>
   )
 }
