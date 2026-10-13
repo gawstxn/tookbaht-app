@@ -8,6 +8,7 @@ import { Icon } from "@/components/ui/Icon"
 import { BillsDue } from "@/components/bills"
 import { BudgetBannerCard } from "@/components/BudgetBanner"
 import { LeftoverCard } from "@/components/LeftoverCard"
+import { MonthCheckCard } from "@/components/MonthCheckCard"
 import { CashFlowAlert } from "@/components/cashflow"
 import { NotificationBell } from "@/components/notifications"
 import { StreakChip, StreakSync } from "@/components/streak"
@@ -171,6 +172,7 @@ export default function OverviewPage() {
       <CashFlowAlert />
       <BillsDue />
       <LeftoverCard />
+      <MonthCheckCard />
 
       {owed.length ? (
         <Link

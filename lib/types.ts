@@ -190,6 +190,8 @@ export interface Settings {
   /** Rounds of a changing bill the user chose not to log (lib/bills.ts ids), so it stops asking. */
   billSkipped?: string[]
   /** Last month ("YYYY-MM") whose leftover the user saved or skipped (lib/leftover.ts). */
+  /** Month (YYYY-MM) whose balances were last checked or the reminder dismissed. */
+  balanceCheckedMonth?: string
   leftoverMonth?: string
   /** Picked profile picture (lib/avatars.ts key); the initial shows when unset. */
   avatar?: string

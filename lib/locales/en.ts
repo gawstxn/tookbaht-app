@@ -721,6 +721,21 @@ const en: Messages = {
     dueDayValue: "Day {{day}}",
     dueLine: "Due {{date}} · owed {{amount}}",
   },
+  monthCheck: {
+    title: "Month-end check",
+    open: "Month-end check",
+    openHint: "Compare every account with the real balance at once, in case you forgot to log something",
+    lead: "Enter what your bank app shows or what you counted, only for the accounts you checked. The difference is logged for you; blank rows are skipped.",
+    placeholder: "Actual",
+    save_one: "Log the difference for {{count}} account",
+    save_other: "Log the difference for {{count}} accounts",
+    allMatch: "All accounts match",
+    allMatchHint: "Nothing to log. Turns off this month's reminder.",
+    done: "Check saved",
+    cardTitle: "Time for a month-end check?",
+    cardBody: "See if the balances in the app match what you really have, in case you forgot to log something.",
+    dismiss: "Later",
+  },
   onboarding: {
     welcome: "Welcome",
     title: "Set up Tookbaht",
@@ -1318,6 +1333,10 @@ const en: Messages = {
   },
   whatsNew: {
     title: "What's new in v{{version}}",
+    monthCheck: {
+      title: "Month-end check",
+      body: "At the end of the month the app invites you to compare every account with its real balance on one screen. Enter the real figures and the differences are logged for you, in case you forgot something. You can open it any time from Accounts.",
+    },
     saveCategory: {
       title: "A shorter add screen",
       body: "No more scrolling. Tap Save, then pick the category in the sheet that opens. The one you use most is already selected.",
