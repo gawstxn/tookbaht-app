@@ -288,7 +288,7 @@ function AddForm() {
     )
 
   return (
-    <PushScreen className="gap-3">
+    <PushScreen className="h-dvh gap-3">
       {header}
 
       <Segmented
@@ -413,7 +413,8 @@ function AddForm() {
           placeholder={copy.note}
           className="min-h-11 w-full rounded-xl border border-line bg-card px-3 text-sm outline-none"
         />
-        <div className="flex flex-wrap gap-2">
+        {/* One row that scrolls sideways, so the screen never grows taller than the phone. */}
+        <div className="-mx-6 flex gap-2 overflow-x-auto px-6 *:shrink-0 *:whitespace-nowrap">
           <TagField value={tag} onChange={pickTag} />
           {!editing && type !== "move" ? (
             <button
@@ -463,7 +464,13 @@ function AddForm() {
         </div>
       </div>
 
-      <div className={cx("mt-auto grid gap-1.5", keypadMath ? "grid-cols-4" : "grid-cols-3")}>
+      {/* Takes what is left of the screen: the keys shrink on short phones and stop growing on tall ones. */}
+      <div
+        className={cx(
+          "grid min-h-0 flex-1 auto-rows-[minmax(40px,54px)] content-end gap-1.5",
+          keypadMath ? "grid-cols-4" : "grid-cols-3",
+        )}
+      >
         {(keypadMath ? MATH_KEYS : PLAIN_KEYS).map((k) => (
           <button
             key={k}
@@ -481,7 +488,7 @@ function AddForm() {
             }
             onClick={() => press(k)}
             className={cx(
-              "flex min-h-[50px] items-center justify-center rounded-xl font-mono text-[22px] font-medium",
+              "flex items-center justify-center rounded-xl font-mono text-[22px] font-medium",
               /[0-9]/.test(k) ? "bg-card" : "bg-chip",
               k === "del" && keypadMath && "col-span-2",
             )}
