@@ -403,11 +403,8 @@ function AddForm() {
       )}
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="note" className="pl-0.5 text-[11px] text-muted">
-          {t("common.note")}
-        </label>
         <input
-          id="note"
+          aria-label={t("common.note")}
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder={copy.note}
