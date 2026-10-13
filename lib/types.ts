@@ -171,6 +171,8 @@ export interface Settings {
   keypadMath?: boolean
   /** The add screen opens as a chat: type "ค่าข้าว 50", send, and keep going (off unless true). */
   chatEntry?: boolean
+  /** Order of the optional buttons under the note on the add screen, and the ones hidden (lib/addChips.ts). */
+  addChips?: { order: string[]; hidden: string[] }
   /** Evening push (20:00) when nothing was logged that day (off unless true). */
   dailyReminder?: boolean
   /** Last app version whose "what's new" this account has seen. */

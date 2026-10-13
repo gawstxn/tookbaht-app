@@ -721,6 +721,13 @@ const en: Messages = {
     dueDayValue: "Day {{day}}",
     dueLine: "Due {{date}} · owed {{amount}}",
   },
+  addChips: {
+    open: "Arrange extra options",
+    title: "Arrange extra options",
+    lead: "Tap the arrows to move one up or down, and turn off the ones you don't use. Hidden options can be switched back on here.",
+    up: "Move up",
+    down: "Move down",
+  },
   monthCheck: {
     title: "Month-end check",
     open: "Month-end check",
@@ -1333,6 +1340,10 @@ const en: Messages = {
   },
   whatsNew: {
     title: "What's new in v{{version}}",
+    addChips: {
+      title: "Arrange the add screen's options",
+      body: "Reorder the trip tag, currency, tax mark, split and slip buttons to suit you, and hide the ones you never use. Tap the adjust button at the right end of the row.",
+    },
     monthCheck: {
       title: "Month-end check",
       body: "At the end of the month the app invites you to compare every account with its real balance on one screen. Enter the real figures and the differences are logged for you, in case you forgot something. You can open it any time from Accounts.",

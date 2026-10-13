@@ -1,7 +1,8 @@
 "use client"
 
 import { useRouter, useSearchParams } from "next/navigation"
-import { Suspense, useEffect, useMemo, useRef, useState } from "react"
+import { Fragment, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { AddChipsSheet } from "@/components/AddChipsSheet"
 import { PushScreen } from "@/components/app"
 import { CategoryEditSheet, type CategoryDraft } from "@/components/CategoryEditSheet"
 import { ChatEntry } from "@/components/ChatEntry"
@@ -17,6 +18,7 @@ import { Chip, PrimaryButton, PushHeader, Segmented, cx } from "@/components/ui/
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, TYPE_META, expenseCategories, incomeCategories } from "@/lib/constants"
 import { evaluate, formatExpr, hasOperator, pressKey, type CalcKey } from "@/lib/calc"
 import { readChatLog, saveChatLog, type ChatLine } from "@/lib/chatLog"
+import { ADD_CHIPS, visibleChips, type AddChip } from "@/lib/addChips"
 import { addDays, baht2, shortDate, todayISO } from "@/lib/format"
 import { entryDefaults, recentDuplicate } from "@/lib/quick"
 import { accountBalance } from "@/lib/selectors"
@@ -48,6 +50,7 @@ function AddForm() {
   const keypadMath = useStore((s) => s.settings.keypadMath !== false)
   const chatPref = useStore((s) => s.settings.chatEntry === true)
   const setSettings = useStore((s) => s.setSettings)
+  const chipPrefs = useStore((s) => s.settings.addChips)
   const notify = useStore((s) => s.notify)
   const addTransaction = useStore((s) => s.addTransaction)
   const updateTransaction = useStore((s) => s.updateTransaction)
@@ -88,7 +91,7 @@ function AddForm() {
   const tripCurrencies = useStore((s) => s.settings.tripCurrencies)
   const [cur, setCur] = useState<FxCurrency | "">("")
   const [rate, setRate] = useState<{ key: string; value: UsdRate | null } | null>(null)
-  const [sheet, setSheet] = useState<"" | "acc" | "from" | "to" | "date" | "cur" | "cat">("")
+  const [sheet, setSheet] = useState<"" | "acc" | "from" | "to" | "date" | "cur" | "cat" | "chips">("")
   // After saving, go straight on to splitting the bill with friends.
   const [split, setSplit] = useState(false)
   const [slips, setSlips] = useState<SlipFields[] | null>(null)
@@ -233,6 +236,69 @@ function AddForm() {
       : date === addDays(today, -1)
         ? t("add.yesterdayDate", { date: shortDate(date, false) })
         : shortDate(date)
+
+  // The optional buttons under the note, in the user's order (hidden ones are left out unless they hold a value).
+  const chipEls: Record<AddChip, ReactNode> = {
+    tag: <TagField value={tag} onChange={pickTag} />,
+    currency:
+      !editing && type !== "move" ? (
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          onClick={() => setSheet("cur")}
+          className={cx(
+            "flex min-h-9 items-center gap-1.5 self-start rounded-full px-3 text-[13px] font-medium",
+            cur ? "bg-ink text-on-ink" : "border border-line bg-card text-muted",
+          )}
+        >
+          <Icon name="globe" size={14} strokeWidth={2.2} />
+          {cur || t("fxEntry.chip")}
+        </button>
+      ) : null,
+    tax: type === "out" ? <TaxField value={taxType} onChange={setTaxType} /> : null,
+    split:
+      !editing && type === "out" ? (
+        <Chip on={split} onClick={() => setSplit((v) => !v)}>
+          <span className="flex items-center gap-1.5">
+            <Icon name="users" size={15} strokeWidth={2} />
+            {t("split.action")}
+          </span>
+        </Chip>
+      ) : null,
+    slip:
+      !editing && type !== "in" ? (
+        <SlipReader
+          onRead={(f) => {
+            // Fill what the slip shows; everything stays editable before saving.
+            // Slips are in baht.
+            if (f.amount) {
+              setAmount(String(f.amount))
+              setCur("")
+            }
+            if (f.date) setDate(f.date)
+            const label = f.memo || f.receiver
+            if (label && !note.trim()) setNote(label)
+            notify(
+              t("slip.filled", {
+                amount: f.amount ? baht2(f.amount) : "—",
+                date: f.date ? shortDate(f.date) : "—",
+              }),
+            )
+          }}
+          onBatch={type === "out" ? setSlips : undefined}
+        />
+      ) : null,
+  }
+  const keep: AddChip[] = [
+    ...(tag ? (["tag"] as const) : []),
+    ...(cur ? (["currency"] as const) : []),
+    ...(taxType ? (["tax"] as const) : []),
+  ]
+  const shownChips = visibleChips(
+    chipPrefs,
+    ADD_CHIPS.filter((k) => chipEls[k]),
+    keep,
+  )
 
   const header = (
     <PushHeader
@@ -411,53 +477,21 @@ function AddForm() {
           className="min-h-11 w-full rounded-xl border border-line bg-card px-3 text-sm outline-none"
         />
         {/* One row that scrolls sideways, so the screen never grows taller than the phone. */}
-        <div className="-mx-6 flex gap-2 overflow-x-auto px-6 *:shrink-0 *:whitespace-nowrap">
-          <TagField value={tag} onChange={pickTag} />
-          {!editing && type !== "move" ? (
-            <button
-              type="button"
-              aria-haspopup="dialog"
-              onClick={() => setSheet("cur")}
-              className={cx(
-                "flex min-h-9 items-center gap-1.5 self-start rounded-full px-3 text-[13px] font-medium",
-                cur ? "bg-ink text-on-ink" : "border border-line bg-card text-muted",
-              )}
-            >
-              <Icon name="globe" size={14} strokeWidth={2.2} />
-              {cur || t("fxEntry.chip")}
-            </button>
-          ) : null}
-          {type === "out" ? <TaxField value={taxType} onChange={setTaxType} /> : null}
-          {!editing && type === "out" ? (
-            <Chip on={split} onClick={() => setSplit((v) => !v)}>
-              <span className="flex items-center gap-1.5">
-                <Icon name="users" size={15} strokeWidth={2} />
-                {t("split.action")}
-              </span>
-            </Chip>
-          ) : null}
-          {!editing && type !== "in" ? (
-            <SlipReader
-              onRead={(f) => {
-                // Fill what the slip shows; everything stays editable before saving.
-                // Slips are in baht.
-                if (f.amount) {
-                  setAmount(String(f.amount))
-                  setCur("")
-                }
-                if (f.date) setDate(f.date)
-                const label = f.memo || f.receiver
-                if (label && !note.trim()) setNote(label)
-                notify(
-                  t("slip.filled", {
-                    amount: f.amount ? baht2(f.amount) : "—",
-                    date: f.date ? shortDate(f.date) : "—",
-                  }),
-                )
-              }}
-              onBatch={type === "out" ? setSlips : undefined}
-            />
-          ) : null}
+        <div className="flex items-center gap-2">
+          <div className="-ml-6 flex min-w-0 grow gap-2 overflow-x-auto pr-1 pl-6 *:shrink-0 *:whitespace-nowrap">
+            {shownChips.map((k) => (
+              <Fragment key={k}>{chipEls[k]}</Fragment>
+            ))}
+          </div>
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            aria-label={t("addChips.open")}
+            onClick={() => setSheet("chips")}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line bg-card text-muted"
+          >
+            <Icon name="sliders" size={16} strokeWidth={2.2} />
+          </button>
         </div>
       </div>
 
@@ -541,6 +575,7 @@ function AddForm() {
         value={cur}
         onPick={setCur}
       />
+      <AddChipsSheet open={sheet === "chips"} onClose={() => setSheet("")} />
       <CategorySheet
         open={sheet === "cat"}
         onClose={() => setSheet("")}
