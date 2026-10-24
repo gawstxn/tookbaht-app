@@ -13,6 +13,7 @@ import { readLock } from "@/lib/appLock"
 import { currentLang, type Lang } from "@/lib/i18n"
 import { useGoBack } from "@/lib/nav"
 import { useStartDay, useStore } from "@/lib/store"
+import { setTabBarStyle, useTabBarStyle, type TabBarStyle } from "@/lib/tabBar"
 import { setThemePref, themePref, type ThemePref } from "@/lib/theme"
 
 /** Everything about how the app behaves: display, when the month starts, app lock, notifications and what is kept on the device. */
@@ -23,11 +24,12 @@ export default function SettingsPage() {
   const setLanguage = useStore((s) => s.setLanguage)
   const setSettings = useStore((s) => s.setSettings)
   const notify = useStore((s) => s.notify)
-  const [sheet, setSheet] = useState<"" | "lang" | "theme" | "lock" | "cycle">("")
+  const [sheet, setSheet] = useState<"" | "lang" | "theme" | "tabBar" | "lock" | "cycle">("")
   const startDay = useStartDay()
   // Per-device settings, read after mount.
   const [lock, setLock] = useState(readLock)
   const [theme, setTheme] = useState<ThemePref>(themePref)
+  const tabBar = useTabBarStyle()
   const langOptions: { value: Lang; label: string }[] = [
     { value: "th", label: tr("lang.th") },
     { value: "en", label: tr("lang.en") },
@@ -36,6 +38,10 @@ export default function SettingsPage() {
     { value: "light", label: tr("theme.light") },
     { value: "dark", label: tr("theme.dark") },
     { value: "system", label: tr("theme.system") },
+  ]
+  const tabBarOptions: { value: TabBarStyle; label: string }[] = [
+    { value: "floating", label: tr("tabBar.floating") },
+    { value: "classic", label: tr("tabBar.classic") },
   ]
 
   return (
@@ -52,6 +58,11 @@ export default function SettingsPage() {
           label={tr("theme.title")}
           value={themeOptions.find((o) => o.value === theme)?.label}
           onClick={() => setSheet("theme")}
+        />
+        <NavRow
+          label={tr("tabBar.title")}
+          value={tabBarOptions.find((o) => o.value === tabBar)?.label}
+          onClick={() => setSheet("tabBar")}
         />
         <SwitchRow
           label={tr("profile.keypadMath")}
@@ -127,6 +138,19 @@ export default function SettingsPage() {
           setSheet("")
           setTheme(v)
           setThemePref(v)
+        }}
+      />
+      <ChoiceSheet
+        open={sheet === "tabBar"}
+        onClose={() => setSheet("")}
+        title={tr("tabBar.title")}
+        options={tabBarOptions}
+        value={tabBar}
+        onPick={(v) => {
+          setSheet("")
+          if (v === tabBar) return
+          setTabBarStyle(v)
+          notify(tr("tabBar.saved", { style: tabBarOptions.find((o) => o.value === v)?.label }))
         }}
       />
 

@@ -8,6 +8,7 @@ import { ACCOUNT_KIND_ICON, TYPE_META, categoryIcon, categoryLabel } from "@/lib
 import { findBrand, onColor, type Brand } from "@/lib/brands"
 import { useBrandPath } from "@/lib/brandLogos"
 import { baht2, relativeDue } from "@/lib/format"
+import { useTabBarStyle } from "@/lib/tabBar"
 import { txTitle } from "@/lib/txTitle"
 import type { Account, Subscription, Transaction } from "@/lib/types"
 import { Icon, type IconName } from "./ui/Icon"
@@ -21,6 +22,52 @@ const TABS: { href: string; label: "home" | "transactions" | "monthly" | "profil
 ]
 
 export function BottomNav() {
+  return useTabBarStyle() === "classic" ? <ClassicNav /> : <FloatingNav />
+}
+
+/** Floating glass pill inset from the screen edges; the current tab sits on a capsule. */
+function FloatingNav() {
+  const path = usePathname()
+  const { t: tr } = useTranslation()
+  const tab = (t: (typeof TABS)[number]) => {
+    const on = t.href === "/" ? path === "/" : path.startsWith(t.href)
+    return (
+      <Link
+        key={t.href}
+        href={t.href}
+        aria-current={on ? "page" : undefined}
+        className={cx(
+          "flex h-full min-w-0 flex-col items-center justify-center gap-0.5 rounded-full text-[11px] leading-tight transition-colors duration-200",
+          on ? "bg-glass-pill font-semibold text-ink" : "text-muted",
+        )}
+      >
+        <Icon name={t.icon} size={22} strokeWidth={on ? 2 : 1.8} />
+        <span className="max-w-full truncate px-1">{tr(`nav.${t.label}`)}</span>
+      </Link>
+    )
+  }
+  return (
+    <nav
+      aria-label={tr("nav.menu")}
+      className="tabbar-glass fixed inset-x-3 bottom-[max(12px,calc(env(safe-area-inset-bottom)-10px))] z-40 mx-auto grid h-16 max-w-[406px] grid-cols-5 items-center rounded-full p-1.5"
+    >
+      {tab(TABS[0])}
+      {tab(TABS[1])}
+      <Link
+        href="/add"
+        aria-label={tr("nav.add")}
+        className="flex h-12 w-12 items-center justify-center justify-self-center rounded-full bg-lime text-on-lime"
+      >
+        <Icon name="plus" size={24} strokeWidth={2.4} />
+      </Link>
+      {tab(TABS[2])}
+      {tab(TABS[3])}
+    </nav>
+  )
+}
+
+/** The original full-width bar with the add button raised above it. */
+function ClassicNav() {
   const path = usePathname()
   const { t: tr } = useTranslation()
   const tab = (t: (typeof TABS)[number]) => {
