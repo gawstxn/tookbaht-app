@@ -50,6 +50,7 @@ const en: Messages = {
   },
   lang: { title: "Language", th: "ไทย", en: "English" },
   theme: { title: "Theme", light: "Light", dark: "Dark", system: "System" },
+  tabBar: { title: "Tab bar", floating: "Floating", classic: "Classic", saved: "Tab bar: {{style}}" },
   nav: {
     home: "Home",
     transactions: "Activity",
@@ -1340,6 +1341,10 @@ const en: Messages = {
   },
   whatsNew: {
     title: "What's new in v{{version}}",
+    floatingTabBar: {
+      title: "A floating tab bar",
+      body: "The tab bar now floats as a see-through pill, and the tab you're on sits on its own highlight. Prefer the old one? Switch back in Profile → Settings → Tab bar.",
+    },
     addChips: {
       title: "Arrange the add screen's options",
       body: "Reorder the trip tag, currency, tax mark, split and slip buttons to suit you, and hide the ones you never use. Tap the adjust button at the right end of the row.",
